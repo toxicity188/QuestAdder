@@ -1,0 +1,119 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.0'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'org.jetbrains.kotlin.jvm'
+    apply plugin: 'com.github.johnrengelman.shadow'
+
+    group = 'kor.toxicity'
+    version = '1.0-SNAPSHOT'
+
+    repositories {
+        mavenCentral()
+        maven {
+            name = "papermc-repo"
+            url = "https://repo.papermc.io/repository/maven-public/"
+        }
+        maven {
+            name = "sonatype"
+            url = "https://oss.sonatype.org/content/groups/public/"
+        }
+        maven {
+            url = 'https://mvn.lumine.io/repository/maven/'
+        }
+        maven {
+            name = 'citizens-repo'
+            url = 'https://maven.citizensnpcs.co/repo'
+        }
+        maven {
+            url = 'https://jitpack.io'
+        }
+        maven {
+            name = "alessiodpRepo"
+            url = uri("https://repo.alessiodp.com/releases")
+        }
+    }
+
+    dependencies {
+        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
+        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
+        testImplementation 'io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT'
+
+        compileOnly 'io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT'
+        compileOnly group: 'net.byteflux', name: 'libby-bukkit', version: '1.1.5'
+        compileOnly group: 'com.github.oraxen', name: 'oraxen', version: '1.158.0'
+        compileOnly group: 'com.github.LoneDev6', name: 'api-itemsadder', version: '3.5.0b'
+        compileOnly 'net.citizensnpcs:citizens-main:2.0.32-SNAPSHOT'
+        compileOnly "com.github.MilkBowl:VaultAPI:1.7"
+    }
+    tasks.named('test', Test) {
+        useJUnitPlatform()
+
+        maxHeapSize = '1G'
+
+        testLogging {
+            events "passed"
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(path: ':plugin', configuration: 'shadow')
+}
+
+def targetJavaVersion = 17
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        options.release = targetJavaVersion
+    }
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+jar {
+    finalizedBy shadowJar
+}
+
+shadowJar {
+    relocate("kotlin","kor.toxicity.questadder.shaded.kotlin")
+    relocate("com.ticxo.playeranimator","kor.toxicity.questadder.shaded.com.ticxo.playeranimator")
+    relocate("org.apache.commons.io","kor.toxicity.questadder.shaded.org.apache.commons.io")
+    relocate("net.objecthunter","kor.toxicity.questadder.shaded.net.objecthunter")
+    dependencies {
+        exclude(dependency("org.jetbrains:annotations:13.0"))
+    }
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}

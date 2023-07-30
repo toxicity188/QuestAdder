@@ -1,0 +1,12 @@
+name: QuestAdder
+version: '${version}'
+main: kor.toxicity.questadder.QuestAdder
+api-version: 1.17
+depend:
+  - Citizens
+commands:
+  questadder:
+    aliases:
+      - qa
+    description: QuestAdder's command.
+    usage: /<command>
