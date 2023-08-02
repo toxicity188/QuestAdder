@@ -28,5 +28,6 @@ class GuiWrapper(val title: Component, size: Int) {
         override fun getInventory(): Inventory {
             return inv
         }
+
     }
 }

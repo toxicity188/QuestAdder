@@ -1,13 +1,24 @@
-package kor.toxicity.questadder.util.function
+package kor.toxicity.questadder.util.builder
 
 import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.event.ActionEvent
+import kor.toxicity.questadder.event.ArgumentEvent
 import kor.toxicity.questadder.event.DialogEvent
 import kor.toxicity.questadder.event.NPCEvent
 import kor.toxicity.questadder.event.QuestAdderPlayerEvent
+import kor.toxicity.questadder.event.QuestEvent
+import kor.toxicity.questadder.event.QuestPlayerEvent
+import kor.toxicity.questadder.mechanic.Quest
+import kor.toxicity.questadder.util.HashedClass
 import kor.toxicity.questadder.util.Null
+import kor.toxicity.questadder.util.function.ArgumentFunction
+import kor.toxicity.questadder.util.function.QuestOperator
+import kor.toxicity.questadder.util.function.WrappedFunction
+import kor.toxicity.questadder.util.reflect.PrimitiveType
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import java.text.DecimalFormat
+import java.util.concurrent.ThreadLocalRandom
 import java.util.regex.Pattern
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -16,9 +27,9 @@ import kotlin.math.round
 object FunctionBuilder {
 
     private val functionPattern = Pattern.compile("(?<name>\\w+)\\((?<argument>(\\w|\\W)*)\\)")
-    private val stringPattern = Pattern.compile("^\"(?<string>(\\w|\"\"|\\W|^\")+)\"$")
-    private val map = HashMap<ClassWrapper, MutableMap<String, MutableMap<ClassListWrapper, ArgumentFunction>>>()
-    private val operatorMap = HashMap<ClassWrapper,MutableMap<String,QuestOperator>>()
+    private val stringPattern = Pattern.compile("^\'(?<string>(\\w|\'\'|\\W|^\')+)\'$")
+    private val map = HashMap<HashedClass, MutableMap<String, MutableMap<HashedClassList, ArgumentFunction>>>()
+    private val operatorMap = HashMap<HashedClass,MutableMap<String, QuestOperator>>()
     private val booleanStringArray = arrayOf("true", "false")
     private val numberArray = arrayOf(
         '0','1','2','3','4','5','6','7','8','9'
@@ -156,20 +167,44 @@ object FunctionBuilder {
         addFunction("hello") { _: Null, _ ->
             "Hello world!"
         }
-        addFunction("str", listOf(Any::class.java)) { _: Null, args ->
-            args[0].toString()
+        addFunction("numOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
+            when (val n = QuestAdder.getPlayerData(args[0] as Player)?.get(args[1] as String)) {
+                is Number -> n.toDouble()
+                is String -> try {
+                    n.toDouble()
+                } catch (ex: Exception) {
+                    0.0
+                }
+                else -> 0.0
+            }
         }
-        addFunction("number", listOf(String::class.java)) { _: Null, args ->
-            (args[0] as String).toDouble()
+        addFunction("strOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
+            QuestAdder.getPlayerData(args[0] as Player)?.get(args[1] as String).toString()
+        }
+        addFunction("boolOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
+            QuestAdder.getPlayerData(args[0] as Player)?.get(args[1] as String).toString().toBoolean()
+        }
+        addFunction("random", listOf(Number::class.java, Number::class.java)) { _: Null, args ->
+            ThreadLocalRandom.current().nextDouble((args[0] as Number).toDouble(), (args[1] as Number).toDouble())
         }
         addFunction("player") { e: QuestAdderPlayerEvent, _ ->
             e.player
+        }
+        addFunction("quest") { e: QuestEvent, _ ->
+            e.quest
         }
         addFunction("dialog") { e: DialogEvent, _ ->
             e.dialog
         }
         addFunction("npc") { e: NPCEvent, _ ->
             e.npc
+        }
+        addFunction("args", listOf(Number::class.java)) { e: ArgumentEvent, args ->
+            val index = (args[0] as Number).toInt()
+            if (index >= 0 && index < e.args.size) e.args[index] else null
+        }
+        addFunction("var", listOf(String::class.java)) { e: QuestPlayerEvent, args ->
+            QuestAdder.getPlayerData(e.player)?.getQuestVariable(e.quest.key,args[0] as String) ?: 0
         }
         addFunction("name", listOf(Entity::class.java)) { _: Null, args ->
             (args[0] as Entity).name
@@ -207,12 +242,18 @@ object FunctionBuilder {
         addFunction("round", listOf(Number::class.java)) { _: Null, args ->
             round((args[0] as Number).toDouble())
         }
+        addFunction("and", listOf(Boolean::class.java, Boolean::class.java)) { _: Null, args ->
+            args[0] as Boolean && args[1] as Boolean
+        }
+        addFunction("or", listOf(Boolean::class.java, Boolean::class.java)) { _: Null, args ->
+            args[0] as Boolean || args[1] as Boolean
+        }
     }
     inline fun <reified T, reified R : Any> addOperation(name: String, noinline operate: (T, T) -> R) {
         addOperation(name,T::class.java,R::class.java,operate)
     }
     fun <T,R : Any> addOperation(name: String, clazz: Class<T>, returnType: Class<R>, operation: (T, T) -> R) {
-        operatorMap.getOrPut(ClassWrapper(clazz)) {
+        operatorMap.getOrPut(HashedClass(clazz)) {
             HashMap()
         }[name] = object : QuestOperator {
             override fun getReturnType(): Class<*> {
@@ -245,12 +286,12 @@ object FunctionBuilder {
         args: List<Class<*>>,
         function: (t: T, Array<Any>) -> R?
     ) {
-        map.getOrPut(ClassWrapper(returnType)) {
+        map.getOrPut(HashedClass(returnType)) {
             HashMap()
         }.getOrPut(name) {
             HashMap()
-        }.putIfAbsent(ClassListWrapper(args.map {
-            ClassWrapper(it)
+        }.putIfAbsent(HashedClassList(args.map {
+            HashedClass(it)
         }), object : ArgumentFunction {
             override fun getName(): String {
                 return name
@@ -280,7 +321,7 @@ object FunctionBuilder {
         })
     }
 
-    fun funcSplit(name: String): List<String> {
+    private fun funcSplit(name: String): List<String> {
         val target = name.replace(" ","§")
         val list = ArrayList<String>()
         var i = 0
@@ -304,7 +345,7 @@ object FunctionBuilder {
                 list.add(builder.toString().replace("§"," "))
                 builder.setLength(0)
                 i = i2
-            } else if (n == '\"') {
+            } else if (n == '\'') {
                 appendBuilder()
                 var i2 = i
                 while (i2 < length) {
@@ -314,7 +355,7 @@ object FunctionBuilder {
                             i2++
                             continue
                         }
-                        '\"' -> break
+                        '\'' -> break
                     }
                 }
                 list.add(target.substring(i,++i2).replace("§"," ").replace("\\",""))
@@ -334,7 +375,7 @@ object FunctionBuilder {
                 var sum2 = 0
                 while (sum != sum2) {
                     when (target[i3++]) {
-                        '\"' -> skip = !skip
+                        '\'' -> skip = !skip
                         '(' -> if (!skip) sum++
                         ')' -> if (!skip) sum2++
                     }
@@ -350,7 +391,7 @@ object FunctionBuilder {
     private fun getPrimitiveFunction(string: String): WrappedFunction {
         val match = stringPattern.matcher(string)
         return if (match.find()) {
-            val stringParsed = match.group("string").replace("\"\"", "\"")
+            val stringParsed = match.group("string").replace("\'\'", "\'")
             object : WrappedFunction {
                 override fun getReturnType(): Class<*> {
                     return String::class.java
@@ -441,16 +482,15 @@ object FunctionBuilder {
                                     }
                                 }
                                 split.add(argument.subList(i,argument.size))
-                                for ((index,strings) in split.withIndex()) {
-                                    val cl = classes[index]
-                                    var find = find(cl,strings[0]) ?: continue
+                                for (strings in split) {
+                                    var find = find(Any::class.java,strings[0]) ?: continue
 
                                     if (strings.size > 1) {
                                         var i2 = 0
                                         while (i2 < strings.size - 2) {
                                             i2 += 2
                                             val before = find
-                                            val after = find(cl,strings[i2]) ?: break
+                                            val after = find(Any::class.java,strings[i2]) ?: break
                                             findOperator(strings[i2 - 1],find.getReturnType())?.let { operator ->
                                                 find = object : WrappedFunction {
                                                     override fun getReturnType(): Class<*> {
@@ -458,7 +498,7 @@ object FunctionBuilder {
                                                     }
 
                                                     override fun getType(): Class<*> {
-                                                        return find.getType()
+                                                        return before.getType()
                                                     }
 
                                                     override fun getName(): String {
@@ -482,7 +522,10 @@ object FunctionBuilder {
                             else {
                                 val types = e.value.getArgumentType()
                                 for ((i,type) in types.withIndex()) {
-                                    if (!type.isAssignableFrom(wrapped[i].getReturnType())) check = false
+                                    if (!PrimitiveType.convertToReferenceClass(type).isAssignableFrom(wrapped[i].getReturnType())) {
+                                        check = false
+                                        break
+                                    }
                                 }
                             }
                             if (!check) {
@@ -552,7 +595,6 @@ object FunctionBuilder {
         return try {
             functionMatch(clazz, funcSplit(parameter))
         } catch (ex: Exception) {
-            ex.printStackTrace()
             null
         } ?: nullFunction
     }
@@ -561,27 +603,12 @@ object FunctionBuilder {
             if (e.key == name) e.value else null
         } else null
     }
-
-    private class ClassWrapper(val clazz: Class<*>) {
+    private class HashedClassList(val classes: List<HashedClass>) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
 
-            other as ClassWrapper
-
-            return other.clazz.name == clazz.name
-        }
-
-        override fun hashCode(): Int {
-            return clazz.name.hashCode()
-        }
-    }
-    private class ClassListWrapper(val classes: List<ClassWrapper>) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as ClassListWrapper
+            other as HashedClassList
 
             if (classes != other.classes) return false
 

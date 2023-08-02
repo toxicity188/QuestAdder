@@ -1,17 +1,18 @@
 package kor.toxicity.questadder.event;
 
+import kor.toxicity.questadder.mechanic.npc.ActualNPC;
 import kor.toxicity.questadder.mechanic.Dialog;
-import kor.toxicity.questadder.mechanic.QuestNPC;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 public class DialogStartEvent extends QuestAdderPlayerEvent implements DialogEvent, NPCEvent, Cancellable {
 
-    private final QuestNPC npc;
+    private final ActualNPC npc;
     private final Dialog dialog;
     private boolean cancelled;
-    public DialogStartEvent(Player who, QuestNPC npc, Dialog dialog) {
+    public DialogStartEvent(Player who, ActualNPC npc, Dialog dialog) {
         super(who);
         this.npc = npc;
         this.dialog = dialog;
@@ -19,13 +20,13 @@ public class DialogStartEvent extends QuestAdderPlayerEvent implements DialogEve
 
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
-    }
+}
 
-    public Dialog getDialog() {
+    public @NotNull Dialog getDialog() {
         return dialog;
     }
 
-    public QuestNPC getNpc() {
+    public @NotNull ActualNPC getNpc() {
         return npc;
     }
 

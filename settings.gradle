@@ -1,3 +1,4 @@
 rootProject.name = 'QuestAdder'
 
 include("plugin")
+include("nms:v1_19_R3")

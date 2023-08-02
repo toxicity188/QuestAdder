@@ -15,6 +15,8 @@ private val EMPTY_DECORATION = mapOf(
     TextDecoration.STRIKETHROUGH to TextDecoration.State.FALSE,
     TextDecoration.OBFUSCATED to TextDecoration.State.FALSE
 )
+
+val ANNOTATION_PATTERN: Pattern = Pattern.compile("@((?<name>(\\w|_|-)+):(?<value>(\\w|[가-힣]|_|,|-)+))")
 fun String.colored(): TextComponent {
     val str = replace('&','§').split('^')
     if (str.size % 2 == 0) return Component.text(this)

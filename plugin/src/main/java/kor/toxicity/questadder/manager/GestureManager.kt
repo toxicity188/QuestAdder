@@ -1,11 +1,18 @@
 package kor.toxicity.questadder.manager
 
+import com.comphenix.protocol.PacketType
+import com.comphenix.protocol.ProtocolLibrary
+import com.ticxo.playeranimator.api.model.player.PlayerModel
 import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.extension.send
+import net.citizensnpcs.api.npc.NPC
 import org.bukkit.Bukkit
+import org.bukkit.entity.Player
 import java.io.File
+import java.util.UUID
 
 object GestureManager: QuestAdderManager {
+    private val gestureMap = HashMap<UUID,QuestPlayerModel>()
     override fun start(adder: QuestAdder) {
 
     }
@@ -25,5 +32,38 @@ object GestureManager: QuestAdderManager {
     }
 
     override fun end(adder: QuestAdder) {
+    }
+
+    fun play(player: Player, string: String, npc: NPC) {
+        val entity = npc.entity as? Player ?: return
+        try {
+            gestureMap.put(player.uniqueId, object : QuestPlayerModel(entity) {
+                override fun spawn() {
+                    spawn(player)
+                    QuestAdder.nms.removePlayer(player,entity)
+                }
+
+                override fun despawn() {
+                    despawn(player)
+                    QuestAdder.task {
+                        ProtocolLibrary.getProtocolManager().updateEntity(entity, listOf(player))
+                    }
+                    gestureMap.remove(player.uniqueId)
+                }
+
+                override fun cancel() {
+                    despawn(player)
+                }
+            }.apply {
+                playAnimation("questadder.$string")
+            })?.cancel()
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            QuestAdder.warn("runtime error: unable to load gesture. (${npc.name})")
+        }
+    }
+
+    private abstract class QuestPlayerModel(player: Player): PlayerModel(player) {
+        abstract fun cancel()
     }
 }

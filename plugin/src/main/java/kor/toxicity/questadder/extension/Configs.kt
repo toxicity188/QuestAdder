@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.extension
 
 import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.manager.ItemManager
 import org.bukkit.Material
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
@@ -9,9 +10,12 @@ import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import java.util.*
+import java.util.regex.Pattern
 
 private const val ATTRIBUTE_NAME = "questadder.attribute"
 private val ATTRIBUTE_UUID = UUID.fromString("8d1fc1b6-00fe-11ee-be56-0242ac120002")
+
+private val ITEM_PATTERN = Pattern.compile("\\?(?<type>([a-zA-Z]|_)+) (?<data>[0-9]+) (?<display>(\\w|\\W)+)")
 
 
 fun ConfigurationSection.findString(vararg string: String) = string.firstNotNullOfOrNull {
@@ -33,7 +37,7 @@ fun ConfigurationSection.findDouble(defaultValue: Double = 0.0, vararg string: S
 } ?: defaultValue
 
 
-fun ConfigurationSection.getAsStringList(key: String): List<String>? = if (isList(key)) getStringList(key) else null
+fun ConfigurationSection.getAsStringList(key: String): List<String>? = if (isList(key)) getStringList(key) else if (isString(key)) listOf(getString(key)!!) else null
 
 fun ConfigurationSection.getAsItemStack(key: String): ItemStack? = if (isItemStack(key)) getItemStack(key) else if (isConfigurationSection(key)) getConfigurationSection(key)!!.run {
     ItemStack(try {
@@ -73,4 +77,16 @@ fun ConfigurationSection.getAsItemStack(key: String): ItemStack? = if (isItemSta
             }
         }
     }
+} else if (isString(key)) getString(key)!!.let {
+    val matcher = ITEM_PATTERN.matcher(it)
+    if (matcher.find()) try {
+        ItemStack(Material.valueOf(matcher.group("type"))).apply {
+            itemMeta = itemMeta?.apply {
+                setCustomModelData(matcher.group("data").toInt())
+                displayName(matcher.group("display").colored())
+            }
+        }
+    } catch (ex: Exception) {
+        null
+    } else ItemManager.getItem(it)
 } else null

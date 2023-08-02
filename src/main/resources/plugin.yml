@@ -1,12 +1,22 @@
 name: QuestAdder
 version: '${version}'
 main: kor.toxicity.questadder.QuestAdder
-api-version: 1.17
+api-version: 1.19
 depend:
   - Citizens
+softdepend:
+  - ItemsAdder
+  - Oraxen
 commands:
   questadder:
     aliases:
       - qa
     description: QuestAdder's command.
+    usage: /<command>
+  quest:
+    aliases:
+      - q
+      - 퀘스트
+      - 퀘
+    description: QuestAdder's quest command.
     usage: /<command>

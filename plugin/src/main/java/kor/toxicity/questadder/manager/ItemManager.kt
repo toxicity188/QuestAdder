@@ -77,6 +77,16 @@ object ItemManager: QuestAdderManager {
     }
 
     override fun reload(adder: QuestAdder) {
+        adder.loadFile("item")?.let { c ->
+            c.getString("using")?.let {
+                itemDatabase = try {
+                    DataBaseType.valueOf(it.uppercase()).getter()
+                } catch (ex: Throwable) {
+                    QuestAdder.warn("unable to set item database to $it.")
+                    defaultItemDataBase
+                }
+            }
+        }
         if (itemDatabase === defaultItemDataBase) {
             itemMap.clear()
             adder.loadFolder("items") { file, config ->

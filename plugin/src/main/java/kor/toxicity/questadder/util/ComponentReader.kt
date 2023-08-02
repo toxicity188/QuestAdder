@@ -3,7 +3,7 @@ package kor.toxicity.questadder.util
 import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.extension.asComponent
 import kor.toxicity.questadder.extension.deepClear
-import kor.toxicity.questadder.util.function.FunctionBuilder
+import kor.toxicity.questadder.util.builder.FunctionBuilder
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor

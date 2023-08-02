@@ -1,8 +1,9 @@
-package kor.toxicity.questadder.mechanic
+package kor.toxicity.questadder.mechanic.npc
 
 import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.extension.findConfig
 import kor.toxicity.questadder.extension.findInt
+import kor.toxicity.questadder.extension.findString
 import kor.toxicity.questadder.extension.findStringList
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.util.SoundData
@@ -17,6 +18,7 @@ class QuestNPC(file: File, key: String, section: ConfigurationSection) {
     val soundData = section.findConfig("typing-sound","TypingSound")?.let { t ->
         SoundData.fromConfig(t)
     }
+    val dialogVar = section.findString("dialog-bar","DialogVar")
     val dialogs = section.findStringList("dialogs","Dialog","dialog","Dialogs")?.mapNotNull {
         DialogManager.getDialog(it).apply {
             if (this == null) QuestAdder.warn("not found error: unable to found the dialog named \"$it\". ($key in ${file.name})")
