@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.util
 
 import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.extension.EMPTY_DECORATION
 import kor.toxicity.questadder.extension.asComponent
 import kor.toxicity.questadder.extension.deepClear
 import kor.toxicity.questadder.util.builder.FunctionBuilder
@@ -71,6 +72,7 @@ class ComponentReader<T : Any>(string: String) {
                 }
             },
             "color" to { s, c ->
+                c.decoration = EMPTY_DECORATION
                 if (s == "null") c.color = null
                 else if (s.startsWith('#') && s.length == 7) c.color = TextColor.fromHexString(s.uppercase())
                 else c.color = textColorMap[s.uppercase()]
@@ -166,13 +168,7 @@ class ComponentReader<T : Any>(string: String) {
     private data class ComponentData(
         var font: Key? = null,
         var color: TextColor? = NamedTextColor.WHITE,
-        var decoration: Map<TextDecoration,TextDecoration.State> = mapOf(
-            TextDecoration.OBFUSCATED to TextDecoration.State.FALSE,
-            TextDecoration.BOLD to TextDecoration.State.FALSE,
-            TextDecoration.UNDERLINED to TextDecoration.State.FALSE,
-            TextDecoration.STRIKETHROUGH to TextDecoration.State.FALSE,
-            TextDecoration.ITALIC to TextDecoration.State.FALSE,
-        )
+        var decoration: Map<TextDecoration,TextDecoration.State> = EMPTY_DECORATION
     )
     fun createIterator(t: T) = try {
         ComponentIteratorImpl(t)

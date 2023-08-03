@@ -16,6 +16,8 @@ import kor.toxicity.questadder.util.action.type.*
 import kor.toxicity.questadder.util.event.AbstractEvent
 import kor.toxicity.questadder.util.event.type.EventJoin
 import kor.toxicity.questadder.util.event.type.EventKill
+import kor.toxicity.questadder.util.event.type.EventQuestGive
+import kor.toxicity.questadder.util.event.type.EventQuestRemove
 import kor.toxicity.questadder.util.reflect.ActionReflector
 import org.bukkit.command.CommandExecutor
 import org.bukkit.configuration.ConfigurationSection
@@ -37,6 +39,8 @@ object ActionBuilder {
         put("action",ActAction::class.java)
         put("quest",ActQuest::class.java)
 
+        put("sound", ActSound::class.java)
+
         put("set",ActSet::class.java)
         put("remove",ActRemove::class.java)
         put("add",ActAdd::class.java)
@@ -47,6 +51,9 @@ object ActionBuilder {
     private val eventMap = HashMap<String,Class<out AbstractEvent<*>>>().apply {
         put("join",EventJoin::class.java)
         put("kill",EventKill::class.java)
+
+        put("questgive", EventQuestGive::class.java)
+        put("questremove", EventQuestRemove::class.java)
     }
 
     fun addAction(name: String, clazz: Class<out AbstractAction>) {

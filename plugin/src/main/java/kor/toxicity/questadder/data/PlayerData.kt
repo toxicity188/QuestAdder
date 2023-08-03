@@ -42,7 +42,27 @@ class PlayerData {
     fun giveQuest(quest: String) {
         questVariables[quest] = HashMap()
     }
+    fun hasQuest(quest: String) = questVariables.containsKey(quest)
     fun removeQuest(quest: String) = questVariables.remove(quest)
 
     fun getQuestKey() = questVariables.keys
+
+    fun saveQuest() = HashMap<String,List<Pair<String,Long>>>().apply {
+        questVariables.forEach {
+            put(it.key,ArrayList<Pair<String, Long>>().apply {
+                for (mutableEntry in it.value) {
+                    add(mutableEntry.key to mutableEntry.value)
+                }
+            })
+        }
+    }
+    fun loadQuest(map: Map<String,List<Pair<String,Long>>>) {
+        map.forEach {
+            questVariables[it.key] = HashMap<String, Long>().apply {
+                it.value.forEach { p ->
+                    put(p.first,p.second)
+                }
+            }
+        }
+    }
 }

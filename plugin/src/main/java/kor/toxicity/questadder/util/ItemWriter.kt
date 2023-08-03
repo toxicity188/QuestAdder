@@ -15,7 +15,7 @@ class ItemWriter<T: Any>(section: ConfigurationSection) {
     private val display = section.findString("display","Display","name","Name")?.let { c ->
         ComponentReader<T>(c)
     }
-    private val writerData = section.findInt(0,"data","custom-model-data")
+    private val writerData = section.findInt(0,"data","custom-model-data","Data","CustomModelData")
     private val writerLore = section.findStringList("Lore","lore")?.map {
         ComponentReader<T>(it)
     }

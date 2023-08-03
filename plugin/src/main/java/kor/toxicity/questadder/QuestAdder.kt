@@ -75,11 +75,15 @@ class QuestAdder: JavaPlugin() {
     }
     object Prefix {
 
-        var plugin: Component = "[QuestAdder] ".asComponent(GOLD).append(Component.empty().color(WHITE))
+        var plugin: Component = "[QuestAdder] ".asComponent(GOLD).clear().append(Component.empty().color(WHITE))
             private set
-        var info: Component = " [!] ".asComponent(GOLD).append(Component.empty().color(WHITE))
+        var info: Component = " [!] ".asComponent(GOLD).clear().append(Component.empty().color(WHITE))
             private set
-        var warn: Component = " [!] ".asComponent(RED).append(Component.empty().color(WHITE))
+        var warn: Component = " [!] ".asComponent(RED).clear().append(Component.empty().color(WHITE))
+            private set
+        var condition: Component = " [!] Condition".asComponent(YELLOW).clear()
+            private set
+        var conditionLore: Component = " [!] ".asComponent(YELLOW).clear().append(Component.empty().color(WHITE))
             private set
 
         internal fun reload(section: ConfigurationSection) {
@@ -91,6 +95,12 @@ class QuestAdder: JavaPlugin() {
             }
             section.getString("warn")?.let { w ->
                 warn = w.colored()
+            }
+            section.getString("condition")?.let { c ->
+                condition = c.colored()
+            }
+            section.getString("condition-lore")?.let { c ->
+                conditionLore = c.colored()
             }
         }
     }

@@ -157,10 +157,10 @@ object FunctionBuilder {
             a.toDouble() < b.toDouble()
         }
         addOperation(">=") { a: Number, b: Number ->
-            a.toDouble() > b.toDouble()
+            a.toDouble() >= b.toDouble()
         }
         addOperation("<=") { a: Number, b: Number ->
-            a.toDouble() < b.toDouble()
+            a.toDouble() <= b.toDouble()
         }
 
 
@@ -204,7 +204,7 @@ object FunctionBuilder {
             if (index >= 0 && index < e.args.size) e.args[index] else null
         }
         addFunction("var", listOf(String::class.java)) { e: QuestPlayerEvent, args ->
-            QuestAdder.getPlayerData(e.player)?.getQuestVariable(e.quest.key,args[0] as String) ?: 0
+            QuestAdder.getPlayerData(e.player)?.getQuestVariable(e.quest.key,args[0] as String) ?: 0L
         }
         addFunction("name", listOf(Entity::class.java)) { _: Null, args ->
             (args[0] as Entity).name

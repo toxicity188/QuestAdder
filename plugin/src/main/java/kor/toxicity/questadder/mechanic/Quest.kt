@@ -2,11 +2,10 @@ package kor.toxicity.questadder.mechanic
 
 import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.event.ActionInvokeEvent
+import kor.toxicity.questadder.event.QuestGiveEvent
 import kor.toxicity.questadder.event.QuestInvokeEvent
-import kor.toxicity.questadder.extension.findConfig
-import kor.toxicity.questadder.extension.findInt
-import kor.toxicity.questadder.extension.findString
-import kor.toxicity.questadder.extension.findStringList
+import kor.toxicity.questadder.event.QuestRemoveEvent
+import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.ItemWriter
 import kor.toxicity.questadder.util.action.AbstractAction
@@ -14,6 +13,7 @@ import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.util.function.WrappedFunction
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
@@ -21,6 +21,11 @@ import org.bukkit.inventory.ItemStack
 import java.io.File
 
 class Quest(adder: QuestAdder, file: File, val key: String, section: ConfigurationSection) {
+    companion object {
+        private val success = "Success!".asComponent(YELLOW).clear().decorate(TextDecoration.BOLD)
+    }
+
+    val name = (section.findString("name","Name") ?: key).replace('&','§')
 
     private val item = section.findConfig("Item","item","Icon","icon")?.let { c ->
         try {
@@ -29,11 +34,23 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
             null
         }
     } ?: throw RuntimeException("the quest has no icon.")
-    private val condition = ArrayList<WrappedFunction>()
+    private val condition = ArrayList<Pair<ComponentReader<QuestInvokeEvent>,WrappedFunction>>()
 
     init {
-        section.findStringList("Conditions","Condition","conditions","condition")?.forEach { s ->
-            condition.add(FunctionBuilder.evaluate(s))
+        section.findConfig("Conditions","Condition","conditions","condition")?.let { c ->
+            c.getKeys(false).forEach { s ->
+                c.getConfigurationSection(s)?.let { config ->
+                    val s1 = config.findString("lore","Lore") ?: run {
+                        QuestAdder.warn("syntax error: the condition must be have lore.")
+                        return@forEach
+                    }
+                    val s2 = config.findString("condition","Condition") ?: run {
+                        QuestAdder.warn("syntax error: the condition not found.")
+                        return@forEach
+                    }
+                    condition.add(ComponentReader<QuestInvokeEvent>(s1) to FunctionBuilder.evaluate(s2))
+                } ?: QuestAdder.warn("syntax error: the value $s is not configuration section. ($key in ${file.name})")
+            }
         }
 
         section.findConfig("variable","Variable","variables","Variables")?.let { c ->
@@ -84,33 +101,58 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
     }
     fun give(player: Player) {
         QuestAdder.getPlayerData(player)?.giveQuest(key)
+        QuestGiveEvent(this,player).callEvent()
     }
     fun remove(player: Player) {
         QuestAdder.getPlayerData(player)?.removeQuest(key)
+        QuestRemoveEvent(this,player).callEvent()
     }
     fun complete(player: Player) {
 
     }
 
-    fun success(player: Player): Boolean {
+    fun isCompleted(player: Player): Boolean {
         val invokeEvent = QuestInvokeEvent(this,player).apply {
             callEvent()
         }
         return condition.all {
-            val get = it.apply(invokeEvent)
+            val get = it.second.apply(invokeEvent)
             get is Boolean && get
         }
     }
+    fun has(player: Player) = QuestAdder.getPlayerData(player)?.hasQuest(key) ?: false
     fun getIcon(player: Player): ItemStack {
         val event = QuestInvokeEvent(this,player).apply {
             callEvent()
         }
+        val cond = condition.map {
+            val get = it.second.apply(event)
+            if (get is Boolean) get
+            else {
+                QuestAdder.warn("runtime error: the value $get is not a boolean!")
+                false
+            }
+        }
         return item.write(event).apply {
-            if (condition.all {
-                    val get = it.apply(event)
-                    get is Boolean && get
-                }) itemMeta = itemMeta?.apply {
-                addEnchant(Enchantment.DURABILITY,1, true)
+            itemMeta = itemMeta?.apply {
+                lore(ArrayList<Component>().apply {
+                    lore()?.let { l ->
+                        addAll(l)
+                        add(Component.empty())
+                    }
+                    if (condition.isNotEmpty()) {
+                        add(QuestAdder.Prefix.condition)
+                        for ((index,pair) in condition.withIndex()) {
+                            val component = pair.first.createComponent(event) ?: Component.empty()
+
+                            add(QuestAdder.Prefix.conditionLore.append(if (cond[index]) component.deepClear().deepDecorate(TextDecoration.STRIKETHROUGH).append(
+                                Component.space().deepClear()).append(success) else component))
+                        }
+                    }
+                })
+                if (cond.all {
+                    it
+                    }) addEnchant(Enchantment.DURABILITY,1, true)
             }
         }
     }

@@ -2,3 +2,6 @@ plugin: "&6[QuestAdder] &f"
 
 info: " &6[!] &f"
 warn: " &c[!] &f"
+
+condition: " &e&l[!] Condition"
+condition-lore: " &e&l[!] &f"

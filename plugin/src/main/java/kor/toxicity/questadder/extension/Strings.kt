@@ -8,7 +8,7 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import java.util.regex.Pattern
 
-private val EMPTY_DECORATION = mapOf(
+val EMPTY_DECORATION = mapOf(
     TextDecoration.ITALIC to TextDecoration.State.FALSE,
     TextDecoration.BOLD to TextDecoration.State.FALSE,
     TextDecoration.UNDERLINED to TextDecoration.State.FALSE,
@@ -74,5 +74,5 @@ private val TEXT_STYLE_MAP: Map<String,(Component, String) -> Component> = mapOf
     }
 )
 
-fun Component.clear() = decorations(EMPTY_DECORATION)
-fun Component.deepClear() = clear().color(WHITE)
+fun Component.clear() = deepDecorations(EMPTY_DECORATION)
+fun Component.deepClear() = clear().deepColor(WHITE)

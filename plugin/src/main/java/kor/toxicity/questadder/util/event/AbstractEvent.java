@@ -30,7 +30,7 @@ public abstract class AbstractEvent<T extends Event> implements DataObject {
     }
     protected abstract void invoke(T event);
 
-    protected final void apply(Player player) {
-        action.apply(player);
+    protected final void apply(Player player, String... args) {
+        action.apply(player, args);
     }
 }

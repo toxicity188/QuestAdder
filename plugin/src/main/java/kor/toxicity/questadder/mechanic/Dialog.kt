@@ -313,6 +313,19 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                 action(it)
             }
         }
+        fun addLastAction(action: (DialogCurrent) -> Unit) {
+            val before = lastAction
+            lastAction = {
+                before(it)
+                action(it)
+            }
+        }
+        fun addPredicate(action: (DialogCurrent) -> Boolean) {
+            val before = predicate
+            predicate = {
+                before(it) && action(it)
+            }
+        }
         section.findStringList("talk","Talk")?.let { t ->
             t.forEach {
                 val matcher = talkPattern.matcher(it)
@@ -427,31 +440,26 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                 while (matcher.find()) {
                     val name = matcher.group("name")
                     val value = matcher.group("value")
-                    val action = lastAction
                     if (name == "remove") {
-                        lastAction = { current ->
-                            action(current)
+                        addLastAction { current ->
                             QuestAdder.getPlayerData(current.player)?.remove(value)
                         }
                     } else {
                         val func = FunctionBuilder.evaluate(matcher.replaceAll(""))
                         when (name) {
-                            "set" -> lastAction = { current ->
-                                action(current)
+                            "set" -> addLastAction { current ->
                                 val get = func.apply(current.event)
                                 get?.let { any ->
                                     QuestAdder.getPlayerData(current.player)?.set(value,any)
                                 } ?: isNull()
                             }
-                            "putifabsent" -> lastAction = { current ->
-                                action(current)
+                            "putifabsent" -> addLastAction { current ->
                                 val get = func.apply(current.event)
                                 get?.let { any ->
                                     QuestAdder.getPlayerData(current.player)?.putIfAbsent(value,any)
                                 } ?: isNull()
                             }
-                            "add" -> lastAction = { current ->
-                                action(current)
+                            "add" -> addLastAction { current ->
                                 QuestAdder.getPlayerData(current.player)?.let { data ->
                                     val original = data.get(value)
                                     val get = func.apply(current.event)
@@ -461,8 +469,7 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                                     }
                                 }
                             }
-                            "subtract" -> lastAction = { current ->
-                                action(current)
+                            "subtract" -> addLastAction { current ->
                                 QuestAdder.getPlayerData(current.player)?.let { data ->
                                     val original = data.get(value)
                                     val get = func.apply(current.event)
@@ -475,8 +482,7 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                                     }
                                 }
                             }
-                            "multiply" -> lastAction = { current ->
-                                action(current)
+                            "multiply" -> addLastAction { current ->
                                 QuestAdder.getPlayerData(current.player)?.let { data ->
                                     val original = data.get(value)
                                     val get = func.apply(current.event)
@@ -489,8 +495,7 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                                     }
                                 }
                             }
-                            "divide" -> lastAction = { current ->
-                                action(current)
+                            "divide" -> addLastAction { current ->
                                 QuestAdder.getPlayerData(current.player)?.let { data ->
                                     val original = data.get(value)
                                     val get = func.apply(current.event)
@@ -525,10 +530,9 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                                     DialogManager.getDialog(d)
                                 }
                                 if (dialogs.isNotEmpty()) {
-                                    val n = predicate
-                                    predicate = { e ->
+                                    addPredicate { e ->
                                         val result = func.apply(e.event)
-                                        n(e) && if ((result is Boolean)) {
+                                        if ((result is Boolean)) {
                                             if (result) {
                                                 dialogs.random().start(e)
                                                 false
@@ -541,10 +545,9 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                                 } else QuestAdder.warn("not found error: unable to find the dialog named \"$flag\". ($key in ${file.name})")
                             }
                             else -> {
-                                val n = predicate
-                                predicate = { e ->
+                                addPredicate { e ->
                                     val result = func.apply(e.event)
-                                    n(e) && if (result is Boolean) {
+                                    if (result is Boolean) {
                                         result
                                     } else {
                                         throwRuntimeError(result)
@@ -555,16 +558,55 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                         }
                     } else {
                         val func = FunctionBuilder.evaluate(it)
-                        val n = predicate
-                        predicate = { e ->
+                        addPredicate { e ->
                             val result = func.apply(e.event)
-                            n(e) && if (result is Boolean) {
+                            if (result is Boolean) {
                                 result
                             } else {
                                 throwRuntimeError(result)
                                 false
                             }
                         }
+                    }
+                }
+            }
+        }
+        section.findStringList("quest","Quest","SetQuest","set-quest")?.forEach {
+            val split = it.split(' ')
+            if (split.size > 1) {
+                adder.addLazyTask {
+                    val quest = DialogManager.getQuest(split[0]) ?: run {
+                        QuestAdder.warn("not found error: the quest named \"${split[0]}\" doesn't exist.")
+                        return@addLazyTask
+                    }
+                    when (split[1].lowercase()) {
+                        "give" -> addLastAction { current ->
+                            quest.give(current.player)
+                        }
+                        "remove" -> addLastAction { current ->
+                            quest.remove(current.player)
+                        }
+                        else -> QuestAdder.warn("not found error: the quest action \"${split[1]}\" doesn't exist.")
+                    }
+                }
+            }
+        }
+        section.findStringList("Check","check","CheckQuest","check-quest")?.forEach {
+            val split = it.split(' ')
+            if (split.size > 1) {
+                adder.addLazyTask {
+                    val quest = DialogManager.getQuest(split[0]) ?: run {
+                        QuestAdder.warn("not found error: the quest named \"${split[0]}\" doesn't exist.")
+                        return@addLazyTask
+                    }
+                    when (split[1].lowercase()) {
+                        "has" -> addPredicate { current ->
+                            quest.has(current.player)
+                        }
+                        "complete" -> addPredicate { current ->
+                            quest.isCompleted(current.player)
+                        }
+                        else -> QuestAdder.warn("not found error: the quest predicate \"${split[1]}\" doesn't exist.")
                     }
                 }
             }
