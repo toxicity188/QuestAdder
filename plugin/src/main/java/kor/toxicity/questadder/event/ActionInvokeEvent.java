@@ -5,7 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
-public class ActionInvokeEvent extends QuestAdderPlayerEvent implements Cancellable, ActionEvent, ArgumentEvent {
+public class ActionInvokeEvent extends QuestAdderPlayerEvent implements Cancellable, ActionEvent {
 
     private final AbstractAction action;
     private final String[] args;
@@ -15,7 +15,6 @@ public class ActionInvokeEvent extends QuestAdderPlayerEvent implements Cancella
         this.args = args;
     }
 
-    @Override
     public String[] getArgs() {
         return args;
     }

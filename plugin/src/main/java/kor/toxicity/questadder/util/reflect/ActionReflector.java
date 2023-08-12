@@ -25,11 +25,21 @@ public class ActionReflector<T extends DataObject> {
         }
         for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
             fields.stream().filter(e -> e.field.getName().toLowerCase().equals(entry.getKey()) || Arrays.stream(e.dataField.aliases()).anyMatch(s -> s.equals(entry.getKey()))).findFirst().ifPresent(f -> {
-                var parse = DataType.findByClass(f.field.getType());
-                if (parse != null) try {
-                    f.field.set(object,parse.apply(entry.getValue()));
+                var type = f.field.getType();
+                var entryValue = entry.getValue();
+                Object value;
+                if (type.isEnum()) {
+                    var upperCase = entry.getValue().getAsString().toUpperCase();
+                    value = Arrays.stream(type.getEnumConstants()).filter(obj -> upperCase.equals(obj.toString())).findFirst().orElse(null);
+                    if (value == null) QuestAdder.Companion.warn("not found error: no enum constant \"" + upperCase + "\" found.");
+                } else {
+                    var parse = DataType.findByClass(type);
+                    value = (parse != null) ? parse.apply(entryValue) : null;
+                }
+                if (value != null) try {
+                    f.field.set(object,value);
                 } catch (IllegalAccessException e) {
-                    QuestAdder.Companion.warn("reflection error: cannot invoke field \"" + f.field.getName() + "\".");
+                    throwReflectionError(f.field.getName());
                 }
             });
         }
@@ -37,10 +47,13 @@ public class ActionReflector<T extends DataObject> {
             try {
                 if (field.dataField.throwIfNull() && field.field.get(object) == null) throw new RuntimeException("the field \"" + field.field.getName() + "\" is null.");
             } catch (IllegalAccessException exception) {
-                QuestAdder.Companion.warn("reflection error: cannot invoke field \"" + field.field.getName() + "\".");
+                throwReflectionError(field.field.getName());
             }
         }
         object.initialize();
+    }
+    private void throwReflectionError(String n) {
+        QuestAdder.Companion.warn("reflection error: cannot invoke field \"" + n + "\".");
     }
 
     public T getResult() {

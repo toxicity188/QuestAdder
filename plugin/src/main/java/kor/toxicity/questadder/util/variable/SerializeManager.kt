@@ -69,6 +69,11 @@ object SerializeManager {
             }
         })
     }
+    fun canSerialize(clazz: Class<*>): Boolean {
+        return map.keys.any {
+            it.clazz.isAssignableFrom(clazz)
+        }
+    }
 
     fun trySerialize(any: Any) = map.firstNotNullOfOrNull {
         if (it.key.clazz.isAssignableFrom(any.javaClass)) try {

@@ -1,24 +1,24 @@
 package kor.toxicity.questadder.mechanic
 
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.event.ActionInvokeEvent
-import kor.toxicity.questadder.event.QuestGiveEvent
-import kor.toxicity.questadder.event.QuestInvokeEvent
-import kor.toxicity.questadder.event.QuestRemoveEvent
+import kor.toxicity.questadder.event.*
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.ItemWriter
+import kor.toxicity.questadder.util.RewardSet
 import kor.toxicity.questadder.util.action.AbstractAction
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.util.function.WrappedFunction
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.Material
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import java.io.File
+import java.util.TreeSet
 
 class Quest(adder: QuestAdder, file: File, val key: String, section: ConfigurationSection) {
     companion object {
@@ -26,6 +26,24 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
     }
 
     val name = (section.findString("name","Name") ?: key).replace('&','§')
+
+    private val reward = section.findConfig("Reward","reward","Rewards","rewards")?.let {
+        RewardSet(it)
+    }
+    private val recommend = section.findStringList("recommend")?.map {
+        ComponentReader<QuestInvokeEvent>(it)
+    }
+    val cancellable = section.findBoolean("Cancellable","cancellable")
+
+    val type = section.findStringList("Type","type","Types","types")?.toSortedSet() ?: TreeSet()
+    private val toast = ItemStack(section.getString("toast")?.let {
+        try {
+            Material.valueOf(it.uppercase())
+        } catch (ex: Exception) {
+            QuestAdder.warn("not found error: the material named \"$it\" doesn't exist.")
+            null
+        }
+    } ?: Material.BOOK)
 
     private val item = section.findConfig("Item","item","Icon","icon")?.let { c ->
         try {
@@ -36,6 +54,9 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
     } ?: throw RuntimeException("the quest has no icon.")
     private val condition = ArrayList<Pair<ComponentReader<QuestInvokeEvent>,WrappedFunction>>()
 
+    private var onRemove: (QuestAdderPlayerEvent) -> Unit = {}
+    private var onComplete: (QuestAdderPlayerEvent) -> Unit = {}
+    private var onGive: (QuestAdderPlayerEvent) -> Unit = {}
     init {
         section.findConfig("Conditions","Condition","conditions","condition")?.let { c ->
             c.getKeys(false).forEach { s ->
@@ -50,6 +71,33 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
                     }
                     condition.add(ComponentReader<QuestInvokeEvent>(s1) to FunctionBuilder.evaluate(s2))
                 } ?: QuestAdder.warn("syntax error: the value $s is not configuration section. ($key in ${file.name})")
+            }
+        }
+        section.findStringList("onRemove","on-remove")?.let { c ->
+            ActionBuilder.create(adder,c)?.let { act ->
+                val before = onRemove
+                onRemove = {
+                    before(it)
+                    act.invoke(it.player,it)
+                }
+            }
+        }
+        section.findStringList("onComplete","on-complete")?.let { c ->
+            ActionBuilder.create(adder,c)?.let { act ->
+                val before = onComplete
+                onComplete = {
+                    before(it)
+                    act.invoke(it.player,it)
+                }
+            }
+        }
+        section.findStringList("onGive","on-give")?.let { c ->
+            ActionBuilder.create(adder,c)?.let { act ->
+                val before = onGive
+                onGive = {
+                    before(it)
+                    act.invoke(it.player,it)
+                }
             }
         }
 
@@ -72,7 +120,7 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
                     } ?: emptyList()
                     val max = config.findInt(0,"Max","max").toLong()
                     val obj: AbstractAction = object : AbstractAction(adder) {
-                        override fun invoke(player: Player, event: ActionInvokeEvent) {
+                        override fun invoke(player: Player, event: QuestAdderEvent) {
                             val questEvent = QuestInvokeEvent(this@Quest,player).apply {
                                 callEvent()
                             }
@@ -84,7 +132,7 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
                                 val newValue = (data.getQuestVariable(key,name) ?: 0)
                                 if (newValue + 1 == max) {
                                     lore?.createComponent(questEvent)?.let { component ->
-                                        QuestAdder.nms.sendAdvancementMessage(player,component)
+                                        QuestAdder.nms.sendAdvancementMessage(player,toast,component)
                                     }
                                 }
                                 data.setQuestVariable(key,name,(newValue + 1).coerceAtMost(max))
@@ -101,14 +149,22 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
     }
     fun give(player: Player) {
         QuestAdder.getPlayerData(player)?.giveQuest(key)
-        QuestGiveEvent(this,player).callEvent()
+        onGive(QuestGiveEvent(this,player).apply {
+            callEvent()
+        })
     }
     fun remove(player: Player) {
         QuestAdder.getPlayerData(player)?.removeQuest(key)
-        QuestRemoveEvent(this,player).callEvent()
+        onRemove(QuestRemoveEvent(this,player).apply {
+            callEvent()
+        })
     }
     fun complete(player: Player) {
-
+        val reward = reward?.give(player)
+        QuestAdder.getPlayerData(player)?.removeQuest(key)
+        onComplete(QuestCompleteEvent(this,player,reward?.money ?: 0.0, reward?.exp ?: 0.0, reward?.itemStacks ?: emptyList()).apply {
+            callEvent()
+        })
     }
 
     fun isCompleted(player: Player): Boolean {
@@ -120,6 +176,8 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
             get is Boolean && get
         }
     }
+    fun isReady(player: Player) = reward?.isReady(player) ?: true
+
     fun has(player: Player) = QuestAdder.getPlayerData(player)?.hasQuest(key) ?: false
     fun getIcon(player: Player): ItemStack {
         val event = QuestInvokeEvent(this,player).apply {
@@ -138,9 +196,16 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
                 lore(ArrayList<Component>().apply {
                     lore()?.let { l ->
                         addAll(l)
+                    }
+                    recommend?.let {
                         add(Component.empty())
+                        add(QuestAdder.Prefix.recommend)
+                        it.forEach { r ->
+                            add(r.createComponent(event) ?: Component.text("error!"))
+                        }
                     }
                     if (condition.isNotEmpty()) {
+                        add(Component.empty())
                         add(QuestAdder.Prefix.condition)
                         for ((index,pair) in condition.withIndex()) {
                             val component = pair.first.createComponent(event) ?: Component.empty()
@@ -149,11 +214,42 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
                                 Component.space().deepClear()).append(success) else component))
                         }
                     }
+                    reward?.let {
+                        add(Component.empty())
+                        add(QuestAdder.Prefix.reward)
+                        add(QuestAdder.Prefix.rewardLore.append(it.money.withComma().asClearComponent().color(WHITE).append(QuestAdder.Suffix.money)))
+                        add(QuestAdder.Prefix.rewardLore.append(it.exp.withComma().asClearComponent().color(WHITE).append(QuestAdder.Suffix.exp)))
+                        it.items.forEach { i ->
+                            var comp = i.item.getNameComponent()
+                            if (i.chance < 100.0) comp = comp.append(" (${i.chance.withComma()}%)".asClearComponent().color(
+                                GRAY))
+                            add(QuestAdder.Prefix.rewardLore.append(comp))
+                        }
+                    }
                 })
                 if (cond.all {
                     it
                     }) addEnchant(Enchantment.DURABILITY,1, true)
             }
         }
+    }
+
+    override fun toString(): String {
+        return name
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Quest
+
+        if (key != other.key) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return key.hashCode()
     }
 }

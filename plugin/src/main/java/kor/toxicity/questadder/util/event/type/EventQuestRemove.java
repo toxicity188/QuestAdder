@@ -20,6 +20,6 @@ public class EventQuestRemove extends AbstractEvent<QuestRemoveEvent> {
         var quest = event.getQuest();
         var key = quest.getKey();
         if (name != null && !name.equals(key)) return;
-        apply(event.getPlayer(),quest.getName());
+        apply(event.getPlayer(),event);
     }
 }

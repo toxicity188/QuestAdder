@@ -10,6 +10,7 @@ import kor.toxicity.questadder.extension.warn
 import kor.toxicity.questadder.item.ItemDatabase
 import kor.toxicity.questadder.item.ItemsAdderItemDataBase
 import kor.toxicity.questadder.item.OraxenItemDataBase
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
@@ -79,8 +80,13 @@ object ItemManager: QuestAdderManager {
     override fun reload(adder: QuestAdder) {
         adder.loadFile("item")?.let { c ->
             c.getString("using")?.let {
-                itemDatabase = try {
-                    DataBaseType.valueOf(it.uppercase()).getter()
+                if (it != "custom") try {
+                    val db = DataBaseType.valueOf(it.uppercase()).getter()
+                    if (Bukkit.getPluginManager().isPluginEnabled(db.requiredPlugin())) {
+                        itemDatabase = db
+                    } else {
+                        QuestAdder.warn("plugin not found: ${db.requiredPlugin()}")
+                    }
                 } catch (ex: Throwable) {
                     QuestAdder.warn("unable to set item database to $it.")
                     defaultItemDataBase

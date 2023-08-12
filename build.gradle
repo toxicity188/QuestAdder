@@ -76,8 +76,13 @@ repositories {
 }
 
 dependencies {
-    implementation project(path: ':plugin', configuration: 'shadow')
+    implementation project(path: ':nms:v1_18_R1', configuration: 'shadow')
+    implementation project(path: ':nms:v1_18_R2', configuration: 'shadow')
+    implementation project(path: ':nms:v1_19_R1', configuration: 'shadow')
+    implementation project(path: ':nms:v1_19_R2', configuration: 'shadow')
     implementation project(path: ':nms:v1_19_R3', configuration: 'shadow')
+    implementation project(path: ':nms:v1_20_R1', configuration: 'shadow')
+    implementation project(path: ':plugin', configuration: 'shadow')
 }
 
 def targetJavaVersion = 17
@@ -113,6 +118,7 @@ shadowJar {
     relocate("com.ticxo.playeranimator","kor.toxicity.questadder.shaded.com.ticxo.playeranimator")
     relocate("org.apache.commons.io","kor.toxicity.questadder.shaded.org.apache.commons.io")
     relocate("net.objecthunter","kor.toxicity.questadder.shaded.net.objecthunter")
+    relocate("org.zeroturnaround","kor.toxicity.questadder.shaded.org.zeroturnaround")
     dependencies {
         exclude(dependency("org.jetbrains:annotations:13.0"))
     }

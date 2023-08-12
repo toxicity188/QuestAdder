@@ -1,7 +1,7 @@
 package kor.toxicity.questadder.util.action.type;
 
 import kor.toxicity.questadder.QuestAdder;
-import kor.toxicity.questadder.event.ActionInvokeEvent;
+import kor.toxicity.questadder.event.QuestAdderEvent;
 import kor.toxicity.questadder.util.ComponentReader;
 import kor.toxicity.questadder.util.action.AbstractAction;
 import kor.toxicity.questadder.util.reflect.DataField;
@@ -27,7 +27,7 @@ public class ActTitle extends AbstractAction {
     public long fadeOut = 10;
 
     private static final Component ERROR_COMPONENT = Component.text("error!");
-    private BiConsumer<Player,ActionInvokeEvent> consumer;
+    private BiConsumer<Player,QuestAdderEvent> consumer;
 
     public ActTitle(QuestAdder adder) {
         super(adder);
@@ -46,8 +46,8 @@ public class ActTitle extends AbstractAction {
         if (title == null && subtitle == null) {
             throw new RuntimeException("both of title and subtitle is null.");
         }
-        var titleReader = (title != null) ? new ComponentReader<ActionInvokeEvent>(title) : null;
-        var subTitleReader = (subtitle != null) ? new ComponentReader<ActionInvokeEvent>(subtitle) : null;
+        var titleReader = (title != null) ? new ComponentReader<QuestAdderEvent>(title) : null;
+        var subTitleReader = (subtitle != null) ? new ComponentReader<QuestAdderEvent>(subtitle) : null;
         consumer = (p,e) -> {
             var comp1 = (titleReader != null) ? titleReader.createComponent(e) : Component.empty();
             var comp2 = (subTitleReader != null) ? subTitleReader.createComponent(e) : Component.empty();
@@ -60,7 +60,7 @@ public class ActTitle extends AbstractAction {
     }
 
     @Override
-    public void invoke(@NotNull Player player, @NotNull ActionInvokeEvent event) {
+    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         consumer.accept(player,event);
     }
 }

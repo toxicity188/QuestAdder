@@ -1,0 +1,44 @@
+example_quest:
+  name: "[Main] Hunt pig"
+  class: quest
+  item:
+    type: book
+    display: <color:gold><decoration:bold>[Main] <color:white>Hunt pig.
+    lore:
+      - Hunt three pig!
+  recommend:
+    - Faster is better.
+  condition:
+    1:
+      condition: var('hunt_pig') >= 3
+      lore: Hunt three pig <color:gray>(%var('hunt_pig')%/3)
+  variable:
+    1:
+      event: kill{t=PIG}
+      name: hunt_pig
+      max: 3
+      lore: Hunt three pig
+  reward:
+    money: 100
+    exp: 50
+
+example_dialog_1:
+  talk:
+    - <gradient:yellow-green>Let's take some quest!
+  quest:
+    - example_quest give
+  check:
+    - example_quest has example_dialog_2
+
+example_dialog_2:
+  talk:
+    - <color:yellow>Success!
+    - <gradient:blue-dark_purple>Congratulation!
+  quest:
+    - example_quest complete
+  check:
+    - example_quest !complete example_dialog_3
+
+example_dialog_3:
+  talk:
+    - you have to hunt more pig,*** to complete quest!

@@ -1,8 +1,9 @@
 package kor.toxicity.questadder.manager
 
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.util.GuiWrapper
-import kor.toxicity.questadder.util.MouseButton
+import kor.toxicity.questadder.mechanic.Quest
+import kor.toxicity.questadder.util.gui.Gui
+import kor.toxicity.questadder.util.gui.MouseButton
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -16,13 +17,13 @@ object GuiManager: QuestAdderManager {
             @EventHandler
             fun click(e: InventoryClickEvent) {
                 val clicked = e.view.topInventory
-                val holder = clicked.holder as? GuiWrapper.GuiHolder ?: return
+                val holder = clicked.holder as? Gui.GuiHolder ?: return
                 e.isCancelled = true
-                holder.executor?.onClick(
-                    holder.inventory,
-                    clicked == e.whoClicked.inventory,
+                holder.executor.click(
+                    holder.data,
                     e.currentItem ?: return,
                     e.slot,
+                    clicked == e.whoClicked.inventory,
                     if (e.isLeftClick) {
                         if (e.isShiftClick) MouseButton.SHIFT_LEFT else MouseButton.LEFT
                     } else if (e.isRightClick) {
@@ -35,14 +36,16 @@ object GuiManager: QuestAdderManager {
             @EventHandler
             fun end(e: InventoryCloseEvent) {
                 val inv = e.inventory
-                val holder = inv.holder as? GuiWrapper.GuiHolder ?: return
-                holder.executor?.onEnd(inv)
+                val holder = inv.holder as? Gui.GuiHolder ?: return
+                holder.executor.end(holder.data)
             }
         },adder)
     }
 
     override fun reload(adder: QuestAdder) {
-        closeAll()
+        QuestAdder.task {
+            closeAll()
+        }
     }
 
     override fun end(adder: QuestAdder) {
@@ -50,7 +53,7 @@ object GuiManager: QuestAdderManager {
     }
     private fun closeAll() {
         Bukkit.getOnlinePlayers().forEach {
-            if (it.openInventory.topInventory.holder is GuiWrapper.GuiHolder) it.closeInventory()
+            if (it.openInventory.topInventory.holder is Gui.GuiHolder) it.closeInventory()
         }
     }
 }

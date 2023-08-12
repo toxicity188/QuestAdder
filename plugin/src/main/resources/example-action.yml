@@ -1,0 +1,13 @@
+quest_give:
+  event:
+    - questgive
+  action:
+    - sound{n=entity.experience_orb.pickup}
+    - message{m=" <color:gold><decoration:bold>[!] <color:white>quest requested - <color:yellow>%quest()%"}
+
+quest_complete:
+  event:
+    - questcomplete
+  action:
+    - sound{n=ui.toast.challenge_complete}
+    - title{t="<gradient:yellow-green><decoration:bold,italic>Quest Complete!",st="<color:green><decoration:bold,italic>%comma(exp())% Exp <color:gray>- <color:gold><decoration:bold,italic>%comma(money())% Gold"}

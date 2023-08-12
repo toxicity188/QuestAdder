@@ -2,6 +2,7 @@ package kor.toxicity.questadder.util.action.type;
 
 import kor.toxicity.questadder.QuestAdder;
 import kor.toxicity.questadder.event.ActionInvokeEvent;
+import kor.toxicity.questadder.event.QuestAdderEvent;
 import kor.toxicity.questadder.manager.SlateManager;
 import kor.toxicity.questadder.util.action.AbstractAction;
 import kor.toxicity.questadder.util.reflect.DataField;
@@ -17,7 +18,7 @@ public class ActSlate extends AbstractAction {
     }
 
     @Override
-    public void invoke(@NotNull Player player, @NotNull ActionInvokeEvent event) {
+    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         SlateManager.INSTANCE.slate(player,back);
     }
 }

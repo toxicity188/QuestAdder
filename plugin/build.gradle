@@ -2,4 +2,5 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation group: 'com.ticxo.playeranimator', name: 'PlayerAnimator', version: 'R1.2.7'
     implementation group: 'net.objecthunter', name: 'exp4j', version: '0.4.8'
+    implementation group: 'org.zeroturnaround', name: 'zt-zip', version: '1.16'
 }

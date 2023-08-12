@@ -4,6 +4,7 @@ main: kor.toxicity.questadder.QuestAdder
 api-version: 1.19
 depend:
   - Citizens
+  - ProtocolLib
 softdepend:
   - ItemsAdder
   - Oraxen

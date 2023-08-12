@@ -7,18 +7,21 @@ import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.manager.GestureManager
 import kor.toxicity.questadder.manager.SlateManager
 import kor.toxicity.questadder.mechanic.npc.ActualNPC
-import kor.toxicity.questadder.nms.VirtualTextDisplay
-import kor.toxicity.questadder.util.*
+import kor.toxicity.questadder.nms.VirtualArmorStand
+import kor.toxicity.questadder.util.ComponentReader
+import kor.toxicity.questadder.util.SoundData
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
+import kor.toxicity.questadder.util.gui.Gui
+import kor.toxicity.questadder.util.gui.GuiData
+import kor.toxicity.questadder.util.gui.GuiExecutor
+import kor.toxicity.questadder.util.gui.MouseButton
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.title.Title
-import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
-import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitTask
 import java.io.File
@@ -26,8 +29,9 @@ import java.time.Duration
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
+import kotlin.collections.ArrayList
 
-class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationSection) {
+class Dialog(adder: QuestAdder, file: File, val key: String, section: ConfigurationSection) {
     private interface TypingExecutor {
         fun initialize(talker: Component?)
         fun run(talk: Component)
@@ -45,8 +49,8 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
     ) {
         var executor: TypingExecutor? = null
         var typingSpeed = QuestAdder.Config.defaultTypingSpeed
-        var inventory: GuiWrapper.GuiHolder? = null
-        var display: VirtualTextDisplay? = null
+        var inventory: Gui.GuiHolder? = null
+        var display: VirtualArmorStand? = null
         var safeEnd = false
     }
     private inner class DialogRun {
@@ -74,16 +78,17 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
             cancel()
             if (talkIndex < talk.size) {
                 this@Dialog.executorMap[talkIndex + 1]?.let { d ->
+                    current.executor?.end()
                     current.executor = d.create(current)
                 }
                 if (current.executor == null) current.executor = defaultExecutor.create(current)
                 started = true
+                talkComponent = Component.empty()
+                current.executor!!.initialize(talker[talkIndex + 1]?.createComponent(current.event))
+                iterator = talk[talkIndex].createIterator(current.event) ?: ComponentReader.errorIterator()
                 talkTask[talkIndex + 1]?.let { g ->
                     g(current)
                 }
-                talkComponent = Component.empty()
-                current.executor?.initialize(talker[talkIndex + 1]?.createComponent(current.event))
-                iterator = talk[talkIndex].createIterator(current.event) ?: ComponentReader.errorIterator()
                 startTask()
                 talkIndex++
             } else {
@@ -98,7 +103,7 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
             playerTask.remove(current.player.uniqueId)
         }
         fun end() {
-            playerTask.remove(current.player.uniqueId)
+            stop()
             lastAction(current)
             dialog?.let {
                 if (it.isNotEmpty()) {
@@ -106,7 +111,19 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                     return
                 }
             }
+            current.safeEnd = true
             current.executor!!.end()
+            qna?.let {
+                if (it.isNotEmpty()) {
+                    it.random().open(
+                        current.player,
+                        current.event,
+                        current.inventory
+                    )
+                    return
+                }
+            }
+            current.player.closeInventory()
         }
 
         fun restart() {
@@ -128,6 +145,7 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                     cancel()
                     started = false
                     task = QuestAdder.taskLater(20) {
+                        println(talkComponent.onlyText())
                         start()
                     }
                 }
@@ -140,52 +158,49 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
         private val playerTask = ConcurrentHashMap<UUID,DialogRun>()
         private val defaultExecutor = object : TypingManager {
             override fun create(current: DialogCurrent): TypingExecutor {
-                current.display?.let {
-                    it.remove()
-                    current.display = null
-                }
+                val selectedInv = current.npc.questNPC.inventory ?: createInventory("talking with ${current.npc.questNPC.key}".asComponent(),5)
                 val inv = current.inventory?.apply {
                     current.player.openInventory(inventory)
-                } ?: createInventory("talking with ${current.npc.questNPC.name}".asComponent(),5).open(current.player, object : GuiExecutor {
-                    override fun onEnd(inventory: Inventory) {
+                } ?: selectedInv.open(current.player, object :
+                    GuiExecutor {
+                    override fun end(data: GuiData) {
                         if (!current.safeEnd) {
                             current.run.stop()
                             SlateManager.slateOff(current.player)
                         }
                     }
 
-                    override fun initialize(inventory: Inventory) {
+                    override fun initialize(data: GuiData) {
 
                     }
 
-                    override fun onClick(
-                        inventory: Inventory,
-                        isPlayerInventory: Boolean,
+                    override fun click(
+                        data: GuiData,
                         clickedItem: ItemStack,
                         clickedSlot: Int,
-                        action: MouseButton
+                        isPlayerInventory: Boolean,
+                        button: MouseButton
                     ) {
-                        if (clickedSlot == 22) {
-                            when (action) {
-                                MouseButton.LEFT -> {
-                                    current.typingSpeed = (current.typingSpeed - 1).coerceAtLeast(1)
-                                    current.run.restart()
-                                }
-                                MouseButton.SHIFT_LEFT -> {
-                                    current.run.start()
-                                }
-                                MouseButton.RIGHT,MouseButton.SHIFT_RIGHT -> {
-                                    current.typingSpeed = (current.typingSpeed + 1).coerceAtMost(4)
-                                    current.run.restart()
-                                }
-                                else -> {}
+                        when (button) {
+                            MouseButton.LEFT -> {
+                                current.typingSpeed = (current.typingSpeed - 1).coerceAtLeast(1)
+                                current.run.restart()
                             }
+                            MouseButton.SHIFT_LEFT -> {
+                                current.run.start()
+                            }
+                            MouseButton.RIGHT,MouseButton.SHIFT_RIGHT -> {
+                                current.typingSpeed = (current.typingSpeed + 1).coerceAtMost(4)
+                                current.run.restart()
+                            }
+                            else -> {}
                         }
                     }
+
                 }).apply {
                     current.inventory = this
                 }
-                val item = ItemStack(Material.ENCHANTED_BOOK)
+                val item = ItemStack(QuestAdder.Config.defaultDialogItem)
                 val meta = item.itemMeta
 
                 return object : TypingExecutor {
@@ -193,6 +208,13 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                         item.itemMeta = meta.apply {
                             displayName((talker ?: current.npc.questNPC.name.asComponent().deepClear()).append(":".asComponent().deepClear()))
                         }
+                        for (i in 0..44) {
+                            inv.inventory.setItem(i,null)
+                        }
+                        selectedInv.items.forEach {
+                            inv.inventory.setItem(it.key,it.value)
+                        }
+
                         inv.inventory.setItem(22, item)
                         current.player.updateInventory()
                     }
@@ -206,9 +228,13 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                     }
 
                     override fun end() {
-                        current.safeEnd = true
-                        QuestAdder.task {
-                            current.player.closeInventory()
+                        if (!current.safeEnd) {
+                            current.safeEnd = true
+                            QuestAdder.task {
+                                current.player.closeInventory()
+                                current.inventory = null
+                                current.safeEnd = false
+                            }
                         }
                     }
                 }
@@ -221,18 +247,6 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
             put("default", defaultExecutor)
             put("title", object : TypingManager {
                 override fun create(current: DialogCurrent): TypingExecutor {
-                    current.display?.let {
-                        it.remove()
-                        current.display = null
-                    }
-                    if (!current.safeEnd) {
-                        current.safeEnd = true
-                        QuestAdder.task {
-                            current.player.closeInventory()
-                            current.inventory = null
-                            current.safeEnd = false
-                        }
-                    }
                     return object : TypingExecutor {
                         private var talker: Component = Component.empty()
 
@@ -251,7 +265,6 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                             this.talker = talker ?: current.npc.questNPC.name.asComponent().deepClear()
                         }
                         override fun end() {
-
                         }
                     }
                 }
@@ -269,15 +282,16 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                     return object : TypingExecutor {
 
                         private var referencedEntity = current.npc.npc.entity
-                        private val display = current.display ?: QuestAdder.nms.createTextDisplay(current.player,referencedEntity.location).apply {
+                        private val display = current.display ?: QuestAdder.nms.createArmorStand(current.player,referencedEntity.location).apply {
                             current.display = this
                         }
                         override fun end() {
                             display.remove()
+                            current.display = null
                         }
 
                         override fun initialize(talker: Component?) {
-                            referencedEntity = if (talker != null) {
+                            referencedEntity = if (talker != null && talker.onlyText() == "player") {
                                 current.player
                             }
                             else current.npc.npc.entity
@@ -286,7 +300,7 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                         override fun run(talk: Component) {
                             display.setText(talk)
                             display.teleport(referencedEntity.location.apply {
-                                y += 2.25
+                                y += 0.25
                             })
                         }
                     }
@@ -297,6 +311,7 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
     private val talk = ArrayList<ComponentReader<DialogStartEvent>>()
     private val talker = HashMap<Int,ComponentReader<DialogStartEvent>>()
     private var dialog: MutableList<Dialog>? = null
+    private var qna: MutableList<QnA>? = null
     private var subDialog: MutableList<Dialog>? = null
     private var executorMap = HashMap<Int,TypingManager>()
     private var predicate: (DialogCurrent) -> Boolean = {
@@ -326,6 +341,9 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                 before(it) && action(it)
             }
         }
+        fun error(message: String) {
+            QuestAdder.warn("$message ($key in ${file.name})")
+        }
         section.findStringList("talk","Talk")?.let { t ->
             t.forEach {
                 val matcher = talkPattern.matcher(it)
@@ -342,9 +360,9 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                     try {
                         talker[it.toInt()] = ComponentReader(s)
                     } catch (ex: Exception) {
-                        QuestAdder.warn("format error: $it is not a number. (${key} in ${file.name})")
+                        error("format error: $it is not a number.")
                     }
-                } ?: QuestAdder.warn("syntax error: the key '$it' is not a string. (${key} in ${file.name})")
+                } ?: error("syntax error: the key '$it' is not a string.")
             }
         }
         section.findStringList("dialog","Dialog","LinkedDialog","linked-dialog")?.let { t ->
@@ -356,7 +374,7 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                                 add(d)
                             }
                         }
-                    } ?: QuestAdder.warn("not found error: the dialog named '$it' doesn't exist. (${key} in ${file.name})")
+                    } ?: error("not found error: the dialog named '$it' doesn't exist.")
                 }
             }
         }
@@ -366,14 +384,21 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                     ActionBuilder.create(adder,s)?.let { action ->
                         try {
                             addTalkTask(it.toInt()) { current ->
-                                action.apply(current.player)
+                                action.invoke(current.player,current.event)
                             }
                         } catch (ex: Exception) {
-                            QuestAdder.warn("syntax error: the parameter \"$it\" is not an int. (${key} in ${file.name})")
+                            error("syntax error: the parameter \"$it\" is not an int.")
                         }
-                    } ?: QuestAdder.warn("unable to get this action: $it (${key} in ${file.name})")
-                } ?: QuestAdder.warn("syntax error: the value \"$it\" is not a string. (${key} in ${file.name})")
+                    } ?: error("unable to get this action: $it")
+                } ?: error("syntax error: the value \"$it\" is not a string.")
             }
+        }
+        section.findStringList("EndAction","end-action")?.let {
+            ActionBuilder.create(adder,it)?.let { action ->
+                addLastAction { current ->
+                    action.invoke(current.player,current.event)
+                }
+            } ?: error("unable to get end action.")
         }
         section.findConfig("Gesture","gesture","gestures","Gestures")?.let { g ->
             g.getKeys(false).forEach {
@@ -383,9 +408,9 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                             GestureManager.play(current.player, s, current.npc.npc)
                         }
                     } catch (ex: Exception) {
-                        QuestAdder.warn("syntax error: the parameter \"$it\" is not an int. (${key} in ${file.name})")
+                        error("syntax error: the parameter \"$it\" is not an int.")
                     }
-                } ?: QuestAdder.warn("syntax error: the value \"$it\" is not a string. (${key} in ${file.name})")
+                } ?: error("syntax error: the value \"$it\" is not a string.")
             }
         }
         section.findConfig("Sound","Sounds","sounds","sound")?.let { sound ->
@@ -398,7 +423,7 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                         data.play(current.player)
                     }
                 } catch (ex: Exception) {
-                    QuestAdder.warn("syntax error: the parameter \"$j\" is not an int. (${key} in ${file.name})")
+                    error("syntax error: the parameter \"$j\" is not an int.")
                 }
             }
         }
@@ -409,10 +434,10 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                         try {
                             executorMap[it.toInt()] = manager
                         } catch (ex: Exception) {
-                            QuestAdder.warn("syntax error: the argument \"$it\" is not an int. (${key} in ${file.name})")
+                            error("syntax error: the argument \"$it\" is not an int.")
                         }
-                    } ?: QuestAdder.warn("not found error: the interface named $s doesn't exist. (${key} in ${file.name})")
-                } ?: QuestAdder.warn("syntax error: the value \"$it\" is not a string. (${key} in ${file.name})")
+                    } ?: error("not found error: the interface named $s doesn't exist.")
+                } ?: error("syntax error: the value \"$it\" is not a string.")
             }
         }
         section.findStringList("SubDialog","sub-dialog","LinkedSubDialog","linked-sub-dialog")?.let { t ->
@@ -424,88 +449,151 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                                 add(d)
                             }
                         }
-                    } ?: QuestAdder.warn("not found error: the dialog named '$it' doesn't exist. (${key} in ${file.name})")
+                    } ?: error("not found error: the dialog named '$it' doesn't exist.")
                 }
             }
         }
-        section.findStringList("set-vars","SetVars","Vars","vars","Variables","variables","variable","Variable")?.let { vars ->
-            fun isNotNumber(result: Any?) {
-                QuestAdder.warn("runtime error: the value \"$result\" is not a number! ($key in ${file.name})")
-            }
-            fun isNull() {
-                QuestAdder.warn("runtime error: the value is null! ($key in ${file.name})")
-            }
-            vars.forEach {
-                val matcher = ANNOTATION_PATTERN.matcher(it)
-                while (matcher.find()) {
-                    val name = matcher.group("name")
-                    val value = matcher.group("value")
-                    if (name == "remove") {
-                        addLastAction { current ->
-                            QuestAdder.getPlayerData(current.player)?.remove(value)
+        fun isNotNumber(result: Any?) {
+            error("runtime error: the value \"$result\" is not a number!")
+        }
+        fun isNull() {
+            error("runtime error: the value is null!")
+        }
+        section.findStringList("index","Index","Indexes","indexes")?.forEach {
+            val matcher = ANNOTATION_PATTERN.matcher(it)
+            while (matcher.find()) {
+                val name = matcher.group("name")
+                val value = matcher.group("value")
+                val func = FunctionBuilder.evaluate(matcher.replaceAll(""))
+                when (name.lowercase()) {
+                    "set" -> addLastAction { current ->
+                        when (val get = func.apply(current.event)) {
+                            null -> isNull()
+                            !is Number -> isNotNumber(get)
+                            else -> {
+                                QuestAdder.getPlayerData(current.player)?.run {
+                                    npcIndexes[value] = get.toInt()
+                                }
+                            }
                         }
-                    } else {
-                        val func = FunctionBuilder.evaluate(matcher.replaceAll(""))
-                        when (name) {
-                            "set" -> addLastAction { current ->
+                    }
+                    "add" -> addLastAction { current ->
+                        when (val get = func.apply(current.event)) {
+                            null -> isNull()
+                            !is Number -> isNotNumber(get)
+                            else -> {
+                                QuestAdder.getPlayerData(current.player)?.run {
+                                    npcIndexes[value] = (npcIndexes[value] ?: 0) + get.toInt()
+                                }
+                            }
+                        }
+                    }
+                    "subtract" -> addLastAction { current ->
+                        when (val get = func.apply(current.event)) {
+                            null -> isNull()
+                            !is Number -> isNotNumber(get)
+                            else -> {
+                                QuestAdder.getPlayerData(current.player)?.run {
+                                    npcIndexes[value] = (npcIndexes[value] ?: 0) - get.toInt()
+                                }
+                            }
+                        }
+                    }
+                    "multiply" -> addLastAction { current ->
+                        when (val get = func.apply(current.event)) {
+                            null -> isNull()
+                            !is Number -> isNotNumber(get)
+                            else -> {
+                                QuestAdder.getPlayerData(current.player)?.run {
+                                    npcIndexes[value] = (npcIndexes[value] ?: 0) * get.toInt()
+                                }
+                            }
+                        }
+                    }
+                    "divide" -> addLastAction { current ->
+                        when (val get = func.apply(current.event)) {
+                            null -> isNull()
+                            !is Number -> isNotNumber(get)
+                            else -> {
+                                QuestAdder.getPlayerData(current.player)?.run {
+                                    npcIndexes[value] = (npcIndexes[value] ?: 0) / get.toInt()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        section.findStringList("set-vars","SetVars","Vars","vars","Variables","variables","variable","Variable")?.forEach {
+            val matcher = ANNOTATION_PATTERN.matcher(it)
+            while (matcher.find()) {
+                val name = matcher.group("name")
+                val value = matcher.group("value")
+                if (name == "remove") {
+                    addLastAction { current ->
+                        QuestAdder.getPlayerData(current.player)?.remove(value)
+                    }
+                } else {
+                    val func = FunctionBuilder.evaluate(matcher.replaceAll(""))
+                    when (name.lowercase()) {
+                        "set" -> addLastAction { current ->
+                            val get = func.apply(current.event)
+                            get?.let { any ->
+                                QuestAdder.getPlayerData(current.player)?.set(value,any)
+                            } ?: isNull()
+                        }
+                        "putifabsent" -> addLastAction { current ->
+                            val get = func.apply(current.event)
+                            get?.let { any ->
+                                QuestAdder.getPlayerData(current.player)?.putIfAbsent(value,any)
+                            } ?: isNull()
+                        }
+                        "add" -> addLastAction { current ->
+                            QuestAdder.getPlayerData(current.player)?.let { data ->
+                                val original = data.get(value)
                                 val get = func.apply(current.event)
-                                get?.let { any ->
-                                    QuestAdder.getPlayerData(current.player)?.set(value,any)
-                                } ?: isNull()
+                                if (get is Number) data.set(value, (if (original is Number) original.toDouble() else 0.0) + get.toDouble())
+                                else {
+                                    isNotNumber(get)
+                                }
                             }
-                            "putifabsent" -> addLastAction { current ->
+                        }
+                        "subtract" -> addLastAction { current ->
+                            QuestAdder.getPlayerData(current.player)?.let { data ->
+                                val original = data.get(value)
                                 val get = func.apply(current.event)
-                                get?.let { any ->
-                                    QuestAdder.getPlayerData(current.player)?.putIfAbsent(value,any)
-                                } ?: isNull()
-                            }
-                            "add" -> addLastAction { current ->
-                                QuestAdder.getPlayerData(current.player)?.let { data ->
-                                    val original = data.get(value)
-                                    val get = func.apply(current.event)
-                                    if (get is Number) data.set(value, (if (original is Number) original.toDouble() else 0.0) + get.toDouble())
-                                    else {
-                                        isNotNumber(get)
-                                    }
+                                if (get is Number) data.set(
+                                    value,
+                                    (if (original is Number) original.toDouble() else 0.0) - get.toDouble()
+                                )
+                                else {
+                                    isNotNumber(get)
                                 }
                             }
-                            "subtract" -> addLastAction { current ->
-                                QuestAdder.getPlayerData(current.player)?.let { data ->
-                                    val original = data.get(value)
-                                    val get = func.apply(current.event)
-                                    if (get is Number) data.set(
-                                        value,
-                                        (if (original is Number) original.toDouble() else 0.0) - get.toDouble()
-                                    )
-                                    else {
-                                        isNotNumber(get)
-                                    }
+                        }
+                        "multiply" -> addLastAction { current ->
+                            QuestAdder.getPlayerData(current.player)?.let { data ->
+                                val original = data.get(value)
+                                val get = func.apply(current.event)
+                                if (get is Number) data.set(
+                                    value,
+                                    (if (original is Number) original.toDouble() else 0.0) * get.toDouble()
+                                )
+                                else {
+                                    isNotNumber(get)
                                 }
                             }
-                            "multiply" -> addLastAction { current ->
-                                QuestAdder.getPlayerData(current.player)?.let { data ->
-                                    val original = data.get(value)
-                                    val get = func.apply(current.event)
-                                    if (get is Number) data.set(
-                                        value,
-                                        (if (original is Number) original.toDouble() else 0.0) * get.toDouble()
-                                    )
-                                    else {
-                                        isNotNumber(get)
-                                    }
-                                }
-                            }
-                            "divide" -> addLastAction { current ->
-                                QuestAdder.getPlayerData(current.player)?.let { data ->
-                                    val original = data.get(value)
-                                    val get = func.apply(current.event)
-                                    if (get is Number) data.set(
-                                        value,
-                                        (if (original is Number) original.toDouble() else 0.0) / get.toDouble()
-                                    )
-                                    else {
-                                        isNotNumber(get)
-                                    }
+                        }
+                        "divide" -> addLastAction { current ->
+                            QuestAdder.getPlayerData(current.player)?.let { data ->
+                                val original = data.get(value)
+                                val get = func.apply(current.event)
+                                if (get is Number) data.set(
+                                    value,
+                                    (if (original is Number) original.toDouble() else 0.0) / get.toDouble()
+                                )
+                                else {
+                                    isNotNumber(get)
                                 }
                             }
                         }
@@ -516,7 +604,7 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
         section.findStringList("conditions","Conditions","condition","Condition")?.let { cond ->
             adder.addLazyTask {
                 fun throwRuntimeError(result: Any?) {
-                    QuestAdder.warn("runtime error: the value \"$result\" is not a boolean! ($key in ${file.name})")
+                    error("runtime error: the value \"$result\" is not a boolean.")
                 }
                 cond.forEach {
                     val matcher = ANNOTATION_PATTERN.matcher(it)
@@ -542,7 +630,7 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                                             false
                                         }
                                     }
-                                } else QuestAdder.warn("not found error: unable to find the dialog named \"$flag\". ($key in ${file.name})")
+                                } else error("not found error: unable to find the dialog named \"$flag\".")
                             }
                             else -> {
                                 addPredicate { e ->
@@ -576,7 +664,7 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
             if (split.size > 1) {
                 adder.addLazyTask {
                     val quest = DialogManager.getQuest(split[0]) ?: run {
-                        QuestAdder.warn("not found error: the quest named \"${split[0]}\" doesn't exist.")
+                        error("not found error: the quest named \"${split[0]}\" doesn't exist.")
                         return@addLazyTask
                     }
                     when (split[1].lowercase()) {
@@ -586,7 +674,10 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
                         "remove" -> addLastAction { current ->
                             quest.remove(current.player)
                         }
-                        else -> QuestAdder.warn("not found error: the quest action \"${split[1]}\" doesn't exist.")
+                        "complete" -> addLastAction { current ->
+                            quest.complete(current.player)
+                        }
+                        else -> error("not found error: the quest action \"${split[1]}\" doesn't exist.")
                     }
                 }
             }
@@ -596,19 +687,58 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
             if (split.size > 1) {
                 adder.addLazyTask {
                     val quest = DialogManager.getQuest(split[0]) ?: run {
-                        QuestAdder.warn("not found error: the quest named \"${split[0]}\" doesn't exist.")
+                        error("not found error: the quest named \"${split[0]}\" doesn't exist.")
                         return@addLazyTask
                     }
                     when (split[1].lowercase()) {
-                        "has" -> addPredicate { current ->
+                        "has" -> { current: DialogCurrent ->
                             quest.has(current.player)
                         }
-                        "complete" -> addPredicate { current ->
+                        "complete" -> { current: DialogCurrent ->
                             quest.isCompleted(current.player)
                         }
-                        else -> QuestAdder.warn("not found error: the quest predicate \"${split[1]}\" doesn't exist.")
+                        "ready" -> { current: DialogCurrent ->
+                            quest.isReady(current.player)
+                        }
+                        "!has" -> { current: DialogCurrent ->
+                            !quest.has(current.player)
+                        }
+                        "!complete" -> { current: DialogCurrent ->
+                            !quest.isCompleted(current.player)
+                        }
+                        "!ready" -> { current: DialogCurrent ->
+                            !quest.isReady(current.player)
+                        }
+                        else -> {
+                            error("not found error: the quest predicate \"${split[1]}\" doesn't exist.")
+                            null
+                        }
+                    }?.let { pre ->
+                        if (split.size > 2) {
+                            val dialog = DialogManager.getDialog(split[2])
+                            if (dialog == null) error("not found error: the dialog named ${split[2]} doesn't exist.")
+                            else addPredicate { current ->
+                                if (pre(current)) {
+                                    dialog.start(current)
+                                    false
+                                } else true
+                            }
+                        } else {
+                            addPredicate(pre)
+                        }
                     }
                 }
+            }
+        }
+        section.findStringList("QnA","QnAs","qna","qnas")?.forEach {
+            adder.addLazyTask {
+                DialogManager.getQnA(it)?.let { q ->
+                    qna?.add(q) ?: run {
+                        qna = ArrayList<QnA>().apply {
+                            add(q)
+                        }
+                    }
+                } ?: error("not found error: the qna named $it doesn't exist.")
             }
         }
     }
@@ -619,7 +749,9 @@ class Dialog(adder: QuestAdder, file: File, key: String, section: ConfigurationS
         start(run)
     }
     private fun start(current: DialogCurrent) {
-        start(DialogRun(current))
+        start(DialogRun(current.apply {
+            safeEnd = false
+        }))
     }
     private fun start(run: DialogRun) {
         val uuid = run.current.player.uniqueId

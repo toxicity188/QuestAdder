@@ -2,8 +2,10 @@ package kor.toxicity.questadder.util.action;
 
 import kor.toxicity.questadder.QuestAdder;
 import kor.toxicity.questadder.event.ActionInvokeEvent;
+import kor.toxicity.questadder.event.QuestAdderEvent;
 import kor.toxicity.questadder.util.reflect.DataObject;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.jetbrains.annotations.NotNull;
 
 public abstract class AbstractAction implements DataObject {
@@ -27,5 +29,5 @@ public abstract class AbstractAction implements DataObject {
     @Override
     public void initialize() {
     }
-    public abstract void invoke(@NotNull Player player, @NotNull ActionInvokeEvent event);
+    public abstract void invoke(@NotNull Player player, @NotNull QuestAdderEvent event);
 }

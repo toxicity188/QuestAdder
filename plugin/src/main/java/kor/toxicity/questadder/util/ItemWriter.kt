@@ -9,7 +9,7 @@ import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 
 class ItemWriter<T: Any>(section: ConfigurationSection) {
-    private val type = section.getString("type")?.let {
+    private val type = section.findString("Type","type")?.let {
         Material.valueOf(it.uppercase())
     } ?: throw RuntimeException("type not found.")
     private val display = section.findString("display","Display","name","Name")?.let { c ->

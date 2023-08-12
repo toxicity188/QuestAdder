@@ -41,6 +41,11 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
                                     map[s] = array
                                 }
                             }
+                            getConfigurationSection("indexes")?.let {
+                                it.getKeys(false).forEach { s ->
+                                    data.npcIndexes[s] = it.getInt(s)
+                                }
+                            }
                         }
                         data.loadQuest(map)
                         data.loadVariables(collection)
@@ -65,6 +70,11 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
                                             set(it.first,it.second)
                                         }
                                     })
+                                }
+                            })
+                            set("indexes",MemoryConfiguration().apply {
+                                for (npcIndex in playerData.npcIndexes) {
+                                    set(npcIndex.key,npcIndex.value)
                                 }
                             })
                             save(getFile(adder,player))

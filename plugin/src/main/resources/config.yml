@@ -1,2 +1,28 @@
 default-typing-speed: 1
 auto-save-time: 300
+default-dialog-item: ENCHANTED_BOOK
+
+player-gui:
+  size: 4
+  name: 진행중인 퀘스트 목록
+player-gui-layout:
+  page-before:
+    item:
+      type: stone_button
+      display: 이전 페이지
+    slot:
+      - 29
+  page-after:
+    item:
+      type: stone_button
+      display: 다음 페이지
+    slot:
+      - 33
+  type-sort:
+    item:
+      type: paper
+      display: 타입 정렬
+    slot:
+      - 31
+  start-index: 1
+  end-index: 1

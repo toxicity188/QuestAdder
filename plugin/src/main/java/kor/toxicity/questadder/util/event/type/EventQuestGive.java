@@ -19,6 +19,6 @@ public class EventQuestGive extends AbstractEvent<QuestGiveEvent> {
         var quest = event.getQuest();
         var key = quest.getKey();
         if (name != null && !name.equals(key)) return;
-        apply(event.getPlayer(),quest.getName());
+        apply(event.getPlayer(),event);
     }
 }

@@ -2,6 +2,7 @@ package kor.toxicity.questadder.util.action.type;
 
 import kor.toxicity.questadder.QuestAdder;
 import kor.toxicity.questadder.event.ActionInvokeEvent;
+import kor.toxicity.questadder.event.QuestAdderEvent;
 import kor.toxicity.questadder.util.ComponentReader;
 import kor.toxicity.questadder.util.action.AbstractAction;
 import kor.toxicity.questadder.util.reflect.DataField;
@@ -12,7 +13,7 @@ public class ActMessage extends AbstractAction {
     @DataField(aliases = "m",throwIfNull = true)
     public String message;
 
-    private ComponentReader<ActionInvokeEvent> reader;
+    private ComponentReader<QuestAdderEvent> reader;
 
     public ActMessage(QuestAdder adder) {
         super(adder);
@@ -25,7 +26,7 @@ public class ActMessage extends AbstractAction {
     }
 
     @Override
-    public void invoke(@NotNull Player player, @NotNull ActionInvokeEvent event) {
+    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         var component = reader.createComponent(event);
         if (component != null) player.sendMessage(component);
         else player.sendMessage("error!");

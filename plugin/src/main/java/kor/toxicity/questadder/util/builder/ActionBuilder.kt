@@ -3,7 +3,8 @@ package kor.toxicity.questadder.util.builder
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.event.ActionInvokeEvent
+import kor.toxicity.questadder.event.GiveRewardEvent
+import kor.toxicity.questadder.event.QuestAdderEvent
 import kor.toxicity.questadder.extension.ANNOTATION_PATTERN
 import kor.toxicity.questadder.extension.findStringList
 import kor.toxicity.questadder.extension.info
@@ -14,10 +15,18 @@ import kor.toxicity.questadder.util.action.CancellableAction
 import kor.toxicity.questadder.util.action.RegistrableAction
 import kor.toxicity.questadder.util.action.type.*
 import kor.toxicity.questadder.util.event.AbstractEvent
+import kor.toxicity.questadder.util.event.type.EventAttack
+import kor.toxicity.questadder.util.event.type.EventChat
+import kor.toxicity.questadder.util.event.type.EventGiveReward
 import kor.toxicity.questadder.util.event.type.EventJoin
 import kor.toxicity.questadder.util.event.type.EventKill
+import kor.toxicity.questadder.util.event.type.EventQuestComplete
 import kor.toxicity.questadder.util.event.type.EventQuestGive
 import kor.toxicity.questadder.util.event.type.EventQuestRemove
+import kor.toxicity.questadder.util.event.type.EventQuestSurrender
+import kor.toxicity.questadder.util.event.type.EventQuestSurrenderFail
+import kor.toxicity.questadder.util.event.type.EventQuit
+import kor.toxicity.questadder.util.event.type.EventTalk
 import kor.toxicity.questadder.util.reflect.ActionReflector
 import org.bukkit.command.CommandExecutor
 import org.bukkit.configuration.ConfigurationSection
@@ -47,13 +56,24 @@ object ActionBuilder {
         put("subtract",ActSubtract::class.java)
         put("multiply",ActMultiply::class.java)
         put("divide",ActDivide::class.java)
+
+        put("warp", ActWarp::class.java)
+        put("evaluate",ActEvaluate::class.java)
     }
     private val eventMap = HashMap<String,Class<out AbstractEvent<*>>>().apply {
-        put("join",EventJoin::class.java)
-        put("kill",EventKill::class.java)
+        put("join", EventJoin::class.java)
+        put("kill", EventKill::class.java)
+        put("attack",EventAttack::class.java)
+        put("chat", EventChat::class.java)
+        put("talk", EventTalk::class.java)
+        put("quit", EventQuit::class.java)
 
+        put("givereward", EventGiveReward::class.java)
         put("questgive", EventQuestGive::class.java)
         put("questremove", EventQuestRemove::class.java)
+        put("questcomplete", EventQuestComplete::class.java)
+        put("questsurrender", EventQuestSurrender::class.java)
+        put("questsurrenderfail", EventQuestSurrenderFail::class.java)
     }
 
     fun addAction(name: String, clazz: Class<out AbstractAction>) {
@@ -105,7 +125,7 @@ object ActionBuilder {
     fun create(adder: QuestAdder, parameters: Collection<String>, unsafe: Boolean = false): CancellableAction? {
         val playerTask = HashMap<UUID,BukkitTask>()
         val empty: AbstractAction = object : AbstractAction(adder) {
-            override fun invoke(player: Player, event: ActionInvokeEvent) {
+            override fun invoke(player: Player, event: QuestAdderEvent) {
                 playerTask.remove(player.uniqueId)
             }
         }
@@ -116,7 +136,7 @@ object ActionBuilder {
             if (matcher.find()) {
                 val d = matcher.group("delay").toLong()
                 action = object : AbstractAction(adder) {
-                    override fun invoke(player: Player, event: ActionInvokeEvent) {
+                    override fun invoke(player: Player, event: QuestAdderEvent) {
                         playerTask[player.uniqueId] = QuestAdder.taskLater(d) {
                             t.invoke(player,event)
                         }
@@ -125,7 +145,7 @@ object ActionBuilder {
             } else {
                 createAction(adder,parameter)?.let {
                     action = object : AbstractAction(adder) {
-                        override fun invoke(player: Player, event: ActionInvokeEvent) {
+                        override fun invoke(player: Player, event: QuestAdderEvent) {
                             it.invoke(player,event)
                             t.invoke(player,event)
                         }
@@ -138,11 +158,11 @@ object ActionBuilder {
                 playerTask.remove(player.uniqueId)?.cancel()
             }
 
-            override fun invoke(player: Player, event: ActionInvokeEvent) {
+            override fun invoke(player: Player, event: QuestAdderEvent) {
                 action.invoke(player, event)
             }
         } else object : CancellableAction(adder) {
-            override fun invoke(player: Player, event: ActionInvokeEvent) {
+            override fun invoke(player: Player, event: QuestAdderEvent) {
                 if (!playerTask.contains(player.uniqueId)) {
                     action.invoke(player, event)
                 }
@@ -154,10 +174,11 @@ object ActionBuilder {
         })
     }
     fun build(adder: QuestAdder, section: ConfigurationSection): RegistrableAction? {
+        val unsafe = section.getBoolean("Unsafe")
         return section.findStringList("Action","Actions","actions","action")?.let {
-            create(adder,it,section.getBoolean("Unsafe"))
+            create(adder,it,unsafe)
         }?.let { action ->
-            var predicate: (ActionInvokeEvent) -> Boolean = {
+            var predicate: (Player,QuestAdderEvent) -> Boolean = { _, _ ->
                 true
             }
             section.findStringList("Event","Events","event","events")?.forEach {
@@ -177,11 +198,11 @@ object ActionBuilder {
                                     DialogManager.getAction(it)
                                 }
                                 if (castActions.isNotEmpty()) {
-                                    predicate = { event ->
+                                    predicate = { player, event ->
                                         val get = function.apply(event)
-                                        original(event) && if (get is Boolean) {
+                                        original(player,event) && if (get is Boolean) {
                                             if (get) {
-                                                castActions.random().invoke(event.player, event)
+                                                castActions.random().invoke(player, event)
                                                 true
                                             } else false
                                         } else false
@@ -195,11 +216,11 @@ object ActionBuilder {
                                     DialogManager.getAction(it)
                                 }
                                 if (castActions.isNotEmpty()) {
-                                    predicate = { event ->
+                                    predicate = { player, event ->
                                         val get = function.apply(event)
-                                        original(event) && if (get is Boolean) {
+                                        original(player,event) && if (get is Boolean) {
                                             if (get) {
-                                                castActions.random().invoke(event.player, event)
+                                                castActions.random().invoke(player, event)
                                                 false
                                             } else true
                                         } else false
@@ -208,23 +229,23 @@ object ActionBuilder {
                             }
                         }
                         else -> {
-                            predicate = { event ->
+                            predicate = { player, event ->
                                 val get = function.apply(event)
-                                original(event) && get is Boolean && get
+                                original(player,event) && get is Boolean && get
                             }
                         }
                     }
                 } else {
                     val function = FunctionBuilder.evaluate(s)
-                    predicate = { event ->
+                    predicate = { player, event ->
                         val get = function.apply(event)
-                        original(event) && get is Boolean && get
+                        original(player,event) && get is Boolean && get
                     }
                 }
             }
             val obj = object : CancellableAction(adder) {
-                override fun invoke(player: Player, event: ActionInvokeEvent) {
-                    if (predicate(event)) action.invoke(player,event)
+                override fun invoke(player: Player, event: QuestAdderEvent) {
+                    if (predicate(player,event)) action.invoke(player,event)
                 }
 
                 override fun cancel(player: Player) {
@@ -243,7 +264,7 @@ object ActionBuilder {
                 }
             }
             object : RegistrableAction(adder) {
-                override fun invoke(player: Player, event: ActionInvokeEvent) {
+                override fun invoke(player: Player, event: QuestAdderEvent) {
                     obj.invoke(player,event)
                 }
                 override fun cancel(player: Player) {

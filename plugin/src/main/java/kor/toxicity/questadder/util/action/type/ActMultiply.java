@@ -2,6 +2,7 @@ package kor.toxicity.questadder.util.action.type;
 
 import kor.toxicity.questadder.QuestAdder;
 import kor.toxicity.questadder.event.ActionInvokeEvent;
+import kor.toxicity.questadder.event.QuestAdderEvent;
 import kor.toxicity.questadder.util.action.AbstractAction;
 import kor.toxicity.questadder.util.reflect.DataField;
 import kor.toxicity.questadder.util.builder.FunctionBuilder;
@@ -28,7 +29,7 @@ public class ActMultiply extends AbstractAction {
     }
 
     @Override
-    public void invoke(@NotNull Player player, @NotNull ActionInvokeEvent event) {
+    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         var apply = function.apply(event);
         var data = QuestAdder.Companion.getPlayerData(player);
         if (data == null) return;

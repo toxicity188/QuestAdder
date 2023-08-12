@@ -1,7 +1,10 @@
-plugin: "&6[QuestAdder] &f"
+plugin: "<color:gold><decoration:bold>[QuestAdder]<color:white> "
 
-info: " &6[!] &f"
-warn: " &c[!] &f"
+info: " <color:gold><decoration:bold>[!]<color:white> "
+warn: " <color:red><decoration:bold>[!]<color:white> "
 
-condition: " &e&l[!] Condition"
-condition-lore: " &e&l[!] &f"
+condition: " <color:yellow><decoration:bold>[!] <decoration:bold,italic>Conditions"
+condition-lore: " <color:yellow><decoration:bold> └<color:white> "
+reward: " <color:green><decoration:bold>[!] <decoration:bold,italic>Rewards"
+reward-lore: " <color:green><decoration:bold> └<color:white> "
+recommend: " <color:gold><decoration:bold>[!] <decoration:bold,italic>Recommends"

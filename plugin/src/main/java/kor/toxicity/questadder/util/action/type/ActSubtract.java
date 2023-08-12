@@ -1,11 +1,11 @@
 package kor.toxicity.questadder.util.action.type;
 
 import kor.toxicity.questadder.QuestAdder;
-import kor.toxicity.questadder.event.ActionInvokeEvent;
+import kor.toxicity.questadder.event.QuestAdderEvent;
 import kor.toxicity.questadder.util.action.AbstractAction;
-import kor.toxicity.questadder.util.reflect.DataField;
 import kor.toxicity.questadder.util.builder.FunctionBuilder;
 import kor.toxicity.questadder.util.function.WrappedFunction;
+import kor.toxicity.questadder.util.reflect.DataField;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,7 +28,7 @@ public class ActSubtract extends AbstractAction {
     }
 
     @Override
-    public void invoke(@NotNull Player player, @NotNull ActionInvokeEvent event) {
+    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         var apply = function.apply(event);
         var data = QuestAdder.Companion.getPlayerData(player);
         if (data == null) return;

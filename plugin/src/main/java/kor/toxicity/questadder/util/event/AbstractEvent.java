@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.util.event;
 
 import kor.toxicity.questadder.QuestAdder;
+import kor.toxicity.questadder.event.QuestAdderEvent;
 import kor.toxicity.questadder.util.action.AbstractAction;
 import kor.toxicity.questadder.util.reflect.DataObject;
 import org.bukkit.Bukkit;
@@ -19,9 +20,9 @@ public abstract class AbstractEvent<T extends Event> implements DataObject {
     private final AbstractAction action;
     public AbstractEvent(QuestAdder adder, AbstractAction action, Class<T> clazz) {
         this.action = action;
-        Bukkit.getPluginManager().registerEvent(clazz,LISTENER, EventPriority.NORMAL,((listener, event) -> {
+        Bukkit.getPluginManager().registerEvent(clazz,LISTENER, EventPriority.MONITOR,((listener, event) -> {
             if (clazz.isAssignableFrom(event.getClass())) invoke(clazz.cast(event));
-        }), adder);
+        }), adder, true);
     }
 
     @Override
@@ -32,5 +33,8 @@ public abstract class AbstractEvent<T extends Event> implements DataObject {
 
     protected final void apply(Player player, String... args) {
         action.apply(player, args);
+    }
+    protected final void apply(Player player, QuestAdderEvent event) {
+        action.invoke(player, event);
     }
 }

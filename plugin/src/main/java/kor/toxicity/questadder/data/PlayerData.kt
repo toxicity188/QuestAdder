@@ -7,7 +7,7 @@ import kor.toxicity.questadder.util.variable.SerializeManager
 class PlayerData {
     private val variables = HashMap<String,Any>()
     private val questVariables = HashMap<String,MutableMap<String,Long>>()
-
+    val npcIndexes = HashMap<String,Int>()
 
     fun saveVariables() = ArrayList<Triple<String,String,String>>().apply {
         variables.forEach {
@@ -24,6 +24,24 @@ class PlayerData {
                 }
             } catch (ex: Exception) {
                 QuestAdder.warn("unable to load player data named \"${it.first}\"")
+            }
+        }
+    }
+    fun saveQuest() = HashMap<String,List<Pair<String,Long>>>().apply {
+        questVariables.forEach {
+            put(it.key,ArrayList<Pair<String, Long>>().apply {
+                for (mutableEntry in it.value) {
+                    add(mutableEntry.key to mutableEntry.value)
+                }
+            })
+        }
+    }
+    fun loadQuest(map: Map<String,List<Pair<String,Long>>>) {
+        map.forEach {
+            questVariables[it.key] = HashMap<String, Long>().apply {
+                it.value.forEach { p ->
+                    put(p.first,p.second)
+                }
             }
         }
     }
@@ -47,22 +65,5 @@ class PlayerData {
 
     fun getQuestKey() = questVariables.keys
 
-    fun saveQuest() = HashMap<String,List<Pair<String,Long>>>().apply {
-        questVariables.forEach {
-            put(it.key,ArrayList<Pair<String, Long>>().apply {
-                for (mutableEntry in it.value) {
-                    add(mutableEntry.key to mutableEntry.value)
-                }
-            })
-        }
-    }
-    fun loadQuest(map: Map<String,List<Pair<String,Long>>>) {
-        map.forEach {
-            questVariables[it.key] = HashMap<String, Long>().apply {
-                it.value.forEach { p ->
-                    put(p.first,p.second)
-                }
-            }
-        }
-    }
+
 }

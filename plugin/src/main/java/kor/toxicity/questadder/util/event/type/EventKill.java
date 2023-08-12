@@ -10,7 +10,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 
 public class EventKill extends AbstractEvent<EntityDeathEvent> {
     @DataField(aliases = "t")
-    public String type;
+    public EntityType type;
     @DataField(aliases = "n")
     public String name;
 
@@ -18,18 +18,9 @@ public class EventKill extends AbstractEvent<EntityDeathEvent> {
         super(adder, action, EntityDeathEvent.class);
     }
 
-    private EntityType entityType;
-
     @Override
     public void initialize() {
         super.initialize();
-        if (type != null) {
-            try {
-                entityType = EntityType.valueOf(type.toUpperCase());
-            } catch (Exception e) {
-                QuestAdder.Companion.warn("not found error: the entity type \"" + type + "\" doesn't exist.");
-            }
-        }
         if (name != null) name = name.replace('&','§');
     }
 
@@ -38,7 +29,7 @@ public class EventKill extends AbstractEvent<EntityDeathEvent> {
         var entity = event.getEntity();
         var killer = entity.getKiller();
         if (killer != null) {
-            if (entityType != null && event.getEntityType() != entityType) return;
+            if (type != null && event.getEntityType() != type) return;
             if (name != null) {
                 var component = entity.customName();
                 if (component != null && !LegacyComponentSerializer.legacySection().serialize(component).equals(name)) return;

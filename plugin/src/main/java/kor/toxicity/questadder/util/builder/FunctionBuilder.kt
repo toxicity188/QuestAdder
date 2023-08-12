@@ -1,22 +1,26 @@
 package kor.toxicity.questadder.util.builder
 
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.event.ActionEvent
-import kor.toxicity.questadder.event.ArgumentEvent
+import kor.toxicity.questadder.event.ActionInvokeEvent
 import kor.toxicity.questadder.event.DialogEvent
 import kor.toxicity.questadder.event.NPCEvent
 import kor.toxicity.questadder.event.QuestAdderPlayerEvent
+import kor.toxicity.questadder.event.QuestCompleteEvent
 import kor.toxicity.questadder.event.QuestEvent
 import kor.toxicity.questadder.event.QuestPlayerEvent
-import kor.toxicity.questadder.mechanic.Quest
+import kor.toxicity.questadder.extension.storage
+import kor.toxicity.questadder.extension.totalAmount
+import kor.toxicity.questadder.manager.ItemManager
 import kor.toxicity.questadder.util.HashedClass
 import kor.toxicity.questadder.util.Null
 import kor.toxicity.questadder.util.function.ArgumentFunction
 import kor.toxicity.questadder.util.function.QuestOperator
 import kor.toxicity.questadder.util.function.WrappedFunction
 import kor.toxicity.questadder.util.reflect.PrimitiveType
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import java.text.DecimalFormat
 import java.util.concurrent.ThreadLocalRandom
 import java.util.regex.Pattern
@@ -29,7 +33,7 @@ object FunctionBuilder {
     private val functionPattern = Pattern.compile("(?<name>\\w+)\\((?<argument>(\\w|\\W)*)\\)")
     private val stringPattern = Pattern.compile("^\'(?<string>(\\w|\'\'|\\W|^\')+)\'$")
     private val map = HashMap<HashedClass, MutableMap<String, MutableMap<HashedClassList, ArgumentFunction>>>()
-    private val operatorMap = HashMap<HashedClass,MutableMap<String, QuestOperator>>()
+    private val operatorMap = HashMap<HashedClass,MutableMap<String, StoredQuestOperator>>()
     private val booleanStringArray = arrayOf("true", "false")
     private val numberArray = arrayOf(
         '0','1','2','3','4','5','6','7','8','9'
@@ -120,46 +124,46 @@ object FunctionBuilder {
     }
 
     init {
-        addOperation("==") { a: Any, b: Any ->
+        addOperation("==",0) { a: Any, b: Any ->
             a == b
         }
-        addOperation("!=") { a: Any, b: Any ->
+        addOperation("!=",0) { a: Any, b: Any ->
             a != b
         }
-        addOperation("===") { a: Any, b: Any ->
+        addOperation("===",0) { a: Any, b: Any ->
             a === b
         }
-        addOperation("!==") { a: Any, b: Any ->
+        addOperation("!==",0) { a: Any, b: Any ->
             a !== b
         }
-        addOperation("+") { a: String, b: Any ->
+        addOperation("+",99) { a: String, b: Any ->
             a + b
         }
-        addOperation("+") { a: Number, b: Number ->
+        addOperation("+",99) { a: Number, b: Number ->
             a.toDouble() + b.toDouble()
         }
-        addOperation("-") { a: Number, b: Number ->
+        addOperation("-",99) { a: Number, b: Number ->
             a.toDouble() - b.toDouble()
         }
-        addOperation("/") { a: Number, b: Number ->
+        addOperation("/",99) { a: Number, b: Number ->
             a.toDouble() / b.toDouble()
         }
-        addOperation("*") { a: Number, b: Number ->
+        addOperation("*",99) { a: Number, b: Number ->
             a.toDouble() * b.toDouble()
         }
-        addOperation("%") { a: Number, b: Number ->
+        addOperation("%",99) { a: Number, b: Number ->
             a.toDouble() % b.toDouble()
         }
-        addOperation(">") { a: Number, b: Number ->
+        addOperation(">",99) { a: Number, b: Number ->
             a.toDouble() > b.toDouble()
         }
-        addOperation("<") { a: Number, b: Number ->
+        addOperation("<",99) { a: Number, b: Number ->
             a.toDouble() < b.toDouble()
         }
-        addOperation(">=") { a: Number, b: Number ->
+        addOperation(">=",99) { a: Number, b: Number ->
             a.toDouble() >= b.toDouble()
         }
-        addOperation("<=") { a: Number, b: Number ->
+        addOperation("<=",99) { a: Number, b: Number ->
             a.toDouble() <= b.toDouble()
         }
 
@@ -184,6 +188,9 @@ object FunctionBuilder {
         addFunction("boolOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
             QuestAdder.getPlayerData(args[0] as Player)?.get(args[1] as String).toString().toBoolean()
         }
+        addFunction("itemOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
+            QuestAdder.getPlayerData(args[0] as Player)?.get(args[1] as String) as? ItemStack ?: Null
+        }
         addFunction("random", listOf(Number::class.java, Number::class.java)) { _: Null, args ->
             ThreadLocalRandom.current().nextDouble((args[0] as Number).toDouble(), (args[1] as Number).toDouble())
         }
@@ -199,15 +206,30 @@ object FunctionBuilder {
         addFunction("npc") { e: NPCEvent, _ ->
             e.npc
         }
-        addFunction("args", listOf(Number::class.java)) { e: ArgumentEvent, args ->
+        addFunction("itemOf", listOf(String::class.java)) { _: Null, args ->
+            ItemManager.getItem(args[0] as String)
+        }
+        addFunction("args", listOf(Number::class.java)) { e: ActionInvokeEvent, args ->
             val index = (args[0] as Number).toInt()
             if (index >= 0 && index < e.args.size) e.args[index] else null
         }
         addFunction("var", listOf(String::class.java)) { e: QuestPlayerEvent, args ->
             QuestAdder.getPlayerData(e.player)?.getQuestVariable(e.quest.key,args[0] as String) ?: 0L
         }
+        addFunction("exp") { e: QuestCompleteEvent, _ ->
+            e.exp
+        }
+        addFunction("money") { e: QuestCompleteEvent, _ ->
+            e.money
+        }
         addFunction("name", listOf(Entity::class.java)) { _: Null, args ->
             (args[0] as Entity).name
+        }
+        addFunction("totalamount", listOf(Player::class.java,ItemStack::class.java)) { _: Null, args ->
+            (args[0] as Player).totalAmount(args[1] as ItemStack)
+        }
+        addFunction("storage", listOf(Player::class.java,ItemStack::class.java)) { _: Null, args ->
+            (args[0] as Player).storage(args[1] as ItemStack)
         }
         addFunction("health", listOf(Player::class.java)) { _: Null, args ->
             (args[0] as Player).health
@@ -249,13 +271,13 @@ object FunctionBuilder {
             args[0] as Boolean || args[1] as Boolean
         }
     }
-    inline fun <reified T, reified R : Any> addOperation(name: String, noinline operate: (T, T) -> R) {
-        addOperation(name,T::class.java,R::class.java,operate)
+    inline fun <reified T, reified R : Any> addOperation(name: String, priority: Int, noinline operate: (T, T) -> R) {
+        addOperation(name,priority,T::class.java,R::class.java,operate)
     }
-    fun <T,R : Any> addOperation(name: String, clazz: Class<T>, returnType: Class<R>, operation: (T, T) -> R) {
+    fun <T,R : Any> addOperation(name: String, priority: Int, clazz: Class<T>, returnType: Class<R>, operation: (T, T) -> R) {
         operatorMap.getOrPut(HashedClass(clazz)) {
             HashMap()
-        }[name] = object : QuestOperator {
+        }[name] = StoredQuestOperator(priority,object : QuestOperator {
             override fun getReturnType(): Class<*> {
                 return returnType
             }
@@ -267,7 +289,7 @@ object FunctionBuilder {
             override fun getName(): String {
                 return name
             }
-        }
+        })
     }
 
 
@@ -598,10 +620,16 @@ object FunctionBuilder {
             null
         } ?: nullFunction
     }
-    private fun findOperator(name: String, clazz: Class<*>) = operatorMap.firstNotNullOfOrNull {
-        if (it.key.clazz.isAssignableFrom(clazz)) it.value.firstNotNullOfOrNull { e ->
-            if (e.key == name) e.value else null
-        } else null
+    private fun findOperator(name: String, clazz: Class<*>): QuestOperator? {
+        val operatorList = ArrayList<StoredQuestOperator>()
+        operatorMap.forEach {
+            if (it.key.clazz.isAssignableFrom(clazz)) it.value.forEach { e ->
+                if (e.key == name) operatorList.add(e.value)
+            }
+        }
+        return operatorList.maxByOrNull {
+            it.priority
+        }?.operator
     }
     private class HashedClassList(val classes: List<HashedClass>) {
         override fun equals(other: Any?): Boolean {
@@ -619,4 +647,6 @@ object FunctionBuilder {
             return classes.hashCode()
         }
     }
+
+    class StoredQuestOperator(val priority: Int, val operator: QuestOperator)
 }

@@ -27,6 +27,9 @@ fun ConfigurationSection.findStringList(vararg string: String) = string.firstNot
 fun ConfigurationSection.findConfig(vararg string: String) = string.firstNotNullOfOrNull {
     getConfigurationSection(it)
 }
+fun ConfigurationSection.findBoolean(vararg string: String) = string.any {
+    getBoolean(it)
+}
 fun ConfigurationSection.findInt(defaultValue: Int = 0, vararg string: String) = string.firstNotNullOfOrNull {
     val i = getInt(it)
     if (i == 0) null else i
@@ -39,6 +42,9 @@ fun ConfigurationSection.findDouble(defaultValue: Double = 0.0, vararg string: S
 
 fun ConfigurationSection.getAsStringList(key: String): List<String>? = if (isList(key)) getStringList(key) else if (isString(key)) listOf(getString(key)!!) else null
 
+fun ConfigurationSection.findItemStack(vararg string: String) = string.firstNotNullOfOrNull {
+    getAsItemStack(it)
+}
 fun ConfigurationSection.getAsItemStack(key: String): ItemStack? = if (isItemStack(key)) getItemStack(key) else if (isConfigurationSection(key)) getConfigurationSection(key)!!.run {
     ItemStack(try {
         Material.valueOf(getString("type")?.uppercase() ?: "APPLE")

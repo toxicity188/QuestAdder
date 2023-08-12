@@ -2,6 +2,7 @@ package kor.toxicity.questadder.util.action.type;
 
 import kor.toxicity.questadder.QuestAdder;
 import kor.toxicity.questadder.event.ActionInvokeEvent;
+import kor.toxicity.questadder.event.QuestAdderEvent;
 import kor.toxicity.questadder.util.action.AbstractAction;
 import kor.toxicity.questadder.util.reflect.DataField;
 import org.bukkit.entity.Player;
@@ -20,7 +21,7 @@ public class ActSound extends AbstractAction {
     }
 
     @Override
-    public void invoke(@NotNull Player player, @NotNull ActionInvokeEvent event) {
+    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         player.playSound(player.getLocation(),name,volume,pitch);
     }
 }
