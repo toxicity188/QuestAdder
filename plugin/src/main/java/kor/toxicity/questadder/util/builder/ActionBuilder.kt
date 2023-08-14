@@ -3,7 +3,6 @@ package kor.toxicity.questadder.util.builder
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.event.GiveRewardEvent
 import kor.toxicity.questadder.event.QuestAdderEvent
 import kor.toxicity.questadder.extension.ANNOTATION_PATTERN
 import kor.toxicity.questadder.extension.findStringList
@@ -15,18 +14,7 @@ import kor.toxicity.questadder.util.action.CancellableAction
 import kor.toxicity.questadder.util.action.RegistrableAction
 import kor.toxicity.questadder.util.action.type.*
 import kor.toxicity.questadder.util.event.AbstractEvent
-import kor.toxicity.questadder.util.event.type.EventAttack
-import kor.toxicity.questadder.util.event.type.EventChat
-import kor.toxicity.questadder.util.event.type.EventGiveReward
-import kor.toxicity.questadder.util.event.type.EventJoin
-import kor.toxicity.questadder.util.event.type.EventKill
-import kor.toxicity.questadder.util.event.type.EventQuestComplete
-import kor.toxicity.questadder.util.event.type.EventQuestGive
-import kor.toxicity.questadder.util.event.type.EventQuestRemove
-import kor.toxicity.questadder.util.event.type.EventQuestSurrender
-import kor.toxicity.questadder.util.event.type.EventQuestSurrenderFail
-import kor.toxicity.questadder.util.event.type.EventQuit
-import kor.toxicity.questadder.util.event.type.EventTalk
+import kor.toxicity.questadder.util.event.type.*
 import kor.toxicity.questadder.util.reflect.ActionReflector
 import org.bukkit.command.CommandExecutor
 import org.bukkit.configuration.ConfigurationSection
@@ -68,12 +56,18 @@ object ActionBuilder {
         put("talk", EventTalk::class.java)
         put("quit", EventQuit::class.java)
 
+        put("navigatestart",EventNavigateStart::class.java)
+        put("navigatefail",EventNavigateFail::class.java)
+        put("navigateend",EventNavigateEnd::class.java)
+        put("navigatecomplete",EventNavigateComplete::class.java)
+
         put("givereward", EventGiveReward::class.java)
         put("questgive", EventQuestGive::class.java)
         put("questremove", EventQuestRemove::class.java)
         put("questcomplete", EventQuestComplete::class.java)
         put("questsurrender", EventQuestSurrender::class.java)
         put("questsurrenderfail", EventQuestSurrenderFail::class.java)
+        put("questselect", EventQuestSelect::class.java)
     }
 
     fun addAction(name: String, clazz: Class<out AbstractAction>) {

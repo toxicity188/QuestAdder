@@ -34,12 +34,13 @@ class ButtonGui<T: Any>(
     inner class GuiBluePrint(val player: Player) {
 
         private val buttonMap = HashMap<Int,GuiItem>()
-        var exceptAction: ((Inventory,Int,MouseButton) -> Unit)? = null
+        var initializer: ((Inventory) -> Unit)? = null
+        var exceptAction: ((GuiData,ItemStack,Int,MouseButton) -> Unit)? = null
 
-        fun addButton(int: Int, writer: (T) -> ItemStack, action: (Inventory,MouseButton) -> Unit) {
+        fun addButton(int: Int, writer: (T) -> ItemStack, action: (GuiData,MouseButton) -> Unit) {
             buttonMap[int] = GuiItem(writer,action)
         }
-        fun addButton(int: Int, writer: ItemWriter<T>, action: (Inventory, MouseButton) -> Unit) {
+        fun addButton(int: Int, writer: ItemWriter<T>, action: (GuiData, MouseButton) -> Unit) {
             buttonMap[int] = GuiItem({
                 writer.write(it)
             },action)
@@ -59,7 +60,7 @@ class ButtonGui<T: Any>(
                 }
 
                 override fun initialize(data: GuiData) {
-
+                    initializer?.invoke(data.inventory)
                 }
 
                 override fun click(
@@ -71,16 +72,16 @@ class ButtonGui<T: Any>(
                 ) {
                     if (isPlayerInventory) return
                     buttonMap[clickedSlot]?.let {
-                        it.action(data.inventory,button)
+                        it.action(data,button)
                         buttonMap.forEach { e ->
                             data.inventory.setItem(e.key,e.value.writer(t))
                         }
-                    } ?: exceptAction?.invoke(data.inventory,clickedSlot,button)
+                    } ?: exceptAction?.invoke(data,clickedItem,clickedSlot,button)
                     player.updateInventory()
                 }
             })
         }
     }
 
-    private inner class GuiItem(val writer: (T) -> ItemStack, val action: (Inventory,MouseButton) -> Unit)
+    private inner class GuiItem(val writer: (T) -> ItemStack, val action: (GuiData,MouseButton) -> Unit)
 }

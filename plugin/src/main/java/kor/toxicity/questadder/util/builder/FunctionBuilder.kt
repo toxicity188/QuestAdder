@@ -1,13 +1,7 @@
 package kor.toxicity.questadder.util.builder
 
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.event.ActionInvokeEvent
-import kor.toxicity.questadder.event.DialogEvent
-import kor.toxicity.questadder.event.NPCEvent
-import kor.toxicity.questadder.event.QuestAdderPlayerEvent
-import kor.toxicity.questadder.event.QuestCompleteEvent
-import kor.toxicity.questadder.event.QuestEvent
-import kor.toxicity.questadder.event.QuestPlayerEvent
+import kor.toxicity.questadder.event.*
 import kor.toxicity.questadder.extension.storage
 import kor.toxicity.questadder.extension.totalAmount
 import kor.toxicity.questadder.manager.ItemManager
@@ -17,7 +11,6 @@ import kor.toxicity.questadder.util.function.ArgumentFunction
 import kor.toxicity.questadder.util.function.QuestOperator
 import kor.toxicity.questadder.util.function.WrappedFunction
 import kor.toxicity.questadder.util.reflect.PrimitiveType
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -130,6 +123,12 @@ object FunctionBuilder {
         addOperation("!=",0) { a: Any, b: Any ->
             a != b
         }
+        addOperation("==",99) { a: Number, b: Number ->
+            a.toDouble() == b.toDouble()
+        }
+        addOperation("!=",99) { a: Number, b: Number ->
+            a.toDouble() != b.toDouble()
+        }
         addOperation("===",0) { a: Any, b: Any ->
             a === b
         }
@@ -205,6 +204,9 @@ object FunctionBuilder {
         }
         addFunction("npc") { e: NPCEvent, _ ->
             e.npc
+        }
+        addFunction("location") { e: LocationEvent, _ ->
+            e.namedLocation
         }
         addFunction("itemOf", listOf(String::class.java)) { _: Null, args ->
             ItemManager.getItem(args[0] as String)

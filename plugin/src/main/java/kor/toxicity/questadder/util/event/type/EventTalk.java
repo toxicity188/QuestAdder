@@ -20,6 +20,6 @@ public class EventTalk extends AbstractEvent<TalkStartEvent> {
     protected void invoke(TalkStartEvent event) {
         if (key != null && !key.equals(event.getNpc().getQuestNPC().getKey())) return;
         if (dialog != null && !dialog.equals(event.getDialog().getKey())) return;
-        apply(event.getPlayer());
+        apply(event.getPlayer(),event);
     }
 }

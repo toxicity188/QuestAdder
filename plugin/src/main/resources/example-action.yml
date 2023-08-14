@@ -1,9 +1,39 @@
+navigate_start:
+  event:
+    - navigatestart
+  action:
+    - sound{n=entity.experience_orb.pickup}
+    - message{m=" <color:gold><decoration:bold>[!] <color:white>navigation start - <color:yellow>%location()%"}
+navigate_fail:
+  event:
+    - navigatefail
+  action:
+    - sound{n=entity.item.break}
+    - message{m=" <color:red><decoration:bold>[!] <color:white>no location found!"}
+navigate_end:
+  event:
+    - navigateend
+  action:
+    - sound{n=entity.item.break}
+    - message{m=" <color:red><decoration:bold>[!] <color:white>navigation end."}
+navigate_complete:
+  event:
+    - navigatecomplete
+  action:
+    - sound{n=entity.experience_orb.pickup}
+    - message{m=" <color:gold><decoration:bold>[!] <color:white> yow arrive at the destination - <color:yellow>%location()%"}
+
 quest_give:
   event:
     - questgive
   action:
     - sound{n=entity.experience_orb.pickup}
-    - message{m=" <color:gold><decoration:bold>[!] <color:white>quest requested - <color:yellow>%quest()%"}
+    - message{m=" <color:gold><decoration:bold>[!] <color:white>quest request - <color:yellow>%quest()%"}
+quest_select:
+  event:
+    - questselect
+  action:
+    - message{m=" <color:gold><decoration:bold>[!] <color:white>quest choose - <color:yellow>%quest()%"}
 
 quest_complete:
   event:

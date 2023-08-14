@@ -9,6 +9,8 @@ import org.bukkit.inventory.ItemStack
 interface NMS {
     fun removePlayer(player: Player, target: Player)
     fun createArmorStand(player: Player, location: Location): VirtualArmorStand
+    fun createItemDisplay(player: Player, location: Location): VirtualItemDisplay
+    fun createTextDisplay(player: Player, location: Location): VirtualTextDisplay
     fun createCommand(name: String, executor: CommandExecutor): RuntimeCommand
     fun sendAdvancementMessage(player: Player, itemStack: ItemStack, component: Component)
 }

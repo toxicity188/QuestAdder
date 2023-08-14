@@ -1,15 +1,15 @@
 package kor.toxicity.questadder.nms.v1_18_R1
 
+import com.mojang.datafixers.util.Pair
 import eu.endercentral.crazy_advancements.advancement.AdvancementDisplay
 import eu.endercentral.crazy_advancements.advancement.ToastNotification
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.nms.NMS
-import kor.toxicity.questadder.nms.RuntimeCommand
-import kor.toxicity.questadder.nms.VirtualArmorStand
+import kor.toxicity.questadder.nms.*
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import net.minecraft.network.protocol.game.*
 import net.minecraft.world.entity.EntityTypes
+import net.minecraft.world.entity.EnumItemSlot
 import net.minecraft.world.entity.decoration.EntityArmorStand
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -19,6 +19,7 @@ import org.bukkit.command.CommandSender
 import org.bukkit.craftbukkit.v1_18_R1.CraftServer
 import org.bukkit.craftbukkit.v1_18_R1.CraftWorld
 import org.bukkit.craftbukkit.v1_18_R1.entity.CraftPlayer
+import org.bukkit.craftbukkit.v1_18_R1.inventory.CraftItemStack
 import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -35,7 +36,7 @@ class NMSImpl: NMS {
     override fun sendAdvancementMessage(player: Player, itemStack: ItemStack, component: Component) {
         ToastNotification(
             itemStack,
-            LegacyComponentSerializer.legacySection().serialize(component),
+            GsonComponentSerializer.gson().serialize(component),
             AdvancementDisplay.AdvancementFrame.GOAL
         ).send(player)
     }
@@ -81,5 +82,18 @@ class NMSImpl: NMS {
             (display.bukkitEntity as ArmorStand).customName(text)
             connection.a(PacketPlayOutEntityMetadata(display.ae(),display.ai(),true))
         }
+
+        override fun setItem(itemStack: ItemStack) {
+            val item = CraftItemStack.asNMSCopy(itemStack)
+            display.setItemSlot(EnumItemSlot.f, item,true)
+            connection.a(PacketPlayOutEntityEquipment(display.ae(), listOf(Pair(EnumItemSlot.f,item))))
+        }
+    }
+    override fun createItemDisplay(player: Player, location: Location): VirtualItemDisplay {
+        throw UnsupportedOperationException("unsupported minecraft version.")
+    }
+
+    override fun createTextDisplay(player: Player, location: Location): VirtualTextDisplay {
+        throw UnsupportedOperationException("unsupported minecraft version.")
     }
 }

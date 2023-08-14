@@ -3,6 +3,7 @@ package kor.toxicity.questadder.mechanic
 import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.event.*
 import kor.toxicity.questadder.extension.*
+import kor.toxicity.questadder.manager.LocationManager
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.ItemWriter
 import kor.toxicity.questadder.util.RewardSet
@@ -23,6 +24,7 @@ import java.util.TreeSet
 class Quest(adder: QuestAdder, file: File, val key: String, section: ConfigurationSection) {
     companion object {
         private val success = "Success!".asComponent(YELLOW).clear().decorate(TextDecoration.BOLD)
+        private val defaultToast = ItemStack(Material.BOOK)
     }
 
     val name = (section.findString("name","Name") ?: key).replace('&','§')
@@ -36,14 +38,22 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
     val cancellable = section.findBoolean("Cancellable","cancellable")
 
     val type = section.findStringList("Type","type","Types","types")?.toSortedSet() ?: TreeSet()
-    private val toast = ItemStack(section.getString("toast")?.let {
-        try {
-            Material.valueOf(it.uppercase())
-        } catch (ex: Exception) {
-            QuestAdder.warn("not found error: the material named \"$it\" doesn't exist.")
-            null
+    private val toast = section.findConfig("toast")?.let {
+        ItemStack(it.findString("type","Type")?.let { s ->
+            section.getString("toast")?.let {
+                try {
+                    Material.valueOf(s.uppercase())
+                } catch (ex: Exception) {
+                    QuestAdder.warn("not found error: the material named \"$s\" doesn't exist.")
+                    null
+                }
+            }
+        } ?: Material.BOOK).apply {
+            itemMeta = itemMeta?.apply {
+                setCustomModelData(it.findInt(0,"custom-model-data","CustomModelData"))
+            }
         }
-    } ?: Material.BOOK)
+    } ?: defaultToast
 
     private val item = section.findConfig("Item","item","Icon","icon")?.let { c ->
         try {
@@ -57,6 +67,14 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
     private var onRemove: (QuestAdderPlayerEvent) -> Unit = {}
     private var onComplete: (QuestAdderPlayerEvent) -> Unit = {}
     private var onGive: (QuestAdderPlayerEvent) -> Unit = {}
+
+    val locationList = section.findStringList("location","Location","locations","Locations")?.mapNotNull {s ->
+        LocationManager.getLocation(s)
+    }
+
+    fun getConditions() = condition.map {
+        it.first
+    }
     init {
         section.findConfig("Conditions","Condition","conditions","condition")?.let { c ->
             c.getKeys(false).forEach { s ->

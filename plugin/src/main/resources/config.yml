@@ -1,6 +1,7 @@
 default-typing-speed: 1
 auto-save-time: 300
 default-dialog-item: ENCHANTED_BOOK
+default-resource-pack-item: ENDER_EYE
 
 player-gui:
   size: 4
@@ -25,4 +26,6 @@ player-gui-layout:
     slot:
       - 31
   start-index: 1
-  end-index: 1
+  max-index: 1
+
+navigation-gui-name: "navigation"

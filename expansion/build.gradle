@@ -1,0 +1,12 @@
+dependencies {
+    compileOnly(group: "com.github.PlaceholderAPI", name: "PlaceholderAPI", version: "master-SNAPSHOT")
+    compileOnly(project(":plugin"))
+}
+
+version = ""
+
+jar {
+    archiveBaseName.set("Expansion-questadder")
+    archiveExtension.set("patch")
+    destinationDirectory.set(file("$rootDir/plugin/src/main/resources"))
+}

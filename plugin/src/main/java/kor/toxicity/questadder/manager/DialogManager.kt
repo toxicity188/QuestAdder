@@ -3,11 +3,7 @@ package kor.toxicity.questadder.manager
 import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
-import kor.toxicity.questadder.event.ButtonGuiOpenEvent
-import kor.toxicity.questadder.event.PlayerParseEvent
-import kor.toxicity.questadder.event.QuestSurrenderEvent
-import kor.toxicity.questadder.event.QuestSurrenderFailEvent
-import kor.toxicity.questadder.event.TalkStartEvent
+import kor.toxicity.questadder.event.*
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.mechanic.Dialog
 import kor.toxicity.questadder.mechanic.QnA
@@ -19,7 +15,10 @@ import kor.toxicity.questadder.util.action.RegistrableAction
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.util.event.AbstractEvent
+import kor.toxicity.questadder.util.gui.Gui
+import kor.toxicity.questadder.util.gui.GuiData
 import kor.toxicity.questadder.util.gui.MouseButton
+import kor.toxicity.questadder.util.gui.SubExecutor
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButtonType
 import kor.toxicity.questadder.util.gui.player.PlayerGuiData
 import net.citizensnpcs.api.CitizensAPI
@@ -27,7 +26,9 @@ import net.citizensnpcs.api.event.CitizensReloadEvent
 import net.citizensnpcs.api.event.NPCDespawnEvent
 import net.citizensnpcs.api.event.NPCSpawnEvent
 import net.citizensnpcs.api.npc.NPC
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
+import org.bukkit.Material
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -41,6 +42,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import java.io.File
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.HashMap
 
 object DialogManager: QuestAdderManager {
@@ -58,6 +60,10 @@ object DialogManager: QuestAdderManager {
         "dialogs" to "example-dialog.yml"
     )
 
+    private val selectedDialogMap = ConcurrentHashMap<UUID,Quest>()
+
+    fun getSelectedQuest(player: Player) = selectedDialogMap[player.uniqueId]
+
     override fun start(adder: QuestAdder) {
         Bukkit.getPluginManager().registerEvents(object : Listener {
             @EventHandler
@@ -67,6 +73,7 @@ object DialogManager: QuestAdderManager {
                 actionMap.values.forEach {
                     it.cancel(player)
                 }
+                selectedDialogMap.remove(player.uniqueId)
             }
             @EventHandler
             fun death(e: PlayerDeathEvent) {
@@ -175,69 +182,127 @@ object DialogManager: QuestAdderManager {
                         for (i in startIndex until (startIndex + maxIndex)) {
                             inventory.setItem(i,null)
                         }
-                        questData.subList(index, (index + 9).coerceAtMost(questData.size).coerceAtMost(maxIndex)).forEachIndexed { index, quest ->
+                        questData.subList(index, (index + 9 * maxIndex).coerceAtMost(questData.size)).forEachIndexed { index, quest ->
                             inventory.setItem(startIndex + index, quest.getIcon(sender))
                         }
+                        sender.updateInventory()
                     }
                     QuestAdder.Config.playerGui.create(sender).run {
-                        exceptAction = { inv, i, mouseButton ->
-                            val quest = questData[i - QuestAdder.Config.playerGuiStartIndex * 9 + index]
-                            when (mouseButton) {
-                                MouseButton.SHIFT_LEFT -> {
-                                    if (quest.cancellable) {
-                                        QuestSurrenderEvent(quest,sender).callEvent()
-                                        quest.remove(sender)
-                                        questData.remove(quest)
-                                        initialize(inv)
-                                    } else {
-                                        QuestSurrenderFailEvent(quest,sender).callEvent()
+                        initializer = {
+                            initialize(it)
+                        }
+                        exceptAction = { inv, _, i, mouseButton ->
+                            val get = i - QuestAdder.Config.playerGuiStartIndex * 9 + index
+                            if (get >= 0 && get < questData.size) {
+                                val quest = questData[get]
+                                when (mouseButton) {
+                                    MouseButton.LEFT -> {
+                                        if (!NavigationManager.onNavigate(player)) {
+                                            quest.locationList?.let { loc ->
+                                                Gui(6, QuestAdder.Config.navigationGuiName, HashMap<Int, ItemStack>().apply {
+                                                    loc.forEachIndexed { index, namedLocation ->
+                                                        set(9 + index, ItemStack(namedLocation.material).apply {
+                                                            itemMeta = itemMeta?.apply {
+                                                                setCustomModelData(namedLocation.customModelData)
+                                                                displayName(namedLocation.name)
+                                                                val l = namedLocation.location
+                                                                lore(listOf(
+                                                                    Component.empty(),
+                                                                    QuestAdder.Prefix.info.append("x: ${l.x.withComma()}, y: ${l.y.withComma()}, z: ${l.z.withComma()}".asClearComponent().color(
+                                                                        WHITE))
+                                                                ))
+                                                            }
+                                                        })
+                                                    }
+                                                }).open(player, object : SubExecutor(inv) {
+                                                    override fun initialize(data: GuiData) {
+                                                    }
+
+                                                    override fun click(
+                                                        data: GuiData,
+                                                        clickedItem: ItemStack,
+                                                        clickedSlot: Int,
+                                                        isPlayerInventory: Boolean,
+                                                        button: MouseButton
+                                                    ) {
+                                                        if (isPlayerInventory) return
+                                                        if (clickedItem.type == Material.AIR) return
+                                                        val t = clickedSlot - 9
+                                                        if (t < 0 || t > loc.lastIndex) return
+                                                        NavigateStartEvent(player,loc[t]).callEvent()
+                                                        NavigationManager.startNavigate(player,loc[t])
+                                                        safeEnd = true
+                                                        player.closeInventory()
+                                                    }
+                                                })
+                                            } ?: NavigateFailEvent(player).callEvent()
+                                        } else {
+                                            NavigationManager.endNavigate(player)
+                                            NavigateEndEvent(player).callEvent()
+                                            player.closeInventory()
+                                        }
                                     }
+                                    MouseButton.RIGHT -> {
+                                        selectedDialogMap[player.uniqueId] = quest
+                                        QuestSelectEvent(quest,player).callEvent()
+                                    }
+                                    MouseButton.SHIFT_LEFT -> {
+                                        if (quest.cancellable) {
+                                            QuestSurrenderEvent(quest, sender).callEvent()
+                                            quest.remove(sender)
+                                            questData.remove(quest)
+                                            initialize(inv.inventory)
+                                        } else {
+                                            QuestSurrenderFailEvent(quest, sender).callEvent()
+                                        }
+                                    }
+
+                                    else -> {}
                                 }
-                                else -> {}
                             }
                         }
                         PlayerGuiButtonType.values().forEach {
                             val t = QuestAdder.Config.getPlayerGuiButton(it) ?: return@forEach
-                            val action: (Inventory,MouseButton) -> Unit = when (it) {
+                            val action: (GuiData,MouseButton) -> Unit = when (it) {
                                 PlayerGuiButtonType.PAGE_BEFORE -> {
-                                    { inv, button ->
+                                    { i, button ->
                                         when (button) {
                                             MouseButton.LEFT,MouseButton.SHIFT_LEFT -> {
                                                 index = (index - 1).coerceAtLeast(0)
-                                                initialize(inv)
+                                                initialize(i.inventory)
                                             }
                                             MouseButton.RIGHT,MouseButton.SHIFT_RIGHT -> {
                                                 index = 0
-                                                initialize(inv)
+                                                initialize(i.inventory)
                                             }
                                             else -> {}
                                         }
                                     }
                                 }
                                 PlayerGuiButtonType.PAGE_AFTER -> {
-                                    { inv, button ->
+                                    { i, button ->
                                         when (button) {
                                             MouseButton.LEFT,MouseButton.SHIFT_LEFT -> {
                                                 index = (index + 1).coerceAtMost((questData.size - 9).coerceAtLeast(0))
-                                                initialize(inv)
+                                                initialize(i.inventory)
                                             }
                                             MouseButton.RIGHT,MouseButton.SHIFT_RIGHT -> {
                                                 index = questData.size
-                                                initialize(inv)
+                                                initialize(i.inventory)
                                             }
                                             else -> {}
                                         }
                                     }
                                 }
                                 PlayerGuiButtonType.TYPE_SORT -> {
-                                    { inv, button ->
+                                    { i, button ->
                                         if (types.isNotEmpty()) {
                                             fun reload() {
                                                 playerGuiData.selectedType = types[typeIndex]
                                                 questData = originalQuestData.filter { q ->
                                                     q.type.contains(types[typeIndex])
                                                 }.toMutableList()
-                                                initialize(inv)
+                                                initialize(i.inventory)
                                             }
                                             when (button) {
                                                 MouseButton.LEFT -> {
@@ -253,7 +318,7 @@ object DialogManager: QuestAdderManager {
                                                 else -> {
                                                     questData = originalQuestData
                                                     playerGuiData.selectedType = null
-                                                    initialize(inv)
+                                                    initialize(i.inventory)
                                                 }
                                             }
                                         }
@@ -268,9 +333,7 @@ object DialogManager: QuestAdderManager {
                         }
                         open(player, ButtonGuiOpenEvent(player).apply {
                             callEvent()
-                        }).inventory.apply {
-                            initialize(this)
-                        }
+                        })
                     }
                 }
             }
@@ -388,6 +451,13 @@ object DialogManager: QuestAdderManager {
             send("${questMap.size} of quests has successfully loaded.")
             send("${qnaMap.size} of QnAs has successfully loaded.")
             send("${actionMap.size} of NPCs successfully loaded.")
+        }
+        val iterator = selectedDialogMap.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            val quest = questMap[entry.value.key]
+            if (quest == null) iterator.remove()
+            else entry.setValue(quest)
         }
     }
 

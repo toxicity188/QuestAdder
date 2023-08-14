@@ -3,11 +3,13 @@ package kor.toxicity.questadder.manager
 import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
+import kor.toxicity.questadder.extension.colored
 import kor.toxicity.questadder.extension.info
 import kor.toxicity.questadder.extension.send
 import kor.toxicity.questadder.extension.warn
 import kor.toxicity.questadder.util.NamedLocation
 import org.bukkit.Bukkit
+import org.bukkit.Material
 import org.bukkit.configuration.MemoryConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
@@ -35,13 +37,20 @@ object LocationManager: QuestAdderManager {
                             try {
                                 val file = File(locationFolder.apply {
                                     mkdir()
-                                }, args[1]).apply {
+                                },"${args[1]}.yml").apply {
                                     if (!exists()) createNewFile()
                                 }
+                                val name = (if (args.size > 3) {
+                                    args.toMutableList().apply {
+                                        removeAt(0)
+                                        removeAt(0)
+                                        removeAt(0)
+                                    }.joinToString(" ")
+                                } else args[2])
                                 YamlConfiguration().run {
                                     load(file)
                                     set(args[2], MemoryConfiguration().apply {
-                                        set("name", args[2])
+                                        set("name", name)
                                         set("world", location.world.name)
                                         set("x", location.x)
                                         set("y", location.y)
@@ -51,7 +60,7 @@ object LocationManager: QuestAdderManager {
                                     })
                                     save(file)
                                 }
-                                locationMap[args[2]] = NamedLocation(args[2], location)
+                                locationMap[args[2]] = NamedLocation(args[2],Material.BOOK, 0, name.colored(), location)
                                 sender.info("the location named \"${args[2]}\" successfully saved.")
                             } catch (ex: Exception) {
                                 sender.info("unable to save the location named \"${args[2]}")

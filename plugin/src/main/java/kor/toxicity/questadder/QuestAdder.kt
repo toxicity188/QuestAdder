@@ -16,7 +16,6 @@ import kor.toxicity.questadder.util.database.StandardDatabaseSupplier
 import kor.toxicity.questadder.util.gui.ButtonGui
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButton
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButtonType
-import kor.toxicity.questadder.util.variable.SerializeManager
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -73,6 +72,7 @@ class QuestAdder: JavaPlugin() {
 
         private val managerList = mutableListOf(
             ResourcePackManager,
+            NavigationManager,
             SlateManager,
             LocationManager,
             GuiManager,
@@ -98,6 +98,10 @@ class QuestAdder: JavaPlugin() {
             private set
         var playerGuiMaxIndex = 1
             private set
+        var defaultResourcePackItem = Material.ENDER_EYE
+            private set
+        var navigationGuiName: Component = Component.empty()
+            private set
         fun getPlayerGuiButton(type: PlayerGuiButtonType) = playerGuiButton[type]
         internal fun reload(section: ConfigurationSection) {
             defaultTypingSpeed = section.getLong("default-typing-speed",1L)
@@ -122,6 +126,16 @@ class QuestAdder: JavaPlugin() {
                     ComponentReader("quest"),
                     emptyMap()
                 )
+            }
+            section.getString("default-resource-pack-item")?.let {
+                try {
+                    defaultResourcePackItem = Material.valueOf(it.uppercase())
+                } catch (ex: Exception) {
+                    warn("not found error: unable to find material name \"$it\"")
+                }
+            }
+            section.getString("navigation-gui-name")?.let {
+                navigationGuiName = it.colored()
             }
             playerGuiButton.clear()
             section.getConfigurationSection("player-gui-layout")?.let {
@@ -241,6 +255,19 @@ class QuestAdder: JavaPlugin() {
             return
         }
         getCommand("questadder")?.setExecutor(command.createTabExecutor())
+        Bukkit.getPluginManager().getPlugin("PlaceholderAPI")?.let {
+            getResource("Expansion-questadder.patch")?.buffered()?.use { stream ->
+                try {
+                    File(File(it.dataFolder, "expansions").apply {
+                        mkdir()
+                    }, "Expansion.questadder.jar").outputStream().buffered().use {
+                        stream.copyTo(it)
+                    }
+                } catch (ex: Exception) {
+                    warn("unable to unzip QuestAdder's expansion")
+                }
+            }
+        }
         loadConfig()
         managerList.forEach {
             it.start(this)

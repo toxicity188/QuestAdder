@@ -23,7 +23,7 @@ object GuiManager: QuestAdderManager {
                     holder.data,
                     e.currentItem ?: return,
                     e.slot,
-                    clicked == e.whoClicked.inventory,
+                    e.inventory == e.whoClicked.inventory,
                     if (e.isLeftClick) {
                         if (e.isShiftClick) MouseButton.SHIFT_LEFT else MouseButton.LEFT
                     } else if (e.isRightClick) {

@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.util.event.type;
 
 import kor.toxicity.questadder.QuestAdder;
+import kor.toxicity.questadder.extension.ComponentsKt;
 import kor.toxicity.questadder.util.action.AbstractAction;
 import kor.toxicity.questadder.util.event.AbstractEvent;
 import kor.toxicity.questadder.util.reflect.DataField;
@@ -32,7 +33,7 @@ public class EventKill extends AbstractEvent<EntityDeathEvent> {
             if (type != null && event.getEntityType() != type) return;
             if (name != null) {
                 var component = entity.customName();
-                if (component != null && !LegacyComponentSerializer.legacySection().serialize(component).equals(name)) return;
+                if (component != null && !ComponentsKt.onlyText(component).equals(name)) return;
             }
             apply(killer);
         }

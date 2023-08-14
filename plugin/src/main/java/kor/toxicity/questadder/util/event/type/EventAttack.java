@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.util.event.type;
 
 import kor.toxicity.questadder.QuestAdder;
+import kor.toxicity.questadder.extension.ComponentsKt;
 import kor.toxicity.questadder.util.action.AbstractAction;
 import kor.toxicity.questadder.util.event.AbstractEvent;
 import kor.toxicity.questadder.util.reflect.DataField;
@@ -33,7 +34,7 @@ public class EventAttack extends AbstractEvent<EntityDamageByEntityEvent> {
             if (type != null && victim.getType() != type) return;
             if (name != null) {
                 var n = victim.customName();
-                if (n != null && !LegacyComponentSerializer.legacySection().serialize(n).equals(name)) return;
+                if (n != null && !ComponentsKt.onlyText(n).equals(name)) return;
             }
             apply(player);
         }

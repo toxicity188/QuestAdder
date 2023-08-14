@@ -145,7 +145,6 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
                     cancel()
                     started = false
                     task = QuestAdder.taskLater(20) {
-                        println(talkComponent.onlyText())
                         start()
                     }
                 }
@@ -320,21 +319,49 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
     private var lastAction: (DialogCurrent) -> Unit = {}
     private var talkTask = HashMap<Int,(DialogCurrent) -> Unit>()
 
+    /**
+     * Add the action be called when this index of talk starts.
+     *
+     * @param index the index of talk
+     * @param block the function be called.
+     * @since 1.0
+     */
+    fun addTalkAction(index: Int, block: (Player,ActualNPC) -> Unit) {
+        val act = talkTask[index] ?: {}
+        talkTask[index] = {
+            act(it)
+            block(it.player,it.npc)
+        }
+    }
+    /**
+     * Add the action be called when this dialog ends.
+     *
+     * @param block the function be called.
+     * @since 1.0
+     */
+    fun addLastAction(block: (Player,ActualNPC) -> Unit) {
+        val act = lastAction
+        lastAction = {
+            act(it)
+            block(it.player,it.npc)
+        }
+    }
+
+    private fun addTalkTask(i: Int, action: (DialogCurrent) -> Unit) {
+        val act = talkTask[i] ?: {}
+        talkTask[i] = {
+            act(it)
+            action(it)
+        }
+    }
+    private fun addLastAction(action: (DialogCurrent) -> Unit) {
+        val before = lastAction
+        lastAction = {
+            before(it)
+            action(it)
+        }
+    }
     init {
-        fun addTalkTask(i: Int, action: (DialogCurrent) -> Unit) {
-            val act = talkTask[i] ?: {}
-            talkTask[i] = {
-                act(it)
-                action(it)
-            }
-        }
-        fun addLastAction(action: (DialogCurrent) -> Unit) {
-            val before = lastAction
-            lastAction = {
-                before(it)
-                action(it)
-            }
-        }
         fun addPredicate(action: (DialogCurrent) -> Boolean) {
             val before = predicate
             predicate = {
