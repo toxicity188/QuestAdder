@@ -7,4 +7,5 @@ import org.bukkit.OfflinePlayer
 interface Database {
     fun load(adder: QuestAdder, player: OfflinePlayer): PlayerData
     fun save(adder: QuestAdder, player: OfflinePlayer, playerData: PlayerData): Boolean
+    fun close()
 }

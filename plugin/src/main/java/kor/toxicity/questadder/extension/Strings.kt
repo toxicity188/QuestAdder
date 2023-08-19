@@ -2,11 +2,7 @@ package kor.toxicity.questadder.extension
 
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.Null
-import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.TextComponent
-import net.kyori.adventure.text.format.Style
-import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import java.text.DecimalFormat
 import java.util.regex.Pattern
@@ -28,3 +24,11 @@ fun List<String>.colored() = map {
 fun Component.clear() = deepDecorations(EMPTY_DECORATION)
 fun Component.deepClear() = clear().deepColor(WHITE)
 fun Number.withComma(): String = DecimalFormat.getInstance().format(round(toDouble()).toInt())
+
+fun Int.parseChar(): String {
+    return if (this <= 0xFFFF) toChar().toString()
+    else {
+        val t = this - 0x10000
+        "${((t ushr 10) + 0xD800).toChar()}${((t and 1023) + 0xDC00).toChar()}"
+    }
+}

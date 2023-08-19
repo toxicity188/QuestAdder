@@ -7,9 +7,10 @@ import kor.toxicity.questadder.event.*
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.mechanic.Dialog
 import kor.toxicity.questadder.mechanic.QnA
-import kor.toxicity.questadder.mechanic.Quest
+import kor.toxicity.questadder.mechanic.quest.Quest
 import kor.toxicity.questadder.mechanic.npc.ActualNPC
 import kor.toxicity.questadder.mechanic.npc.QuestNPC
+import kor.toxicity.questadder.mechanic.quest.QuestState
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.action.RegistrableAction
 import kor.toxicity.questadder.util.builder.ActionBuilder
@@ -27,6 +28,7 @@ import net.citizensnpcs.api.event.NPCDespawnEvent
 import net.citizensnpcs.api.event.NPCSpawnEvent
 import net.citizensnpcs.api.npc.NPC
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.event.ClickEvent
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.configuration.ConfigurationSection
@@ -36,7 +38,9 @@ import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerCommandPreprocessEvent
+import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractAtEntityEvent
+import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
@@ -49,7 +53,7 @@ object DialogManager: QuestAdderManager {
 
     private val dialogMap = HashMap<String,Dialog>()
     private val actionMap = HashMap<String,RegistrableAction>()
-    private val questMap = HashMap<String,Quest>()
+    private val questMap = HashMap<String, Quest>()
     private val qnaMap = HashMap<String,QnA>()
 
     private val questNpcMap = HashMap<String, QuestNPC>()
@@ -60,11 +64,29 @@ object DialogManager: QuestAdderManager {
         "dialogs" to "example-dialog.yml"
     )
 
-    private val selectedDialogMap = ConcurrentHashMap<UUID,Quest>()
+    private val selectedQuestMap = ConcurrentHashMap<UUID, Quest>()
 
-    fun getSelectedQuest(player: Player) = selectedDialogMap[player.uniqueId]
+    fun getSelectedQuest(player: Player) = selectedQuestMap[player.uniqueId]
 
     override fun start(adder: QuestAdder) {
+
+        /* QuestAdder.asyncTaskTimer(36000, 36000) {
+            Bukkit.broadcast(" [!] ".asClearComponent().color(YELLOW).append("This server is using toxicity's QuestAdder!".asComponent().color(
+                WHITE)))
+            Bukkit.broadcast(" [!] ".asClearComponent().color(YELLOW).append("Download: https://discord.gg/rePyFESDbk".asClearComponent().clickEvent(
+                ClickEvent.clickEvent(ClickEvent.Action.OPEN_URL,"https://discord.gg/rePyFESDbk")).color(WHITE)))
+        }
+        Bukkit.getPluginManager().registerEvents(object : Listener {
+            @EventHandler
+            fun join(e: PlayerJoinEvent) {
+                QuestAdder.taskLater(60) {
+                    e.player.sendMessage(" [!] ".asClearComponent().color(YELLOW).append("This server is using toxicity's QuestAdder!".asComponent().color(WHITE)))
+                    e.player.sendMessage(" [!] ".asClearComponent().color(YELLOW).append("Download: https://discord.gg/rePyFESDbk".asClearComponent().clickEvent(
+                        ClickEvent.clickEvent(ClickEvent.Action.OPEN_URL,"https://discord.gg/rePyFESDbk")).color(WHITE)))
+                }
+            }
+        },adder) */
+
         Bukkit.getPluginManager().registerEvents(object : Listener {
             @EventHandler
             fun quit(e: PlayerQuitEvent) {
@@ -73,7 +95,7 @@ object DialogManager: QuestAdderManager {
                 actionMap.values.forEach {
                     it.cancel(player)
                 }
-                selectedDialogMap.remove(player.uniqueId)
+                selectedQuestMap.remove(player.uniqueId)
             }
             @EventHandler
             fun death(e: PlayerDeathEvent) {
@@ -88,7 +110,20 @@ object DialogManager: QuestAdderManager {
             fun preProcess(e: PlayerCommandPreprocessEvent) {
                 if (Dialog.isRunning(e.player)) e.isCancelled = true
             }
-
+            @EventHandler
+            fun drop(e: PlayerDropItemEvent) {
+                if (Dialog.isRunning(e.player)) e.isCancelled = true
+            }
+            @EventHandler
+            fun complete(e: QuestCompleteEvent) {
+                val uuid = e.player.uniqueId
+                if (selectedQuestMap[uuid] == e.quest) selectedQuestMap.remove(uuid)
+            }
+            @EventHandler
+            fun remove(e: QuestRemoveEvent) {
+                val uuid = e.player.uniqueId
+                if (selectedQuestMap[uuid] == e.quest) selectedQuestMap.remove(uuid)
+            }
             @EventHandler
             fun click(e: PlayerInteractAtEntityEvent) {
                 val uuid = e.rightClicked.uniqueId
@@ -97,7 +132,7 @@ object DialogManager: QuestAdderManager {
                     val questNpc = it.questNPC
                     QuestAdder.getPlayerData(player)?.let { data ->
                         if (questNpc.dialogs.isNotEmpty()) {
-                            val dialog = questNpc.dialogs[(data.npcIndexes.getOrPut(it.questNPC.name) {
+                            val dialog = questNpc.dialogs[(data.npcIndexes.getOrPut(it.questNPC.key) {
                                 0
                             }).coerceAtLeast(0).coerceAtMost(questNpc.dialogs.lastIndex)]
                             if (!TalkStartEvent(player,dialog,it).apply {
@@ -166,8 +201,8 @@ object DialogManager: QuestAdderManager {
                 if (playerData != null) {
                     var index = 0
                     var typeIndex = 0
-                    val originalQuestData = playerData.getQuestKey().mapNotNull {
-                        questMap[it]
+                    val originalQuestData = playerData.questVariables.mapNotNull {
+                        if (it.value.state == QuestState.HAS) questMap[it.key] else null
                     }.toMutableList()
                     val types = TreeSet<String>().apply {
                         for (originalQuestDatum in originalQuestData) {
@@ -243,8 +278,10 @@ object DialogManager: QuestAdderManager {
                                         }
                                     }
                                     MouseButton.RIGHT -> {
-                                        selectedDialogMap[player.uniqueId] = quest
-                                        QuestSelectEvent(quest,player).callEvent()
+                                        if (selectedQuestMap.remove(player.uniqueId) == null) {
+                                            selectedQuestMap[player.uniqueId] = quest
+                                            QuestSelectEvent(quest, player).callEvent()
+                                        }
                                     }
                                     MouseButton.SHIFT_LEFT -> {
                                         if (quest.cancellable) {
@@ -348,33 +385,7 @@ object DialogManager: QuestAdderManager {
         }
     }
 
-    private val actionReader: (QuestAdder,File,String,ConfigurationSection) -> Unit = { adder, file, key, c ->
-        ActionBuilder.build(adder,c)?.let { build ->
-            actionMap[key] = build
-        } ?: QuestAdder.warn("unable to load action. ($key in ${file.name})")
-    }
-    private val dialogReader: (QuestAdder,File,String,ConfigurationSection) -> Unit = { adder, file, key, c ->
-        dialogMap[key] = Dialog(adder,file,key,c)
-    }
-    private val qnaReader: (QuestAdder,File,String,ConfigurationSection) -> Unit = { adder, file, key, c ->
-        qnaMap[key] = QnA(adder,file,key,c)
-    }
-    private val questReader: (QuestAdder,File,String,ConfigurationSection) -> Unit = { adder, file, key, c ->
-        try {
-            questMap[key] = Quest(adder, file, key, c)
-        } catch (ex: Exception) {
-            QuestAdder.warn("unable to load quest. (${file.name})")
-            QuestAdder.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
-        }
-    }
-    private val npcReader: (QuestAdder,File,String,ConfigurationSection) -> Unit = { adder, file, key, c ->
-        try {
-            questNpcMap[key] = QuestNPC(adder, file, key, c)
-        } catch (ex: Exception) {
-            QuestAdder.warn("unable to load NPC. ($key in ${file.name})")
-            QuestAdder.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
-        }
-    }
+
     override fun reload(adder: QuestAdder) {
         dialogReload(adder)
     }
@@ -385,6 +396,41 @@ object DialogManager: QuestAdderManager {
     fun getQnA(name: String) = qnaMap[name]
 
     private fun dialogReload(adder: QuestAdder) {
+        val actionReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
+            ActionBuilder.build(adder,c)?.let { build ->
+                actionMap[key] = build
+            } ?: QuestAdder.warn("unable to load action. ($key in ${file.name})")
+        }
+        val dialogReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
+            try {
+                //if (dialogMap.size >= 50) throw RuntimeException("this is a demo version!")
+                dialogMap[key] = Dialog(adder,file,key,c)
+            } catch (ex: Exception) {
+                QuestAdder.warn("unable to load dialog. (${file.name})")
+                QuestAdder.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
+            }
+        }
+        val qnaReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
+            qnaMap[key] = QnA(adder,file,key,c)
+        }
+        val questReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
+            try {
+                //if (questMap.size >= 10) throw RuntimeException("this is a demo version!")
+                questMap[key] = Quest(adder, file, key, c)
+            } catch (ex: Exception) {
+                QuestAdder.warn("unable to load quest. (${file.name})")
+                QuestAdder.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
+            }
+        }
+        val npcReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
+            try {
+                //if (questNpcMap.size >= 5) throw RuntimeException("this is a demo version!")
+                questNpcMap[key] = QuestNPC(adder, file, key, c)
+            } catch (ex: Exception) {
+                QuestAdder.warn("unable to load NPC. ($key in ${file.name})")
+                QuestAdder.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
+            }
+        }
 
         exampleMap.forEach {
             val file = File(File(adder.dataFolder, it.key).apply {
@@ -406,6 +452,9 @@ object DialogManager: QuestAdderManager {
         }
 
         AbstractEvent.unregisterAll()
+        actualNPCMap.values.forEach {
+            it.cancel()
+        }
         actionMap.values.forEach {
             it.unregister()
         }
@@ -417,20 +466,20 @@ object DialogManager: QuestAdderManager {
         questNpcMap.clear()
         actualNPCMap.clear()
 
-        fun loadConfig(name: String, reader: (QuestAdder,File,String,ConfigurationSection) -> Unit) {
+        fun loadConfig(name: String, reader: (File,String,ConfigurationSection) -> Unit) {
             adder.loadFolder(name) { file, config ->
                 config.getKeys(false).forEach {
                     config.getConfigurationSection(it)?.let { c ->
                         c.findString("Class","class")?.let { clazz ->
                             when (clazz.lowercase()) {
-                                "dialog" -> dialogReader(adder,file,it,c)
-                                "quest" -> questReader(adder,file,it,c)
-                                "action" -> actionReader(adder,file,it,c)
-                                "npc" -> npcReader(adder,file,it,c)
-                                "qna" -> qnaReader(adder,file,it,c)
-                                else -> reader(adder,file,it,c)
+                                "dialog" -> dialogReader(file,it,c)
+                                "quest" -> questReader(file,it,c)
+                                "action" -> actionReader(file,it,c)
+                                "npc" -> npcReader(file,it,c)
+                                "qna" -> qnaReader(file,it,c)
+                                else -> reader(file,it,c)
                             }
-                        } ?: reader(adder,file,it,c)
+                        } ?: reader(file,it,c)
                     } ?: QuestAdder.warn("syntax error: the key '$it' is not a configuration section. (${file.name})")
                 }
             }
@@ -452,7 +501,7 @@ object DialogManager: QuestAdderManager {
             send("${qnaMap.size} of QnAs has successfully loaded.")
             send("${actionMap.size} of NPCs successfully loaded.")
         }
-        val iterator = selectedDialogMap.iterator()
+        val iterator = selectedQuestMap.iterator()
         while (iterator.hasNext()) {
             val entry = iterator.next()
             val quest = questMap[entry.value.key]

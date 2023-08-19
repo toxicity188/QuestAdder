@@ -5,6 +5,7 @@ import kor.toxicity.questadder.event.*
 import kor.toxicity.questadder.extension.storage
 import kor.toxicity.questadder.extension.totalAmount
 import kor.toxicity.questadder.manager.ItemManager
+import kor.toxicity.questadder.mechanic.npc.QuestNPC
 import kor.toxicity.questadder.util.HashedClass
 import kor.toxicity.questadder.util.Null
 import kor.toxicity.questadder.util.function.ArgumentFunction
@@ -188,10 +189,13 @@ object FunctionBuilder {
             QuestAdder.getPlayerData(args[0] as Player)?.get(args[1] as String).toString().toBoolean()
         }
         addFunction("itemOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
-            QuestAdder.getPlayerData(args[0] as Player)?.get(args[1] as String) as? ItemStack ?: Null
+            QuestAdder.getPlayerData(args[0] as Player)?.get(args[1] as String) as? ItemStack
         }
         addFunction("random", listOf(Number::class.java, Number::class.java)) { _: Null, args ->
             ThreadLocalRandom.current().nextDouble((args[0] as Number).toDouble(), (args[1] as Number).toDouble())
+        }
+        addFunction("index", listOf(QuestNPC::class.java, Player::class.java)) { _: Null, args ->
+            (args[0] as QuestNPC).getIndex(args[1] as Player)
         }
         addFunction("player") { e: QuestAdderPlayerEvent, _ ->
             e.player
@@ -203,7 +207,7 @@ object FunctionBuilder {
             e.dialog
         }
         addFunction("npc") { e: NPCEvent, _ ->
-            e.npc
+            e.npc.questNPC
         }
         addFunction("location") { e: LocationEvent, _ ->
             e.namedLocation
@@ -232,6 +236,12 @@ object FunctionBuilder {
         }
         addFunction("storage", listOf(Player::class.java,ItemStack::class.java)) { _: Null, args ->
             (args[0] as Player).storage(args[1] as ItemStack)
+        }
+        addFunction("weather", listOf(Player::class.java)) { _: Null, args ->
+            val world = (args[0] as Player).world
+            if (world.isThundering) "thunder"
+            else if (world.hasStorm()) "storm"
+            else "clear"
         }
         addFunction("health", listOf(Player::class.java)) { _: Null, args ->
             (args[0] as Player).health

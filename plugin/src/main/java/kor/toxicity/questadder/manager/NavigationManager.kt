@@ -10,6 +10,7 @@ import kor.toxicity.questadder.nms.VirtualEntity
 import kor.toxicity.questadder.nms.VirtualItemDisplay
 import kor.toxicity.questadder.nms.VirtualTextDisplay
 import kor.toxicity.questadder.util.NamedLocation
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -53,7 +54,9 @@ object NavigationManager: QuestAdderManager {
         private val display: VirtualEntity = try {
             QuestAdder.nms.createItemDisplay(player,initialLocation)
         } catch (ex: Exception) {
-            QuestAdder.nms.createArmorStand(player,initialLocation)
+            QuestAdder.nms.createArmorStand(player,initialLocation).apply {
+                setText(Component.empty())
+            }
         }.apply {
             setItem(ItemStack(QuestAdder.Config.defaultResourcePackItem).apply {
                 itemMeta = itemMeta?.apply {

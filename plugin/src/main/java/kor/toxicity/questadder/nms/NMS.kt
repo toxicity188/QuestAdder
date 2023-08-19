@@ -13,4 +13,5 @@ interface NMS {
     fun createTextDisplay(player: Player, location: Location): VirtualTextDisplay
     fun createCommand(name: String, executor: CommandExecutor): RuntimeCommand
     fun sendAdvancementMessage(player: Player, itemStack: ItemStack, component: Component)
+    fun getVersion(): NMSVersion
 }

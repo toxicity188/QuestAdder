@@ -5,6 +5,7 @@ import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 
 val GREEN: TextColor = NamedTextColor.GREEN
 val GRAY: TextColor = NamedTextColor.GRAY
@@ -38,13 +39,5 @@ fun Component.deepColor(color: TextColor?): Component {
 }
 
 fun Component.onlyText(): String {
-    val builder = StringBuilder()
-    fun append(component: Component) {
-        for (child in component.children()) {
-            append(child)
-        }
-        if (component is TextComponent) builder.append(component.content())
-    }
-    append(this)
-    return builder.toString()
+    return PlainTextComponentSerializer.plainText().serialize(this)
 }

@@ -41,3 +41,15 @@ quest_complete:
   action:
     - sound{n=ui.toast.challenge_complete}
     - title{t="<gradient:yellow-green><decoration:bold,italic>Quest Complete!",st="<color:green><decoration:bold,italic>%comma(exp())% Exp <color:gray>- <color:gold><decoration:bold,italic>%comma(money())% Gold"}
+
+quest_surrender:
+  event:
+    - questsurrender
+  action:
+    - message{m=" <color:gold><decoration:bold>[!] <color:white>quest surrender - <color:yellow>%quest()%"}
+
+quest_surrender_fail:
+  event:
+    - questsurrenderfail
+  action:
+    - message{m=" <color:gold><decoration:bold>[!] <color:white>this quest is unsurrenderable - <color:yellow>%quest()%"}

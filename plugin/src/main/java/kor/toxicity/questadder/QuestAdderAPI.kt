@@ -14,8 +14,8 @@ object QuestAdderAPI {
      * Set the item database of QuestAdder.
      * @since 1.0
      */
-    fun changeItemDatabase(itemDatabase: ItemDatabase) {
-        ItemManager.itemDatabase = itemDatabase
+    fun addItemDatabase(itemDatabase: ItemDatabase) {
+        ItemManager.addItemDatabase(itemDatabase)
     }
 
     /**

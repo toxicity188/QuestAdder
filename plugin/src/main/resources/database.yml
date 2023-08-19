@@ -1,3 +1,8 @@
+#yml, mysql
 using: yml
 
-info: {}
+info: #mysql
+  host: localhost
+  database: questadder
+  name: root
+  password: write your password here!

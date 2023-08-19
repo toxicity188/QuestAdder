@@ -2,6 +2,9 @@ package kor.toxicity.questadder.extension
 
 import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.manager.ItemManager
+import kor.toxicity.questadder.manager.ResourcePackManager
+import kor.toxicity.questadder.util.ResourcePackData
+import kor.toxicity.questadder.util.SoundData
 import org.bukkit.Material
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
@@ -34,11 +37,16 @@ fun ConfigurationSection.findInt(defaultValue: Int = 0, vararg string: String) =
     val i = getInt(it)
     if (i == 0) null else i
 } ?: defaultValue
+fun ConfigurationSection.findLong(defaultValue: Long = 0, vararg string: String) = string.firstNotNullOfOrNull {
+    val i = getLong(it)
+    if (i == 0L) null else i
+} ?: defaultValue
 fun ConfigurationSection.findDouble(defaultValue: Double = 0.0, vararg string: String) = string.firstNotNullOfOrNull {
     val i = getDouble(it)
     if (i == 0.0) null else i
 } ?: defaultValue
 
+fun ConfigurationSection.getAsSoundData(key: String) = if (isString(key)) SoundData.fromString(getString(key)!!) else if (isConfigurationSection(key)) SoundData.fromConfig(getConfigurationSection(key)!!) else null
 
 fun ConfigurationSection.getAsStringList(key: String): List<String>? = if (isList(key)) getStringList(key) else if (isString(key)) listOf(getString(key)!!) else null
 
@@ -46,42 +54,53 @@ fun ConfigurationSection.findItemStack(vararg string: String) = string.firstNotN
     getAsItemStack(it)
 }
 fun ConfigurationSection.getAsItemStack(key: String): ItemStack? = if (isItemStack(key)) getItemStack(key) else if (isConfigurationSection(key)) getConfigurationSection(key)!!.run {
-    ItemStack(try {
-        Material.valueOf(getString("type")?.uppercase() ?: "APPLE")
+    (try {
+        Material.valueOf(findString("Type","type")?.uppercase() ?: "APPLE")
     } catch (ex: Exception) {
         Material.APPLE
-    }).apply {
-        itemMeta = itemMeta?.apply {
-            setCustomModelData(getInt("data"))
-            getString("display")?.run {
-                displayName(colored())
-            }
-            getAsStringList("lore")?.run {
-                lore(colored())
-            }
-            isUnbreakable = getBoolean("unbreakable",true)
-            ItemFlag.values().forEach {
-                addItemFlags(it)
-            }
-            getAsStringList("attributes")?.forEach {
-                val split = it.split(' ')
-                if (split.size == 4) {
-                    try {
-                        addAttributeModifier(
-                            Attribute.valueOf(split[0].uppercase().replace('.','_')), AttributeModifier(
-                                ATTRIBUTE_UUID,
-                                ATTRIBUTE_NAME,
-                                split[1].toDouble(),
-                                AttributeModifier.Operation.valueOf(split[2].uppercase()),
-                                EquipmentSlot.valueOf(split[3].uppercase())
+    }).let { material ->
+        ItemStack(material).apply {
+            itemMeta = itemMeta?.apply {
+                setCustomModelData(findInt(0,"CustomModelData","custom-model-data","Data","data"))
+                findString("Display","display")?.run {
+                    displayName(colored())
+                }
+                findStringList("Lore","lore")?.run {
+                    lore(colored())
+                }
+                isUnbreakable = findBoolean("Unbreakable","unbreakable")
+                ItemFlag.values().forEach {
+                    addItemFlags(it)
+                }
+                findStringList("Attributes","attributes")?.forEach {
+                    val split = it.split(' ')
+                    if (split.size == 4) {
+                        try {
+                            addAttributeModifier(
+                                Attribute.valueOf(split[0].uppercase().replace('.','_')), AttributeModifier(
+                                    ATTRIBUTE_UUID,
+                                    ATTRIBUTE_NAME,
+                                    split[1].toDouble(),
+                                    AttributeModifier.Operation.valueOf(split[2].uppercase()),
+                                    EquipmentSlot.valueOf(split[3].uppercase())
+                                )
                             )
-                        )
-                    } catch (ex: Exception) {
-                        QuestAdder.warn("다음 Attribute를 읽을 수 없습니다: $it")
+                        } catch (ex: Exception) {
+                            QuestAdder.warn("다음 Attribute를 읽을 수 없습니다: $it")
+                        }
+                    }
+                }
+                findConfig("Icon","icon")?.let {
+                    it.findString("Asset","asset")?.let { asset ->
+                        ResourcePackManager.addData(ResourcePackData(material,asset) {
+                            itemMeta = itemMeta?.apply {
+                                setCustomModelData(it)
+                            }
+                        })
                     }
                 }
             }
-        }
+    }
     }
 } else if (isString(key)) getString(key)!!.let {
     val matcher = ITEM_PATTERN.matcher(it)

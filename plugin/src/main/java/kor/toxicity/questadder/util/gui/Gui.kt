@@ -1,5 +1,6 @@
 package kor.toxicity.questadder.util.gui
 
+import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.extension.*
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -19,7 +20,8 @@ class Gui(size: Int, val name: Component, val items: Map<Int,ItemStack>) {
                 getKeys(false).forEach {
                     getAsItemStack(it)?.let { itemStack ->
                         put(it.toInt(),itemStack)
-                    }  ?: throw RuntimeException("the key \"$it\" is not an item.")
+                        Unit
+                    } ?: throw RuntimeException("the key \"$it\" is not an item.")
                 }
             }
         }

@@ -1,7 +1,6 @@
 package kor.toxicity.questadder.manager
 
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.mechanic.Quest
 import kor.toxicity.questadder.util.gui.Gui
 import kor.toxicity.questadder.util.gui.MouseButton
 import org.bukkit.Bukkit

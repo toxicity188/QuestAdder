@@ -1,12 +1,15 @@
 package kor.toxicity.questadder.data
 
 import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.mechanic.quest.QuestState
 import kor.toxicity.questadder.util.Null
 import kor.toxicity.questadder.util.variable.SerializeManager
+import java.time.LocalDateTime
+import java.util.concurrent.ConcurrentHashMap
 
 class PlayerData {
     private val variables = HashMap<String,Any>()
-    private val questVariables = HashMap<String,MutableMap<String,Long>>()
+    val questVariables: MutableMap<String,QuestData> = ConcurrentHashMap()
     val npcIndexes = HashMap<String,Int>()
 
     fun saveVariables() = ArrayList<Triple<String,String,String>>().apply {
@@ -27,24 +30,6 @@ class PlayerData {
             }
         }
     }
-    fun saveQuest() = HashMap<String,List<Pair<String,Long>>>().apply {
-        questVariables.forEach {
-            put(it.key,ArrayList<Pair<String, Long>>().apply {
-                for (mutableEntry in it.value) {
-                    add(mutableEntry.key to mutableEntry.value)
-                }
-            })
-        }
-    }
-    fun loadQuest(map: Map<String,List<Pair<String,Long>>>) {
-        map.forEach {
-            questVariables[it.key] = HashMap<String, Long>().apply {
-                it.value.forEach { p ->
-                    put(p.first,p.second)
-                }
-            }
-        }
-    }
 
     fun get(name: String) = variables[name] ?: Null
     fun set(name: String, any: Any) {
@@ -55,13 +40,16 @@ class PlayerData {
     }
     fun remove(name: String) = variables.remove(name) != null
 
-    fun getQuestVariable(quest: String, name: String) = questVariables[quest]?.get(name)
-    fun setQuestVariable(quest: String, name: String, long: Long) = questVariables[quest]?.put(name,long)
+    fun getQuestVariable(quest: String, name: String) = questVariables[quest]?.variable?.get(name)
+    fun setQuestVariable(quest: String, name: String, long: Long) = questVariables[quest]?.variable?.put(name,long)
     fun giveQuest(quest: String) {
-        questVariables[quest] = HashMap()
+        questVariables[quest] = QuestData(LocalDateTime.now(),QuestState.HAS,HashMap())
     }
-    fun hasQuest(quest: String) = questVariables.containsKey(quest)
+    fun hasQuest(quest: String) = questVariables[quest]?.state == QuestState.HAS
     fun removeQuest(quest: String) = questVariables.remove(quest)
+    fun completeQuest(quest: String) {
+        questVariables[quest]?.state = QuestState.COMPLETE
+    }
 
     fun getQuestKey() = questVariables.keys
 

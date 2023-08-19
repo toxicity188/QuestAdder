@@ -1,3 +1,0 @@
-#types: default, items_adder, oraxen, custom
-#To use custom item database, you muse set this value to "custom"
-using: default

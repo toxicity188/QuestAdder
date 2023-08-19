@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.item
 
 import dev.lone.itemsadder.api.CustomStack
+import dev.lone.itemsadder.api.ItemsAdder
 import org.bukkit.inventory.ItemStack
 
 class ItemsAdderItemDataBase: ItemDatabase {
@@ -9,7 +10,15 @@ class ItemsAdderItemDataBase: ItemDatabase {
     }
 
     override fun getKeys(): Collection<String> {
-        return CustomStack.getNamespacedIdsInRegistry()
+        return ItemsAdder.getAllItems()?.map {
+            it.id
+        } ?: emptyList()
+    }
+
+    override fun getItems(): Collection<ItemPair> {
+        return ItemsAdder.getAllItems()?.map {
+            ItemPair(it.id,it.itemStack)
+        } ?: emptyList()
     }
 
     override fun reload() {

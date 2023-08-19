@@ -2,12 +2,15 @@ package kor.toxicity.questadder.nms.v1_19_R3
 
 import com.mojang.datafixers.util.Pair
 import com.mojang.math.Transformation
+import eu.endercentral.crazy_advancements.JSONMessage
 import eu.endercentral.crazy_advancements.advancement.AdvancementDisplay
 import eu.endercentral.crazy_advancements.advancement.ToastNotification
 import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.nms.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+import net.minecraft.network.chat.IChatBaseComponent
 import net.minecraft.network.protocol.game.*
 import net.minecraft.server.network.PlayerConnection
 import net.minecraft.world.entity.Display
@@ -22,8 +25,10 @@ import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.craftbukkit.v1_19_R3.CraftServer
 import org.bukkit.craftbukkit.v1_19_R3.CraftWorld
+import org.bukkit.craftbukkit.v1_19_R3.entity.CraftArmorStand
 import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer
 import org.bukkit.craftbukkit.v1_19_R3.inventory.CraftItemStack
+import org.bukkit.craftbukkit.v1_19_R3.util.CraftChatMessage
 import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
@@ -38,11 +43,18 @@ class NMSImpl: NMS {
             a(ClientboundPlayerInfoRemovePacket(listOf(target.uniqueId)))
         }
     }
-
     override fun sendAdvancementMessage(player: Player, itemStack: ItemStack, component: Component) {
         ToastNotification(
             itemStack,
-            GsonComponentSerializer.gson().serialize(component),
+            object : JSONMessage(null) {
+                override fun getBaseComponent(): IChatBaseComponent {
+                    return CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(component))
+                }
+
+                override fun toString(): String {
+                    return PlainTextComponentSerializer.plainText().serialize(component)
+                }
+            },
             AdvancementDisplay.AdvancementFrame.GOAL
         ).send(player)
     }
@@ -89,6 +101,9 @@ class NMSImpl: NMS {
         j(true)
         n(true)
     }), VirtualArmorStand {
+        init {
+            connection.a(PacketPlayOutEntityMetadata(entity.af(),entity.aj().c()))
+        }
         override fun setText(text: Component) {
             (entity.bukkitEntity as ArmorStand).customName(text)
             connection.a(PacketPlayOutEntityMetadata(entity.af(),entity.aj().c()))
@@ -124,5 +139,8 @@ class NMSImpl: NMS {
             (entity.bukkitEntity as TextDisplay).text(text)
             connection.a(PacketPlayOutEntityMetadata(entity.af(),entity.aj().c()))
         }
+    }
+    override fun getVersion(): NMSVersion {
+        return NMSVersion.V1_19_R3
     }
 }

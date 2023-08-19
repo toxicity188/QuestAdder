@@ -119,6 +119,7 @@ shadowJar {
     relocate("org.apache.commons.io","kor.toxicity.questadder.shaded.org.apache.commons.io")
     relocate("net.objecthunter","kor.toxicity.questadder.shaded.net.objecthunter")
     relocate("org.zeroturnaround","kor.toxicity.questadder.shaded.org.zeroturnaround")
+    relocate("org.bstats","kor.toxicity.questadder.shaded.org.bstats")
     dependencies {
         exclude(dependency("org.jetbrains:annotations:13.0"))
     }

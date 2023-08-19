@@ -10,13 +10,17 @@ import kor.toxicity.questadder.event.UserDataLoadEvent
 import kor.toxicity.questadder.event.UserDataAutoSaveEvent
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.*
+import kor.toxicity.questadder.mechanic.quest.QuestState
 import kor.toxicity.questadder.nms.NMS
 import kor.toxicity.questadder.util.ComponentReader
+import kor.toxicity.questadder.util.SoundData
+import kor.toxicity.questadder.util.TimeFormat
 import kor.toxicity.questadder.util.database.StandardDatabaseSupplier
 import kor.toxicity.questadder.util.gui.ButtonGui
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButton
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButtonType
 import net.kyori.adventure.text.Component
+import org.bstats.bukkit.Metrics
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.configuration.ConfigurationSection
@@ -29,6 +33,8 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.util.EnumMap
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -51,24 +57,12 @@ class QuestAdder: JavaPlugin() {
         fun task(action: () -> Unit) = Bukkit.getScheduler().runTask(plugin,action)
         fun asyncTask(action: () -> Unit) = Bukkit.getScheduler().runTaskAsynchronously(plugin,action)
         fun taskLater(delay: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskLater(plugin,action,delay)
-        fun asyncTaskLater(delay: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskLaterAsynchronously(plugin,action,delay)
         fun taskTimer(delay: Long, period: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskTimer(plugin,action,delay,period)
         fun asyncTaskTimer(delay: Long, period: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin,action,delay,period)
 
         fun getPlayerData(player: Player) = playerThreadMap[player.uniqueId]?.data
         fun reload(callback: (Long) -> Unit) = plugin.reload(callback)
         fun reloadSync() = plugin.reloadSync()
-
-        fun addPlayerVariable(player: Player, name: String, value: Any) {
-            playerThreadMap[player.uniqueId]?.run {
-                data.set(name,value)
-            }
-        }
-        fun removePlayerVariable(player: Player, name: String) {
-            playerThreadMap[player.uniqueId]?.run {
-                data.remove(name)
-            }
-        }
 
         private val managerList = mutableListOf(
             ResourcePackManager,
@@ -101,6 +95,12 @@ class QuestAdder: JavaPlugin() {
         var defaultResourcePackItem = Material.ENDER_EYE
             private set
         var navigationGuiName: Component = Component.empty()
+            private set
+        var defaultTypingSound = SoundData("block.stone_button.click_on",1.0F,0.7F)
+            private set
+        var timeFormat = TimeFormat(MemoryConfiguration())
+            private set
+        var questSuffix = listOf<Component>()
             private set
         fun getPlayerGuiButton(type: PlayerGuiButtonType) = playerGuiButton[type]
         internal fun reload(section: ConfigurationSection) {
@@ -152,6 +152,17 @@ class QuestAdder: JavaPlugin() {
                 playerGuiStartIndex = it.getInt("start-index").coerceAtLeast(0).coerceAtMost(5)
                 playerGuiMaxIndex = it.getInt("max-index").coerceAtLeast(1).coerceAtMost(6 - playerGuiStartIndex)
             }
+            section.getAsSoundData("default-typing-sound")?.let {
+                defaultTypingSound = it
+            }
+            section.getConfigurationSection("time-format")?.let {
+                timeFormat = TimeFormat(it)
+            }
+            section.getAsStringList("quest-suffix")?.let {
+                questSuffix = it.map { s ->
+                    s.colored()
+                }
+            }
         }
     }
     object Prefix {
@@ -171,6 +182,8 @@ class QuestAdder: JavaPlugin() {
         var rewardLore: Component = Component.empty()
             private set
         var recommend: Component = Component.empty()
+            private set
+        var left: Component = Component.empty()
             private set
         internal fun reload(section: ConfigurationSection) {
             section.getString("plugin")?.let { p ->
@@ -197,6 +210,9 @@ class QuestAdder: JavaPlugin() {
             section.getString("reward-lore")?.let { c ->
                 rewardLore = c.colored()
             }
+            section.getString("left")?.let { c ->
+                left = c.colored()
+            }
         }
     }
     object Suffix {
@@ -220,7 +236,9 @@ class QuestAdder: JavaPlugin() {
             val info = section.getConfigurationSection("info") ?: return
             section.getString("using")?.let { s ->
                 try {
-                    using = StandardDatabaseSupplier.valueOf(s.uppercase()).supply(info)
+                    val newDatabase = StandardDatabaseSupplier.valueOf(s.uppercase()).supply(info)
+                    using.close()
+                    using = newDatabase
                 } catch (ex: Exception) {
                     ex.printStackTrace()
                     warn("unable to load the database.")
@@ -268,7 +286,7 @@ class QuestAdder: JavaPlugin() {
                 }
             }
         }
-        loadConfig()
+        loadDatabase()
         managerList.forEach {
             it.start(this)
         }
@@ -291,6 +309,7 @@ class QuestAdder: JavaPlugin() {
                 }
             }
         },this)
+        Metrics(this,19565)
         load()
         send("plugin enabled.")
     }
@@ -311,8 +330,17 @@ class QuestAdder: JavaPlugin() {
         lazyTaskCache.add(action)
     }
     private fun load() {
+        loadFile("prefix")?.let { prefix ->
+            Prefix.reload(prefix)
+        }
+        loadFile("suffix")?.let { suffix ->
+            Suffix.reload(suffix)
+        }
         managerList.forEach {
             it.reload(this)
+        }
+        loadFile("config")?.let { config ->
+            Config.reload(config)
         }
         var task: (() -> Unit)?
         do {
@@ -322,28 +350,19 @@ class QuestAdder: JavaPlugin() {
         } while (task != null)
     }
     private fun reloadSync() {
-        reloadConfig()
+        loadDatabase()
         load()
     }
-    private fun loadConfig() {
-        loadFile("config")?.let { config ->
-            Config.reload(config)
-        }
-        loadFile("prefix")?.let { prefix ->
-            Prefix.reload(prefix)
-        }
+    private fun loadDatabase() {
         loadFile("database")?.let { database ->
             DB.reload(database)
-        }
-        loadFile("suffix")?.let { suffix ->
-            Suffix.reload(suffix)
         }
     }
     private fun reload(callback: (Long) -> Unit) {
         ReloadStartEvent().callEvent()
         asyncTask {
             var time = System.currentTimeMillis()
-            loadConfig()
+            loadDatabase()
             load()
             time = System.currentTimeMillis() - time
             task {
@@ -371,7 +390,7 @@ class QuestAdder: JavaPlugin() {
             }
         }
     }
-    fun loadFile(fileName: String) = try {
+    private fun loadFile(fileName: String) = try {
         YamlConfiguration().apply {
             load(File(dataFolder.apply {
                 mkdir()
@@ -393,6 +412,12 @@ class QuestAdder: JavaPlugin() {
                 UserDataAutoSaveEvent(player, data).callEvent()
             }
         }
+        private val remove = asyncTaskTimer(60 * 20, 60 * 20) {
+            data.questVariables.entries.removeIf {
+                val quest = DialogManager.getQuest(it.key)
+                quest != null && quest.left > 0 && it.value.state == QuestState.HAS && ChronoUnit.MINUTES.between(it.value.time,LocalDateTime.now()) > quest.left
+            }
+        }
         init {
             task {
                 UserDataLoadEvent(player,data).callEvent()
@@ -403,6 +428,7 @@ class QuestAdder: JavaPlugin() {
         }
         fun cancel() {
             task.cancel()
+            remove.cancel()
         }
     }
 }

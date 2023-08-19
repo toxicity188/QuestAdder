@@ -10,6 +10,8 @@ import kor.toxicity.questadder.util.gui.Gui
 import kor.toxicity.questadder.util.gui.GuiData
 import kor.toxicity.questadder.util.gui.GuiExecutor
 import kor.toxicity.questadder.util.gui.MouseButton
+import net.kyori.adventure.text.Component
+import org.bukkit.Material
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -40,12 +42,15 @@ class QnA(adder: QuestAdder, file: File, key: String, section: ConfigurationSect
         }
     }
 
-    fun open(player: Player, event: DialogStartEvent, holder: Gui.GuiHolder?) {
+    fun open(player: Player, event: DialogStartEvent, guiName: Component, talker: Component, talk: Component?) {
 
-        createInventory(name ?: holder?.data?.gui?.name ?: "qna".asComponent(),size,HashMap<Int, ItemStack>().apply {
-            holder?.inventory?.getItem(22)?.let {
-                put(center, it)
-            }
+        createInventory(guiName,size,HashMap<Int, ItemStack>().apply {
+            if (talk != null) put(center, ItemStack(Material.ENCHANTED_BOOK).apply {
+                itemMeta = itemMeta?.apply {
+                    displayName(talker.append(":".asClearComponent()))
+                    lore(listOf(talk))
+                }
+            })
             qnaItemMap.forEach {
                 put(it.key,it.value.item.write(event))
             }

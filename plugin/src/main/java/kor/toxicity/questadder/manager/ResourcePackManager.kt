@@ -6,10 +6,18 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.stream.JsonWriter
 import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.extension.parseChar
+import kor.toxicity.questadder.util.ResourcePackData
+import org.bukkit.Material
+import org.bukkit.configuration.MemoryConfiguration
+import org.bukkit.configuration.file.YamlConfiguration
 import org.zeroturnaround.zip.ZipUtil
 import java.io.*
 import java.util.*
 import javax.imageio.ImageIO
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.collections.LinkedHashMap
 import kotlin.math.max
 
 object ResourcePackManager: QuestAdderManager {
@@ -23,87 +31,188 @@ object ResourcePackManager: QuestAdderManager {
         "down"
     )
     private val assetsMap = mapOf(
-        "arrow" to 1,
-        "pillar" to 2
+        1 to "arrow",
+        2 to "pillar",
+        3 to "request",
+        4 to "complete"
     )
+
+    private val emptyConfig = MemoryConfiguration()
+    private val fontMap = HashMap<String,String>()
 
     override fun start(adder: QuestAdder) {
     }
 
-    override fun reload(adder: QuestAdder) {
-        try {
-            val resource = File(adder.dataFolder, "resources").apply {
-                mkdir()
-            }
-            val build = File(resource, "build").apply {
-                deleteRecursively()
-                mkdir()
-            }
-            val icons = File(resource, "icons").apply {
-                mkdir()
-            }
-            val assets = File(build, "assets").apply {
-                mkdir()
-            }
-            val minecraft = File(assets, "minecraft").apply {
-                mkdir()
-            }
-            val questAdder = File(assets, "questadder").apply {
-                mkdir()
-            }
-            val questTextures = File(File(questAdder, "textures").apply {
-                mkdir()
-            },"item").apply {
-                mkdir()
-            }
-            val questModels = File(questAdder, "models").apply {
-                mkdir()
-            }
-            val minecraftModels = File(File(minecraft, "models").apply {
-                mkdir()
-            }, "item").apply {
-                mkdir()
-            }
+    private var dataList = ArrayList<ResourcePackData>()
+    fun addData(data: ResourcePackData) {
+        dataList.add(data)
+    }
+    fun getImageFont(name: String) = fontMap[name]
 
-            assetsMap.keys.forEach { s ->
-                File(icons, "$s.bbmodel").let {
-                    if (!it.exists()) adder.getResource("$s.bbmodel")?.buffered()?.use { stream ->
-                        it.outputStream().buffered().use { bos ->
-                            stream.copyTo(bos)
+    override fun reload(adder: QuestAdder) {
+        val resource = File(adder.dataFolder, "resources").apply {
+            mkdir()
+        }
+        val build = File(resource, "build").apply {
+            deleteRecursively()
+            mkdir()
+        }
+        val fonts = File(resource,"fonts").apply {
+            mkdir()
+        }
+        val icons = File(resource, "icons").apply {
+            mkdir()
+        }
+        val assets = File(build, "assets").apply {
+            mkdir()
+        }
+        val minecraft = File(assets, "minecraft").apply {
+            mkdir()
+        }
+        val questAdder = File(assets, "questadder").apply {
+            mkdir()
+        }
+        val questTextures = File(questAdder, "textures").apply {
+            mkdir()
+        }
+        val questItemTextures = File(questTextures,"item").apply {
+            mkdir()
+        }
+        val questFontTextures = File(questTextures,"font").apply {
+            mkdir()
+        }
+        val questModels = File(questAdder, "models").apply {
+            mkdir()
+        }
+        val questFont = File(questAdder, "font").apply {
+            mkdir()
+        }
+        val minecraftModels = File(File(minecraft, "models").apply {
+            mkdir()
+        }, "item").apply {
+            mkdir()
+        }
+
+        val fontPngMap = LinkedHashMap<String,File>()
+        val fontYmlMap = LinkedHashMap<String,File>()
+        fonts.listFiles()?.forEach {
+            when (it.extension) {
+                "png" -> fontPngMap[it.nameWithoutExtension] = it
+                "yml" -> fontYmlMap[it.nameWithoutExtension] = it
+            }
+        }
+        val json = JsonArray()
+        var i = 0xD0000
+        fontMap.clear()
+        fontPngMap.forEach {
+            val config = fontYmlMap[it.key]?.let { yaml ->
+                try {
+                    YamlConfiguration().apply {
+                        load(yaml)
+                    }
+                } catch (ex: Exception) {
+                    QuestAdder.warn("unable to read this file: ${yaml.name}")
+                    null
+                }
+            } ?: emptyConfig
+            val char = (i++).parseChar()
+            fontMap[it.key] = char
+            it.value.copyTo(File(questFontTextures,it.value.name))
+            json.add(JsonObject().apply {
+                addProperty("type","bitmap")
+                addProperty("file","questadder:font/${it.value.name}")
+                addProperty("ascent",config.getInt("ascent",0))
+                addProperty("height",config.getInt("height",8))
+                add("chars",JsonArray().apply {
+                    add(char)
+                })
+            })
+        }
+        JsonWriter(File(questFont,"build.json").writer().buffered()).use {
+            gson.toJson(JsonObject().apply {
+                add("providers",json)
+            },it)
+        }
+
+        adder.addLazyTask {
+            try {
+                assetsMap.values.forEach { s ->
+                    File(icons, "$s.bbmodel").let {
+                        if (!it.exists()) adder.getResource("$s.bbmodel")?.buffered()?.use { stream ->
+                            it.outputStream().buffered().use { bos ->
+                                stream.copyTo(bos)
+                            }
+                        }
+                        if (it.exists()) readBlockBenchModel(it, questModels, questItemTextures)
+                    }
+                }
+                adder.getResource("pack.zip")?.use {
+                    ZipUtil.unpack(it, build)
+                }
+
+                val fileMap = HashMap<String,File>()
+                fun addFile(file: File, prefix: String) {
+                    file.listFiles()?.forEach {
+                        if (it.isDirectory) addFile(it,"$prefix${it.name}/")
+                        else fileMap["$prefix${it.nameWithoutExtension}"] = it
+                    }
+                }
+                addFile(icons,"")
+
+                val materialMap = EnumMap<Material,MutableMap<Int,String>>(Material::class.java)
+                val loadAssetsMap = HashMap<String,Int>()
+
+                dataList.forEach {
+                    fileMap[it.assets]?.let { file ->
+                        loadAssetsMap[it.assets]?.let {int ->
+                            it.action(int)
+                            return@forEach
+                        }
+                        val map = materialMap.getOrPut(it.material) {
+                            TreeMap()
+                        }
+                        var modelData = it.assets.hashCode()
+                        while (map.containsKey(modelData)) modelData += 1
+                        map[modelData] = it.assets
+                        loadAssetsMap[it.assets] = modelData
+                        it.action(modelData)
+                        when (file.extension) {
+                            "png" -> readImageModel(file,questModels,questItemTextures)
+                            "bbmodel" -> readBlockBenchModel(file,questModels,questItemTextures)
                         }
                     }
                 }
-            }
-            adder.getResource("pack.zip")?.use {
-                ZipUtil.unpack(it, build)
-            }
-            icons.listFiles()?.forEach {
-                when (it.extension) {
-                    "png" -> readImageModel(it, questModels, questTextures)
-                    "bbmodel" -> readBlockBenchModel(it, questModels, questTextures)
-                }
-            }
-            val type = QuestAdder.Config.defaultResourcePackItem.toString().lowercase()
-            JsonWriter(File(minecraftModels,"${type}.json").writer().buffered()).use {
-                gson.toJson(JsonObject().apply {
-                    addProperty("parent","minecraft:item/generated")
-                    add("textures",JsonObject().apply {
-                        addProperty("layer0","questadder:item/${type}")
-                    })
-                    add("overrides",JsonArray().apply {
-                        assetsMap.forEach {
-                            add(JsonObject().apply {
-                                add("predicate",JsonObject().apply {
-                                    addProperty("custom_model_data",it.value)
-                                })
-                                addProperty("model","questadder:${it.key}")
+                dataList.clear()
+
+                fun saveCustomModelData(material: Material, entry: Collection<Map.Entry<Int,String>>) {
+                    val type = material.toString().lowercase()
+                    JsonWriter(File(minecraftModels,"${type}.json").writer().buffered()).use {
+                        gson.toJson(JsonObject().apply {
+                            addProperty("parent","minecraft:item/generated")
+                            add("textures",JsonObject().apply {
+                                addProperty("layer0","minecraft:item/${type}")
                             })
-                        }
-                    })
-                },it)
+                            add("overrides",JsonArray().apply {
+                                entry.forEach {
+                                    add(JsonObject().apply {
+                                        add("predicate",JsonObject().apply {
+                                            addProperty("custom_model_data",it.key)
+                                        })
+                                        addProperty("model","questadder:${it.value}")
+                                    })
+                                }
+                            })
+                        },it)
+                    }
+                }
+                saveCustomModelData(QuestAdder.Config.defaultResourcePackItem, assetsMap.entries)
+                materialMap.forEach {
+                    saveCustomModelData(it.key,it.value.entries)
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                QuestAdder.warn("unable to make a resource pack.")
             }
-        } catch (ex: Exception) {
-            QuestAdder.warn("unable to make a resource pack.")
         }
     }
 

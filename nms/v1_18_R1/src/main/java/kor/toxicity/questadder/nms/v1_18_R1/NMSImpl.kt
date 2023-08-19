@@ -1,12 +1,15 @@
 package kor.toxicity.questadder.nms.v1_18_R1
 
 import com.mojang.datafixers.util.Pair
+import eu.endercentral.crazy_advancements.JSONMessage
 import eu.endercentral.crazy_advancements.advancement.AdvancementDisplay
 import eu.endercentral.crazy_advancements.advancement.ToastNotification
 import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.nms.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+import net.minecraft.network.chat.IChatBaseComponent
 import net.minecraft.network.protocol.game.*
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.EnumItemSlot
@@ -20,11 +23,13 @@ import org.bukkit.craftbukkit.v1_18_R1.CraftServer
 import org.bukkit.craftbukkit.v1_18_R1.CraftWorld
 import org.bukkit.craftbukkit.v1_18_R1.entity.CraftPlayer
 import org.bukkit.craftbukkit.v1_18_R1.inventory.CraftItemStack
+import org.bukkit.craftbukkit.v1_18_R1.util.CraftChatMessage
 import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
 class NMSImpl: NMS {
+
 
     override fun removePlayer(player: Player, target: Player) {
         (player as CraftPlayer).handle.b.run {
@@ -32,11 +37,18 @@ class NMSImpl: NMS {
             a(PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.e, (target as CraftPlayer).handle))
         }
     }
-
     override fun sendAdvancementMessage(player: Player, itemStack: ItemStack, component: Component) {
         ToastNotification(
             itemStack,
-            GsonComponentSerializer.gson().serialize(component),
+            object : JSONMessage(null) {
+                override fun getBaseComponent(): IChatBaseComponent {
+                    return CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(component))
+                }
+
+                override fun toString(): String {
+                    return PlainTextComponentSerializer.plainText().serialize(component)
+                }
+            },
             AdvancementDisplay.AdvancementFrame.GOAL
         ).send(player)
     }
@@ -68,6 +80,7 @@ class NMSImpl: NMS {
         }
         private val connection = (player as CraftPlayer).handle.b.apply {
             a(PacketPlayOutSpawnEntity(display))
+            a(PacketPlayOutEntityMetadata(display.ae(),display.ai(),true))
         }
 
         override fun teleport(location: Location) {
@@ -95,5 +108,9 @@ class NMSImpl: NMS {
 
     override fun createTextDisplay(player: Player, location: Location): VirtualTextDisplay {
         throw UnsupportedOperationException("unsupported minecraft version.")
+    }
+
+    override fun getVersion(): NMSVersion {
+        return NMSVersion.V1_18_R1
     }
 }

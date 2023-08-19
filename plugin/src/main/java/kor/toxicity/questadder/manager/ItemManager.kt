@@ -17,30 +17,20 @@ import org.bukkit.inventory.ItemStack
 object ItemManager: QuestAdderManager {
 
     private var itemMap = HashMap<String,ItemStack>()
-
-    private val defaultItemDataBase = object : ItemDatabase {
-
-        override fun getItem(name: String): ItemStack? {
-            return itemMap[name]
-        }
-        override fun getKeys(): Collection<String> {
-            return itemMap.keys
-        }
-        override fun reload() {
-        }
-
-        override fun requiredPlugin(): String {
-            return "QuestAdder"
-        }
-    }
-    var itemDatabase = defaultItemDataBase
+    private var itemDatabaseList = ArrayList<ItemDatabase>()
 
 
     fun getItem(name: String): ItemStack? {
-        return itemDatabase.getItem(name)
+        return itemMap[name] ?: itemDatabaseList.firstNotNullOfOrNull {
+            it.getItem(name)
+        }
     }
 
     override fun start(adder: QuestAdder) {
+        Bukkit.getPluginManager().run {
+            if (isPluginEnabled("ItemsAdder")) itemDatabaseList.add(ItemsAdderItemDataBase())
+            if (isPluginEnabled("Oraxen")) itemDatabaseList.add(OraxenItemDataBase())
+        }
         adder.command.addCommandAPI("item", arrayOf("i","아이템"),"item-related command.", true, CommandAPI("qa i")
             .addCommand("get") {
                 aliases = arrayOf("g","지급")
@@ -58,54 +48,40 @@ object ItemManager: QuestAdderManager {
                     }
                 }
                 tabComplete = { _, args ->
-                    if (args.size == 2) itemDatabase.getKeys().filter {
+                    if (args.size == 2) HashSet(itemMap.keys).apply {
+                        itemDatabaseList.forEach {
+                            addAll(it.getKeys())
+                        }
+                    }.filter {
                         it.startsWith(args[1])
                     } else null
                 }
             })
     }
-
-    private enum class DataBaseType(val getter: () -> ItemDatabase) {
-        DEFAULT({
-            defaultItemDataBase
-        }),
-        ORAXEN({
-            OraxenItemDataBase()
-        }),
-        ITEMS_ADDER({
-            ItemsAdderItemDataBase()
-        })
+    fun addItemDatabase(database: ItemDatabase) {
+        itemDatabaseList.add(database)
     }
 
     override fun reload(adder: QuestAdder) {
-        adder.loadFile("item")?.let { c ->
-            c.getString("using")?.let {
-                if (it != "custom") try {
-                    val db = DataBaseType.valueOf(it.uppercase()).getter()
-                    if (Bukkit.getPluginManager().isPluginEnabled(db.requiredPlugin())) {
-                        itemDatabase = db
-                    } else {
-                        QuestAdder.warn("plugin not found: ${db.requiredPlugin()}")
-                    }
-                } catch (ex: Throwable) {
-                    QuestAdder.warn("unable to set item database to $it.")
-                    defaultItemDataBase
+        itemMap.clear()
+        val iterator = itemDatabaseList.iterator()
+        while (iterator.hasNext()) {
+            try {
+                iterator.next().reload()
+            } catch (throwable: Throwable) {
+                iterator.remove()
+            }
+        }
+        adder.loadFolder("items") { file, config ->
+            config.getKeys(false).forEach {
+                config.getAsItemStack(it)?.let { i ->
+                    itemMap.putIfAbsent(it,i)
+                    Unit
+                } ?: run {
+                    QuestAdder.warn("syntax error: $it (${file.name})")
                 }
             }
         }
-        if (itemDatabase === defaultItemDataBase) {
-            itemMap.clear()
-            adder.loadFolder("items") { file, config ->
-                config.getKeys(false).forEach {
-                    config.getAsItemStack(it)?.let { i ->
-                        itemMap[it] = i
-                    } ?: run {
-                        QuestAdder.warn("Syntax error: $it (${file.name})")
-                    }
-                }
-            }
-        }
-        itemDatabase.reload()
     }
 
     override fun end(adder: QuestAdder) {

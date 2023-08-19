@@ -19,7 +19,6 @@ import kor.toxicity.questadder.util.gui.MouseButton
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.title.Title
-import org.bukkit.Sound
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -29,7 +28,7 @@ import java.time.Duration
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
-import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 class Dialog(adder: QuestAdder, file: File, val key: String, section: ConfigurationSection) {
     private interface TypingExecutor {
@@ -49,6 +48,7 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
     ) {
         var executor: TypingExecutor? = null
         var typingSpeed = QuestAdder.Config.defaultTypingSpeed
+        val typingSoundMap = HashMap<String,SoundData>()
         var inventory: Gui.GuiHolder? = null
         var display: VirtualArmorStand? = null
         var safeEnd = false
@@ -68,6 +68,7 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
             }
         }
         private var talkIndex = 0
+        private var talkerComponent: Component? = null
         private var talkComponent = Component.empty()
         private var task: BukkitTask? = null
         private var iterator = ComponentReader.emptyIterator()
@@ -84,7 +85,8 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
                 if (current.executor == null) current.executor = defaultExecutor.create(current)
                 started = true
                 talkComponent = Component.empty()
-                current.executor!!.initialize(talker[talkIndex + 1]?.createComponent(current.event))
+                talkerComponent = talker[talkIndex + 1]?.createComponent(current.event)
+                current.executor!!.initialize(talkerComponent)
                 iterator = talk[talkIndex].createIterator(current.event) ?: ComponentReader.errorIterator()
                 talkTask[talkIndex + 1]?.let { g ->
                     g(current)
@@ -118,12 +120,16 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
                     it.random().open(
                         current.player,
                         current.event,
-                        current.inventory
+                        current.inventory?.data?.gui?.name ?: Component.empty(),
+                        talkerComponent ?: current.npc.questNPC.name.asComponent().deepClear(),
+                        if (talk.isNotEmpty()) talk.last().createComponent(current.event) ?: Component.empty() else null
                     )
                     return
                 }
             }
-            current.player.closeInventory()
+            QuestAdder.task {
+                current.player.closeInventory()
+            }
         }
 
         fun restart() {
@@ -138,7 +144,9 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
                     val next = iterator.nextLine()
                     if ((next as TextComponent).content() != "*") {
                         talkComponent = talkComponent.append(next)
-                        current.player.playSound(current.player.location,Sound.BLOCK_STONE_BUTTON_CLICK_ON,1.0F,0.7F)
+                        (talkerComponent?.let {
+                            current.typingSoundMap[it.onlyText()] ?: QuestAdder.Config.defaultTypingSound
+                        } ?: current.npc.questNPC.soundData).play(current.player)
                         current.executor!!.run(talkComponent)
                     }
                 } else {
@@ -188,9 +196,12 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
                             MouseButton.SHIFT_LEFT -> {
                                 current.run.start()
                             }
-                            MouseButton.RIGHT,MouseButton.SHIFT_RIGHT -> {
+                            MouseButton.RIGHT -> {
                                 current.typingSpeed = (current.typingSpeed + 1).coerceAtMost(4)
                                 current.run.restart()
+                            }
+                            MouseButton.SHIFT_RIGHT -> {
+                                current.run.end()
                             }
                             else -> {}
                         }
@@ -270,14 +281,6 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
             })
             put("text", object : TypingManager {
                 override fun create(current: DialogCurrent): TypingExecutor {
-                    if (!current.safeEnd) {
-                        current.safeEnd = true
-                        QuestAdder.task {
-                            current.player.closeInventory()
-                            current.inventory = null
-                            current.safeEnd = false
-                        }
-                    }
                     return object : TypingExecutor {
 
                         private var referencedEntity = current.npc.npc.entity
@@ -318,6 +321,15 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
     }
     private var lastAction: (DialogCurrent) -> Unit = {}
     private var talkTask = HashMap<Int,(DialogCurrent) -> Unit>()
+    private val typingSound = HashMap<String,SoundData>().apply {
+        section.findConfig("TypingSound","typing-sound")?.let { config ->
+            config.getKeys(false).forEach {
+                config.getAsSoundData(it)?.let { sound ->
+                    put(it,sound)
+                } ?: QuestAdder.warn("syntax error: unable to find sound data: $it ($key in ${file.name})")
+            }
+        }
+    }
 
     /**
      * Add the action be called when this index of talk starts.
@@ -727,6 +739,9 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
                         "ready" -> { current: DialogCurrent ->
                             quest.isReady(current.player)
                         }
+                        "clear" -> { current: DialogCurrent ->
+                            quest.isCleared(current.player)
+                        }
                         "!has" -> { current: DialogCurrent ->
                             !quest.has(current.player)
                         }
@@ -735,6 +750,9 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
                         }
                         "!ready" -> { current: DialogCurrent ->
                             !quest.isReady(current.player)
+                        }
+                        "!clear" -> { current: DialogCurrent ->
+                            !quest.isCleared(current.player)
                         }
                         else -> {
                             error("not found error: the quest predicate \"${split[1]}\" doesn't exist.")
@@ -778,6 +796,10 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
     private fun start(current: DialogCurrent) {
         start(DialogRun(current.apply {
             safeEnd = false
+            npc.questNPC.soundData.let {
+                typingSoundMap[npc.questNPC.name] = it
+                typingSoundMap.putAll(typingSound)
+            }
         }))
     }
     private fun start(run: DialogRun) {

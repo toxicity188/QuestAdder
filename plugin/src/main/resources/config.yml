@@ -29,3 +29,18 @@ player-gui-layout:
   max-index: 1
 
 navigation-gui-name: "navigation"
+
+default-typing-sound:
+  name: "block.stone_button.click_on"
+  volume: 1.0
+  pitch: 0.7
+
+time-format:
+  day: "%dd"
+  hour: "%dh"
+  minute: "%dm"
+
+quest-suffix:
+  - ""
+  - "<color:gray>(Left - open navigation menu, Right - mark quest)"
+  - "<color:gray>(Shift+Left - give up quest)"

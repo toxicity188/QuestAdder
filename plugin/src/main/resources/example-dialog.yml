@@ -36,6 +36,7 @@ example_dialog_2:
     - <gradient:blue-dark_purple>Congratulation!
   quest:
     - example_quest complete
+    - example_quest remove
   check:
     - example_quest !complete example_dialog_3
 

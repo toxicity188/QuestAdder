@@ -2,10 +2,10 @@ package kor.toxicity.questadder.util.event.type;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
 import kor.toxicity.questadder.QuestAdder;
+import kor.toxicity.questadder.extension.ComponentsKt;
 import kor.toxicity.questadder.util.action.AbstractAction;
 import kor.toxicity.questadder.util.event.AbstractEvent;
 import kor.toxicity.questadder.util.reflect.DataField;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class EventChat extends AbstractEvent<AsyncChatEvent> {
     @DataField(aliases = "m")
@@ -17,7 +17,7 @@ public class EventChat extends AbstractEvent<AsyncChatEvent> {
 
     @Override
     protected void invoke(AsyncChatEvent event) {
-        if (message != null && !LegacyComponentSerializer.legacySection().serialize(event.message()).equals(message)) return;
+        if (message != null && !ComponentsKt.onlyText(event.originalMessage()).equals(message)) return;
         apply(event.getPlayer());
     }
 }

@@ -8,3 +8,5 @@ condition-lore: " <color:yellow><decoration:bold> └<color:white> "
 reward: " <color:green><decoration:bold>[!] <decoration:bold,italic>Rewards"
 reward-lore: " <color:green><decoration:bold> └<color:white> "
 recommend: " <color:gold><decoration:bold>[!] <decoration:bold,italic>Recommends"
+
+left: " <color:gold><decoration:bold>[!]<color:white>  Left Time: "

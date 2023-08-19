@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.event;
 
-import kor.toxicity.questadder.mechanic.Quest;
+import kor.toxicity.questadder.mechanic.quest.Quest;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 

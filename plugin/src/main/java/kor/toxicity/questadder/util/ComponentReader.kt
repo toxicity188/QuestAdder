@@ -4,6 +4,8 @@ import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.extension.EMPTY_DECORATION
 import kor.toxicity.questadder.extension.asComponent
 import kor.toxicity.questadder.extension.deepClear
+import kor.toxicity.questadder.extension.parseChar
+import kor.toxicity.questadder.manager.ResourcePackManager
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
@@ -15,6 +17,8 @@ import java.util.regex.Pattern
 class ComponentReader<T : Any>(string: String) {
     companion object {
         private val spaceFont = Key.key("questadder:space")
+        private val buildFont = Key.key("questadder:build")
+        private val legacySpaceFont = Key.key("questadder:legacy_space")
 
         private val emptyIterator = object : ComponentIterator {
             override fun nextLine(): Component {
@@ -40,13 +44,6 @@ class ComponentReader<T : Any>(string: String) {
             }
         }
 
-        private fun parseChar(int: Int): String {
-            return if (int <= 0xFFFF) int.toChar().toString()
-            else {
-                val t = int - 0x10000
-                "${((t ushr 10) + 0xD800).toChar()}${((t and 1023) + 0xDC00).toChar()}"
-            }
-        }
 
         private val pattern = Pattern.compile("<((?<name>([a-zA-Z]+)):(?<value>(\\w|,|_|-|#|:)+))>")
 
@@ -103,7 +100,7 @@ class ComponentReader<T : Any>(string: String) {
             },
             "space" to { s,_ ->
                 try {
-                    SpaceComponentBuilder(s.toInt())
+                    if (QuestAdder.nms.getVersion().version >= 19) SpaceComponentBuilder(s.toInt()) else LegacySpaceComponentBuilder(s.toInt())
                 } catch (ex: Exception) {
                     QuestAdder.warn("number format error: the value \"$s\" is not an int.")
                     null
@@ -123,6 +120,11 @@ class ComponentReader<T : Any>(string: String) {
                     }
                 }
                 null
+            },
+            "image" to { s, c ->
+                ResourcePackManager.getImageFont(s)?.let {
+                    ImageComponentBuilder(it,c)
+                }
             }
         )
         fun parseString(s: String): List<String> {
@@ -211,7 +213,21 @@ class ComponentReader<T : Any>(string: String) {
     private class SpaceComponentBuilder(
         pixel: Int
     ): ComponentBuilder {
-        private val component = parseChar(0xD0000 + pixel).asComponent().font(spaceFont)
+        private val component = (0xD0000 + pixel).parseChar().asComponent().font(spaceFont)
+        override fun length(): Int = 1
+        override fun build(): Component = component
+        override fun build(index: Int): Component = component
+    }
+    private class LegacySpaceComponentBuilder(
+        pixel: Int
+    ): ComponentBuilder {
+        private val component = (0xFFC00 + pixel).parseChar().asComponent().font(legacySpaceFont)
+        override fun length(): Int = 1
+        override fun build(): Component = component
+        override fun build(index: Int): Component = component
+    }
+    private class ImageComponentBuilder(string: String, data: ComponentData): ComponentBuilder {
+        private val component = string.asComponent().color(data.color).decorations(data.decoration).font(buildFont)
         override fun length(): Int = 1
         override fun build(): Component = component
         override fun build(index: Int): Component = component

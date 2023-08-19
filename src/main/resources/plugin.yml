@@ -1,7 +1,7 @@
 name: QuestAdder
 version: '${version}'
 main: kor.toxicity.questadder.QuestAdder
-api-version: 1.19
+api-version: 1.18
 depend:
   - Citizens
   - ProtocolLib

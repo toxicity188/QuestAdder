@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.event;
 
-import kor.toxicity.questadder.mechanic.Quest;
+import kor.toxicity.questadder.mechanic.quest.Quest;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;

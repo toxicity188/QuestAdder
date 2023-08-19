@@ -1,4 +1,4 @@
-package kor.toxicity.questadder.mechanic
+package kor.toxicity.questadder.mechanic.quest
 
 import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.event.*
@@ -19,12 +19,13 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import java.io.File
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.util.TreeSet
 
 class Quest(adder: QuestAdder, file: File, val key: String, section: ConfigurationSection) {
     companion object {
         private val success = "Success!".asComponent(YELLOW).clear().decorate(TextDecoration.BOLD)
-        private val defaultToast = ItemStack(Material.BOOK)
     }
 
     val name = (section.findString("name","Name") ?: key).replace('&','§')
@@ -37,7 +38,17 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
     }
     val cancellable = section.findBoolean("Cancellable","cancellable")
 
+    val left = section.findLong(0L,"Left","left")
+
     val type = section.findStringList("Type","type","Types","types")?.toSortedSet() ?: TreeSet()
+
+    private val item = section.findConfig("Item","item","Icon","icon")?.let { c ->
+        try {
+            ItemWriter<QuestInvokeEvent>(c)
+        } catch (ex: Exception) {
+            null
+        }
+    } ?: throw RuntimeException("the quest has no icon.")
     private val toast = section.findConfig("toast")?.let {
         ItemStack(it.findString("type","Type")?.let { s ->
             section.getString("toast")?.let {
@@ -53,15 +64,7 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
                 setCustomModelData(it.findInt(0,"custom-model-data","CustomModelData"))
             }
         }
-    } ?: defaultToast
-
-    private val item = section.findConfig("Item","item","Icon","icon")?.let { c ->
-        try {
-            ItemWriter<QuestInvokeEvent>(c)
-        } catch (ex: Exception) {
-            null
-        }
-    } ?: throw RuntimeException("the quest has no icon.")
+    } ?: item.type
     private val condition = ArrayList<Pair<ComponentReader<QuestInvokeEvent>,WrappedFunction>>()
 
     private var onRemove: (QuestAdderPlayerEvent) -> Unit = {}
@@ -150,7 +153,7 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
                                 val newValue = (data.getQuestVariable(key,name) ?: 0)
                                 if (newValue + 1 == max) {
                                     lore?.createComponent(questEvent)?.let { component ->
-                                        QuestAdder.nms.sendAdvancementMessage(player,toast,component)
+                                        QuestAdder.nms.sendAdvancementMessage(player,item.write(questEvent),component)
                                     }
                                 }
                                 data.setQuestVariable(key,name,(newValue + 1).coerceAtMost(max))
@@ -179,21 +182,24 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
     }
     fun complete(player: Player) {
         val reward = reward?.give(player)
-        QuestAdder.getPlayerData(player)?.removeQuest(key)
+        QuestAdder.getPlayerData(player)?.completeQuest(key)
         onComplete(QuestCompleteEvent(this,player,reward?.money ?: 0.0, reward?.exp ?: 0.0, reward?.itemStacks ?: emptyList()).apply {
             callEvent()
         })
     }
 
     fun isCompleted(player: Player): Boolean {
+        val data = QuestAdder.getPlayerData(player) ?: return false
+        if (data.questVariables[key]?.state != QuestState.HAS) return false
         val invokeEvent = QuestInvokeEvent(this,player).apply {
             callEvent()
         }
-        return condition.all {
+        return condition.isNotEmpty() && condition.all {
             val get = it.second.apply(invokeEvent)
             get is Boolean && get
         }
     }
+    fun isCleared(player: Player) = QuestAdder.getPlayerData(player)?.questVariables?.get(key)?.state == QuestState.COMPLETE
     fun isReady(player: Player) = reward?.isReady(player) ?: true
 
     fun has(player: Player) = QuestAdder.getPlayerData(player)?.hasQuest(key) ?: false
@@ -201,6 +207,7 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
         val event = QuestInvokeEvent(this,player).apply {
             callEvent()
         }
+        val data = QuestAdder.getPlayerData(player)?.questVariables?.get(key)
         val cond = condition.map {
             val get = it.second.apply(event)
             if (get is Boolean) get
@@ -244,6 +251,12 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
                             add(QuestAdder.Prefix.rewardLore.append(comp))
                         }
                     }
+                    if (left > 0 && data != null) {
+                        add(Component.empty())
+                        add(QuestAdder.Prefix.left.append(QuestAdder.Config.timeFormat.format(left - ChronoUnit.MINUTES.between(data.time,LocalDateTime.now())).asClearComponent().color(
+                            WHITE)))
+                    }
+                    addAll(QuestAdder.Config.questSuffix)
                 })
                 if (cond.all {
                     it

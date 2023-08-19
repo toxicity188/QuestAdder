@@ -47,6 +47,9 @@ object ActionBuilder {
 
         put("warp", ActWarp::class.java)
         put("evaluate",ActEvaluate::class.java)
+
+        put("give",ActGive::class.java)
+        put("take",ActTake::class.java)
     }
     private val eventMap = HashMap<String,Class<out AbstractEvent<*>>>().apply {
         put("join", EventJoin::class.java)
@@ -55,6 +58,7 @@ object ActionBuilder {
         put("chat", EventChat::class.java)
         put("talk", EventTalk::class.java)
         put("quit", EventQuit::class.java)
+        put("command", EventCommand::class.java)
 
         put("navigatestart",EventNavigateStart::class.java)
         put("navigatefail",EventNavigateFail::class.java)
