@@ -29,3 +29,10 @@ you can make any quest to use function with QuestAdder.
 # Beautiful navigation system
 ![2023-08-14_02 10 19](https://github.com/toxicity188/QuestAdder/assets/114675706/56d81f66-5024-48d6-9c8a-53aaeb4ee94d)  
 you can navigate any location related to quest.
+
+# ItemsAdder, Oraxen Support
+this plugin automatically hook an item from ItemsAdder, Oraxen
+
+# Mysql support
+![fff](https://github.com/toxicity188/QuestAdder/assets/114675706/5b5e8533-5b75-4812-af95-0b499617eff0)  
+you can manage the user data to use mysql.
