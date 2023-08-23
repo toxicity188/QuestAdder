@@ -145,7 +145,7 @@ object DialogManager: QuestAdderManager {
             }
             @EventHandler
             fun deSpawn(e: NPCDespawnEvent) {
-                actualNPCMap.remove(e.npc.entity.uniqueId)
+                actualNPCMap.remove(e.npc.entity.uniqueId)?.cancel()
             }
             @EventHandler
             fun reload(e: CitizensReloadEvent) {
