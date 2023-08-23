@@ -2,7 +2,7 @@
 QuestAdder is a plugin that help to make various quest, befautiful npc dialog in your minecraft server!  
 Please feel free to ask me if you have a question. My discord server is [here](https://discord.gg/rePyFESDbk).   
 
-you need 1.18~1.20 paper or fork of that to run.
+you need 1.18~1.20 paper or fork of that, Citizens, and ProtocolLib to run.
 
 ## Beautiful talking system
 [Example video](https://youtu.be/rZeRAL2zQFM?si=vL7yZyYCnsAS0NTM)  
