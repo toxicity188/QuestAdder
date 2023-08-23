@@ -64,7 +64,7 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
                 setCustomModelData(it.findInt(0,"custom-model-data","CustomModelData"))
             }
         }
-    } ?: item.type
+    }
     private val condition = ArrayList<Pair<ComponentReader<QuestInvokeEvent>,WrappedFunction>>()
 
     private var onRemove: (QuestAdderPlayerEvent) -> Unit = {}
@@ -153,7 +153,7 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
                                 val newValue = (data.getQuestVariable(key,name) ?: 0)
                                 if (newValue + 1 == max) {
                                     lore?.createComponent(questEvent)?.let { component ->
-                                        QuestAdder.nms.sendAdvancementMessage(player,item.write(questEvent),component)
+                                        QuestAdder.nms.sendAdvancementMessage(player,toast ?: item.write(questEvent),component)
                                     }
                                 }
                                 data.setQuestVariable(key,name,(newValue + 1).coerceAtMost(max))

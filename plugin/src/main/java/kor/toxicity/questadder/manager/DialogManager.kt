@@ -7,9 +7,9 @@ import kor.toxicity.questadder.event.*
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.mechanic.Dialog
 import kor.toxicity.questadder.mechanic.QnA
-import kor.toxicity.questadder.mechanic.quest.Quest
 import kor.toxicity.questadder.mechanic.npc.ActualNPC
 import kor.toxicity.questadder.mechanic.npc.QuestNPC
+import kor.toxicity.questadder.mechanic.quest.Quest
 import kor.toxicity.questadder.mechanic.quest.QuestState
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.action.RegistrableAction
@@ -28,7 +28,6 @@ import net.citizensnpcs.api.event.NPCDespawnEvent
 import net.citizensnpcs.api.event.NPCSpawnEvent
 import net.citizensnpcs.api.npc.NPC
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.event.ClickEvent
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.configuration.ConfigurationSection
@@ -40,14 +39,12 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerCommandPreprocessEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractAtEntityEvent
-import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.HashMap
 
 object DialogManager: QuestAdderManager {
 
@@ -499,7 +496,7 @@ object DialogManager: QuestAdderManager {
             send("${dialogMap.size} of dialogs has successfully loaded.")
             send("${questMap.size} of quests has successfully loaded.")
             send("${qnaMap.size} of QnAs has successfully loaded.")
-            send("${actionMap.size} of NPCs successfully loaded.")
+            send("${questNpcMap.size} of NPCs successfully loaded.")
         }
         val iterator = selectedQuestMap.iterator()
         while (iterator.hasNext()) {
