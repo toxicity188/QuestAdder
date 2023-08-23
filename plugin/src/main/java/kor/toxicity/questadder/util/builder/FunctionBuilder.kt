@@ -243,6 +243,12 @@ object FunctionBuilder {
             else if (world.hasStorm()) "storm"
             else "clear"
         }
+        addFunction("sneak", listOf(Player::class.java)) { _: Null, args ->
+            (args[0] as Player).isSneaking
+        }
+        addFunction("sprint", listOf(Player::class.java)) { _: Null, args ->
+            (args[0] as Player).isSprinting
+        }
         addFunction("health", listOf(Player::class.java)) { _: Null, args ->
             (args[0] as Player).health
         }

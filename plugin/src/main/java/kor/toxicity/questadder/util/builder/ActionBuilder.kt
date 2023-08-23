@@ -61,6 +61,16 @@ object ActionBuilder {
         put("command", EventCommand::class.java)
         put("walk", EventWalk::class.java)
 
+        put("fish", EventFish::class.java)
+        put("animation", EventAnimation::class.java)
+        put("changeworld", EventChangeWorld::class.java)
+        put("entityclick", EventEntityClick::class.java)
+        put("npcclick", EventNPCClick::class.java)
+
+        put("blockclick", EventBlockClick::class.java)
+        put("blockbreak", EventBlockBreak::class.java)
+        put("blockplace", EventBlockPlace::class.java)
+
         put("respawn", EventRespawn::class.java)
         put("sneak", EventSneak::class.java)
         put("sprint", EventSprint::class.java)

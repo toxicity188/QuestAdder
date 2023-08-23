@@ -34,6 +34,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.java.JavaPlugin
+import org.jetbrains.annotations.ApiStatus.Internal
 import java.io.File
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -52,18 +53,28 @@ class QuestAdder: JavaPlugin() {
 
         private val playerThreadMap = ConcurrentHashMap<UUID,PlayerThread>()
 
+        @Internal
         fun send(message: String) = plugin.logger.info(message)
+        @Internal
         fun warn(message: String) = plugin.logger.warning(message)
 
 
+        @Internal
         fun task(action: () -> Unit) = Bukkit.getScheduler().runTask(plugin,action)
+        @Internal
         fun asyncTask(action: () -> Unit) = Bukkit.getScheduler().runTaskAsynchronously(plugin,action)
+        @Internal
         fun taskLater(delay: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskLater(plugin,action,delay)
+        @Internal
         fun taskTimer(delay: Long, period: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskTimer(plugin,action,delay,period)
+        @Internal
         fun asyncTaskTimer(delay: Long, period: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin,action,delay,period)
 
+        @Internal
         fun getPlayerData(player: Player) = playerThreadMap[player.uniqueId]?.data
+        @Internal
         fun reload(callback: (Long) -> Unit) = plugin.reload(callback)
+        @Internal
         fun reloadSync() = plugin.reloadSync()
 
         private val managerList = mutableListOf(
@@ -308,6 +319,7 @@ class QuestAdder: JavaPlugin() {
         if (pluginManager.isPluginEnabled("MythicMobs")) ActionBuilder.run {
             addEvent("mythicdamage", EventMythicDamage::class.java)
             addEvent("mythicheal", EventMythicHeal::class.java)
+            addEvent("mythickill", EventMythicKill::class.java)
         }
         if (pluginManager.isPluginEnabled("SuperiorSkyblock2")) ActionBuilder.run {
             addEvent("islandopen", EventIslandOpen::class.java)
@@ -318,6 +330,25 @@ class QuestAdder: JavaPlugin() {
             addEvent("islandcreate", EventIslandCreate::class.java)
             addEvent("islandchat", EventIslandChat::class.java)
             addEvent("islandjoin", EventIslandJoin::class.java)
+            addEvent("islandinvite", EventIslandInvite::class.java)
+        }
+        if (pluginManager.isPluginEnabled("Oraxen")) ActionBuilder.run {
+            addEvent("oraxenfurniturebreak", EventOraxenFurnitureBreak::class.java)
+            addEvent("oraxennotebreak", EventOraxenNoteBreak::class.java)
+            addEvent("oraxenstringbreak", EventOraxenStringBreak::class.java)
+
+            addEvent("oraxenfurnitureplace", EventOraxenFurniturePlace::class.java)
+            addEvent("oraxennoteplace", EventOraxenNotePlace::class.java)
+            addEvent("oraxenstringplace", EventOraxenStringPlace::class.java)
+
+            addEvent("oraxenfurnitureclick", EventOraxenFurnitureClick::class.java)
+            addEvent("oraxennoteclick", EventOraxenNoteClick::class.java)
+            addEvent("oraxenstringclick", EventOraxenStringClick::class.java)
+        }
+        if (pluginManager.isPluginEnabled("ItemsAdder")) ActionBuilder.run {
+            addEvent("customblockbreak", EventCustomBlockBreak::class.java)
+            addEvent("customblockclick", EventCustomBlockClick::class.java)
+            addEvent("customblockplace", EventCustomBlockPlace::class.java)
         }
         loadDatabase()
         managerList.forEach {

@@ -6,6 +6,7 @@ depend:
   - Citizens
   - ProtocolLib
 softdepend:
+  - Vault
   - ItemsAdder
   - Oraxen
   - PlaceholderAPI

@@ -22,7 +22,7 @@ public abstract class AbstractEvent<T extends Event> implements DataObject {
         this.action = action;
         Bukkit.getPluginManager().registerEvent(clazz,LISTENER, EventPriority.MONITOR,((listener, event) -> {
             if (clazz.isAssignableFrom(event.getClass())) invoke(clazz.cast(event));
-        }), adder, true);
+        }), adder);
     }
 
     @Override

@@ -45,6 +45,7 @@ import org.bukkit.inventory.ItemStack
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.HashSet
 
 object DialogManager: QuestAdderManager {
 
@@ -66,23 +67,6 @@ object DialogManager: QuestAdderManager {
     fun getSelectedQuest(player: Player) = selectedQuestMap[player.uniqueId]
 
     override fun start(adder: QuestAdder) {
-
-        /* QuestAdder.asyncTaskTimer(36000, 36000) {
-            Bukkit.broadcast(" [!] ".asClearComponent().color(YELLOW).append("This server is using toxicity's QuestAdder!".asComponent().color(
-                WHITE)))
-            Bukkit.broadcast(" [!] ".asClearComponent().color(YELLOW).append("Download: https://discord.gg/rePyFESDbk".asClearComponent().clickEvent(
-                ClickEvent.clickEvent(ClickEvent.Action.OPEN_URL,"https://discord.gg/rePyFESDbk")).color(WHITE)))
-        }
-        Bukkit.getPluginManager().registerEvents(object : Listener {
-            @EventHandler
-            fun join(e: PlayerJoinEvent) {
-                QuestAdder.taskLater(60) {
-                    e.player.sendMessage(" [!] ".asClearComponent().color(YELLOW).append("This server is using toxicity's QuestAdder!".asComponent().color(WHITE)))
-                    e.player.sendMessage(" [!] ".asClearComponent().color(YELLOW).append("Download: https://discord.gg/rePyFESDbk".asClearComponent().clickEvent(
-                        ClickEvent.clickEvent(ClickEvent.Action.OPEN_URL,"https://discord.gg/rePyFESDbk")).color(WHITE)))
-                }
-            }
-        },adder) */
 
         Bukkit.getPluginManager().registerEvents(object : Listener {
             @EventHandler
@@ -391,6 +375,8 @@ object DialogManager: QuestAdderManager {
     fun getAction(name: String) = actionMap[name]
     fun getQuest(name: String) = questMap[name]
     fun getQnA(name: String) = qnaMap[name]
+    fun getNPC(uuid: UUID) = actualNPCMap[uuid]
+    fun getAllNPC(): Set<ActualNPC> = HashSet(actualNPCMap.values)
 
     private fun dialogReload(adder: QuestAdder) {
         val actionReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
@@ -400,7 +386,6 @@ object DialogManager: QuestAdderManager {
         }
         val dialogReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
             try {
-                //if (dialogMap.size >= 50) throw RuntimeException("this is a demo version!")
                 dialogMap[key] = Dialog(adder,file,key,c)
             } catch (ex: Exception) {
                 QuestAdder.warn("unable to load dialog. (${file.name})")
@@ -412,7 +397,6 @@ object DialogManager: QuestAdderManager {
         }
         val questReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
             try {
-                //if (questMap.size >= 10) throw RuntimeException("this is a demo version!")
                 questMap[key] = Quest(adder, file, key, c)
             } catch (ex: Exception) {
                 QuestAdder.warn("unable to load quest. (${file.name})")
@@ -421,7 +405,6 @@ object DialogManager: QuestAdderManager {
         }
         val npcReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
             try {
-                //if (questNpcMap.size >= 5) throw RuntimeException("this is a demo version!")
                 questNpcMap[key] = QuestNPC(adder, file, key, c)
             } catch (ex: Exception) {
                 QuestAdder.warn("unable to load NPC. ($key in ${file.name})")

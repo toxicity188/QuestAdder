@@ -6,9 +6,11 @@ import kor.toxicity.questadder.manager.ResourcePackManager
 import kor.toxicity.questadder.util.ResourcePackData
 import kor.toxicity.questadder.util.SoundData
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
 import org.bukkit.configuration.ConfigurationSection
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
@@ -72,7 +74,7 @@ fun ConfigurationSection.getAsItemStack(key: String): ItemStack? = if (isItemSta
                 ItemFlag.values().forEach {
                     addItemFlags(it)
                 }
-                findStringList("Attributes","attributes")?.forEach {
+                findStringList("Attributes","attributes","Attribute","attribute")?.forEach {
                     val split = it.split(' ')
                     if (split.size == 4) {
                         try {
@@ -97,6 +99,19 @@ fun ConfigurationSection.getAsItemStack(key: String): ItemStack? = if (isItemSta
                                 setCustomModelData(it)
                             }
                         })
+                    }
+                }
+                findConfig("Enchant","Enchantment","enchant","enchantment")?.let {
+                    it.getKeys(false).forEach { key ->
+                        val str = it.getString(key) ?: return@forEach
+                        val enchant = NamespacedKey.fromString(key)?.let { namespacedKey ->
+                            Enchantment.getByKey(namespacedKey)
+                        } ?: return@forEach
+                        try {
+                            addUnsafeEnchantment(enchant,str.toInt())
+                        } catch (ex: Exception) {
+                            QuestAdder.warn("cannot apply this enchant: $key $str")
+                        }
                     }
                 }
             }

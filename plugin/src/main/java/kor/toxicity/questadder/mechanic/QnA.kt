@@ -44,7 +44,7 @@ class QnA(adder: QuestAdder, file: File, key: String, section: ConfigurationSect
 
     fun open(player: Player, event: DialogStartEvent, guiName: Component, talker: Component, talk: Component?) {
 
-        createInventory(guiName,size,HashMap<Int, ItemStack>().apply {
+        createInventory(name ?: guiName,size,HashMap<Int, ItemStack>().apply {
             if (talk != null) put(center, ItemStack(Material.ENCHANTED_BOOK).apply {
                 itemMeta = itemMeta?.apply {
                     displayName(talker.append(":".asClearComponent()))

@@ -4,14 +4,19 @@ import kor.toxicity.questadder.item.ItemDatabase
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.manager.ItemManager
 import kor.toxicity.questadder.manager.LocationManager
+import kor.toxicity.questadder.manager.NavigationManager
+import kor.toxicity.questadder.util.NamedLocation
 import kor.toxicity.questadder.util.action.AbstractAction
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.util.event.AbstractEvent
+import org.bukkit.entity.Player
+import java.util.UUID
 
 /**
  * @author Toxicity
  */
+@Suppress("UNUSED")
 object QuestAdderAPI {
     /**
      * Set the item database of QuestAdder.
@@ -43,7 +48,7 @@ object QuestAdderAPI {
      * Get the dialog.
      * @since 1.0
      * @param name The yaml key of dialog
-     * @return the object of dialog or null
+     * @return The object of dialog or null
      */
     fun getDialog(name: String) = DialogManager.getDialog(name)
 
@@ -51,7 +56,7 @@ object QuestAdderAPI {
      * Get the quest.
      * @since 1.0
      * @param name The yaml key of quest
-     * @return the object of dialog or null
+     * @return The object of dialog or null
      */
     fun getQuest(name: String) = DialogManager.getQuest(name)
     /**
@@ -65,7 +70,7 @@ object QuestAdderAPI {
      * Get the location.
      * @since 1.0
      * @param name The yaml key of location
-     * @return the object of location or null
+     * @return The object of location or null
      */
     fun getLocation(name: String) = LocationManager.getLocation(name)
 
@@ -79,6 +84,23 @@ object QuestAdderAPI {
     inline fun <reified T, reified R> addFunction(name: String, args: List<Class<*>> = emptyList(), noinline function: (t: T, Array<Any>) -> R?) {
         FunctionBuilder.addFunction(name, T::class.java, R::class.java, args, function)
     }
+
+    /**
+     * Get NPC object from given uuid.
+     *
+     * @param uuid An entity uuid of NPC
+     * @return An object of NPC of null
+     * @since 1.0.3
+     */
+    fun getNPC(uuid: UUID) = DialogManager.getNPC(uuid)
+
+    /**
+     * Get all NPC in server.
+     *
+     * @return All object of NPC in server
+     * @since 1.0.3
+     */
+    fun getAllNPC() = DialogManager.getAllNPC()
 
     /**
      * Add action in QuestAdder.
@@ -96,4 +118,28 @@ object QuestAdderAPI {
     fun addEvent(name: String, clazz: Class<out AbstractEvent<*>>) {
         ActionBuilder.addEvent(name, clazz)
     }
+
+    /**
+     * Start navigate to specific location.
+     * @param player Player
+     * @param location Location to navigate
+     * @since 1.0.3
+     */
+    fun startNavigate(player: Player, location: NamedLocation) {
+        NavigationManager.startNavigate(player, location)
+    }
+    /**
+     * End navigate.
+     * @param player Player
+     * @since 1.0.3
+     */
+    fun endNavigate(player: Player) {
+        NavigationManager.endNavigate(player)
+    }
+
+    /**
+     * @return The object of config
+     * @since 1.0.3
+     */
+    fun getConfig() = QuestAdder.Config
 }

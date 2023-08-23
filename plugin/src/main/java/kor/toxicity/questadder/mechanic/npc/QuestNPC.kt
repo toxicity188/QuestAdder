@@ -62,8 +62,6 @@ class QuestNPC(adder: QuestAdder, file: File, val key: String, section: Configur
     val thread = section.findLong(20,"Thread","thread").coerceAtLeast(1)
     val renderDistance = section.findDouble(16.0,"render-distance","RenderDistance").coerceAtLeast(3.0)
 
-    fun getNpc(): NPC? = CitizensAPI.getNPCRegistry().getById(id)
-
     fun getIndex(player: Player) = QuestAdder.getPlayerData(player)?.npcIndexes?.get(key)
 
     override fun toString(): String {

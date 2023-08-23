@@ -20,7 +20,11 @@ fun CommandSender.warn(message: String) = warn(message.colored())
 fun CommandSender.warn(message: Component) = sendMessage(QuestAdder.Prefix.warn.append(message))
 
 object Money {
-    private val economy = Bukkit.getServicesManager().getRegistration(Economy::class.java)?.provider
+    private val economy = try {
+        Bukkit.getServicesManager().getRegistration(Economy::class.java)?.provider
+    } catch (throwable: Throwable) {
+        null
+    }
 
     internal fun getMoney(p: OfflinePlayer?): Double {
         return economy?.getBalance(p) ?: 0.0

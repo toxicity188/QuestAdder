@@ -9,6 +9,7 @@ import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import org.jetbrains.annotations.ApiStatus.Internal
 import java.util.UUID
 
 class ActualNPC(val npc: NPC, val questNPC: QuestNPC) {
@@ -45,8 +46,27 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC) {
             }
         }
     }
+    @Internal
     fun cancel() {
+        playerDisplayMap.values.forEach {
+            it.remove()
+        }
         thread.cancel()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ActualNPC
+
+        if (npc != other.npc) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return npc.hashCode()
     }
 
     private inner class PlayerDisplay(val player: Player, val data: PlayerData) {
@@ -114,4 +134,6 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC) {
         READY_TO_REQUEST,
         NOT_EXIST
     }
+
+
 }

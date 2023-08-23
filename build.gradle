@@ -10,7 +10,7 @@ allprojects {
     apply plugin: 'com.github.johnrengelman.shadow'
 
     group = 'kor.toxicity'
-    version = '1.0.2-SNAPSHOT'
+    version = '1.0.3-SNAPSHOT'
 
     repositories {
         mavenCentral()
