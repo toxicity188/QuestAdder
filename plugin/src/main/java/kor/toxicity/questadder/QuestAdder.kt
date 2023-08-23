@@ -15,7 +15,9 @@ import kor.toxicity.questadder.nms.NMS
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.SoundData
 import kor.toxicity.questadder.util.TimeFormat
+import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.database.StandardDatabaseSupplier
+import kor.toxicity.questadder.util.event.type.*
 import kor.toxicity.questadder.util.gui.ButtonGui
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButton
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButtonType
@@ -273,7 +275,8 @@ class QuestAdder: JavaPlugin() {
             return
         }
         getCommand("questadder")?.setExecutor(command.createTabExecutor())
-        Bukkit.getPluginManager().getPlugin("PlaceholderAPI")?.let {
+        val pluginManager = Bukkit.getPluginManager()
+        pluginManager.getPlugin("PlaceholderAPI")?.let {
             getResource("Expansion-questadder.patch")?.buffered()?.use { stream ->
                 try {
                     File(File(it.dataFolder, "expansions").apply {
@@ -285,6 +288,36 @@ class QuestAdder: JavaPlugin() {
                     warn("unable to unzip QuestAdder's expansion")
                 }
             }
+        }
+        if (pluginManager.isPluginEnabled("WorldGuard")) {
+            managerList.add(WorldGuardManager)
+            ActionBuilder.run {
+                addEvent("enter", EventRegionEnter::class.java)
+                addEvent("exit", EventRegionExit::class.java)
+            }
+        }
+        if (pluginManager.isPluginEnabled("MagicSpells")) ActionBuilder.run {
+            addEvent("spellcast", EventSpellCast::class.java)
+            addEvent("spelltarget", EventSpellTarget::class.java)
+            addEvent("spelldamage", EventSpellDamage::class.java)
+            addEvent("spelllearn", EventSpellLearn::class.java)
+            addEvent("spellforget", EventSpellForget::class.java)
+            addEvent("buffstart", EventBuffStart::class.java)
+            addEvent("buffend", EventBuffEnd::class.java)
+        }
+        if (pluginManager.isPluginEnabled("MythicMobs")) ActionBuilder.run {
+            addEvent("mythicdamage", EventMythicDamage::class.java)
+            addEvent("mythicheal", EventMythicHeal::class.java)
+        }
+        if (pluginManager.isPluginEnabled("SuperiorSkyblock2")) ActionBuilder.run {
+            addEvent("islandopen", EventIslandOpen::class.java)
+            addEvent("islandclose", EventIslandClose::class.java)
+            addEvent("islandquit", EventIslandQuit::class.java)
+            addEvent("islandrate", EventIslandRate::class.java)
+            addEvent("islandenter", EventIslandEnter::class.java)
+            addEvent("islandcreate", EventIslandCreate::class.java)
+            addEvent("islandchat", EventIslandChat::class.java)
+            addEvent("islandjoin", EventIslandJoin::class.java)
         }
         loadDatabase()
         managerList.forEach {

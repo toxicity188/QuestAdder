@@ -59,6 +59,11 @@ object ActionBuilder {
         put("talk", EventTalk::class.java)
         put("quit", EventQuit::class.java)
         put("command", EventCommand::class.java)
+        put("walk", EventWalk::class.java)
+
+        put("respawn", EventRespawn::class.java)
+        put("sneak", EventSneak::class.java)
+        put("sprint", EventSprint::class.java)
 
         put("navigatestart",EventNavigateStart::class.java)
         put("navigatefail",EventNavigateFail::class.java)
@@ -76,6 +81,9 @@ object ActionBuilder {
 
     fun addAction(name: String, clazz: Class<out AbstractAction>) {
         actionMap.putIfAbsent(name.lowercase(),clazz)
+    }
+    fun addEvent(name: String, clazz: Class<out AbstractEvent<*>>) {
+        eventMap.putIfAbsent(name.lowercase(),clazz)
     }
 
     fun createAction(adder: QuestAdder, parameter: String): AbstractAction? {

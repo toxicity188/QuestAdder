@@ -4,7 +4,10 @@ import kor.toxicity.questadder.item.ItemDatabase
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.manager.ItemManager
 import kor.toxicity.questadder.manager.LocationManager
+import kor.toxicity.questadder.util.action.AbstractAction
+import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
+import kor.toxicity.questadder.util.event.AbstractEvent
 
 /**
  * @author Toxicity
@@ -75,5 +78,22 @@ object QuestAdderAPI {
      */
     inline fun <reified T, reified R> addFunction(name: String, args: List<Class<*>> = emptyList(), noinline function: (t: T, Array<Any>) -> R?) {
         FunctionBuilder.addFunction(name, T::class.java, R::class.java, args, function)
+    }
+
+    /**
+     * Add action in QuestAdder.
+     * @param clazz The class of action
+     * @since 1.0.2
+     */
+    fun addAction(name: String, clazz: Class<out AbstractAction>) {
+        ActionBuilder.addAction(name, clazz)
+    }
+    /**
+     * Add event in QuestAdder.
+     * @param clazz The class of action
+     * @since 1.0.2
+     */
+    fun addEvent(name: String, clazz: Class<out AbstractEvent<*>>) {
+        ActionBuilder.addEvent(name, clazz)
     }
 }

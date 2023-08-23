@@ -8,6 +8,11 @@ depend:
 softdepend:
   - ItemsAdder
   - Oraxen
+  - PlaceholderAPI
+  - WorldGuard
+  - MagicSpells
+  - MythicMobs
+  - SuperiorSkyblock2
 commands:
   questadder:
     aliases:

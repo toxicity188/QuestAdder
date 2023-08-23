@@ -282,6 +282,9 @@ object FunctionBuilder {
         addFunction("or", listOf(Boolean::class.java, Boolean::class.java)) { _: Null, args ->
             args[0] as Boolean || args[1] as Boolean
         }
+        addFunction("region") { e: RegionEvent, _ ->
+            e.region.id
+        }
     }
     inline fun <reified T, reified R : Any> addOperation(name: String, priority: Int, noinline operate: (T, T) -> R) {
         addOperation(name,priority,T::class.java,R::class.java,operate)
