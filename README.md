@@ -7,20 +7,23 @@ Please feel free to ask me if you have a question. My discord server is [here](h
 QuestAdder supports various talking system.
 
 ## Citizens support
-![1](https://github.com/toxicity188/QuestAdder/assets/114675706/d62bf670-76c8-4412-ba38-cffe5a60e8cf)  
+![2](https://github.com/toxicity188/QuestAdder/assets/114675706/b3fb94cd-c17d-4ef9-8dcd-50cdb8feb343)  
+![5](https://github.com/toxicity188/QuestAdder/assets/114675706/74ead25e-eced-42aa-a2f6-865bd6f2e11d)  
 QuestAdder supports Citizens.
 
 ## Variable-based system
-![1](https://github.com/toxicity188/QuestAdder/assets/114675706/99c3b171-8366-4b5b-aaa2-b7c5b8fdea40)  
-![2](https://github.com/toxicity188/QuestAdder/assets/114675706/5f18aee4-f514-4917-91a5-d3d0ec56ecc4)  
+![1](https://github.com/toxicity188/QuestAdder/assets/114675706/14d1adfd-121a-4e34-a690-926a7dfedaf8)  
+![2](https://github.com/toxicity188/QuestAdder/assets/114675706/36ee6b14-3e65-494d-894d-a9c29482355e)  
 You can change the dialog of the npc to modify it's index.
 
-## Unlimited quest
-![9](https://github.com/toxicity188/QuestAdder/assets/114675706/cd3410ac-bd8c-44e0-a4d5-016ef6abf6c1)  
-![8](https://github.com/toxicity188/QuestAdder/assets/114675706/bf8c28d0-bbc5-4e99-9b6a-ed007502414e)  
-![7_1](https://github.com/toxicity188/QuestAdder/assets/114675706/3dee0658-d9c6-4e2c-ac19-3c19c864e532)  
+## Unlimited quest 
+![1](https://github.com/toxicity188/QuestAdder/assets/114675706/6df6cf5f-d5f0-45ea-92c3-664995077a31)  
+![9](https://github.com/toxicity188/QuestAdder/assets/114675706/90a0d0b9-3558-44d8-886f-e5046168ab04)  
+![3](https://github.com/toxicity188/QuestAdder/assets/114675706/baba9bd7-8847-4c7d-8908-687872589c5f)  
+![5](https://github.com/toxicity188/QuestAdder/assets/114675706/5da4f7e4-321e-411a-8acc-14d2e42357e5)  
+![7](https://github.com/toxicity188/QuestAdder/assets/114675706/753a6c38-4877-4222-99b0-ba238f19c5c5)  
 you can make any quest to use function with QuestAdder.
 
 # Beautiful navigation system
-![2023-08-14_02 10 19](https://github.com/toxicity188/QuestAdder/assets/114675706/252c395f-e8ad-40be-92e3-e6d23d29fb0b)  
+![2023-08-14_02 10 19](https://github.com/toxicity188/QuestAdder/assets/114675706/56d81f66-5024-48d6-9c8a-53aaeb4ee94d)  
 you can navigate any location related to quest.
