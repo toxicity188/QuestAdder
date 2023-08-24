@@ -9,9 +9,10 @@ allprojects {
     apply plugin: 'java'
     apply plugin: 'org.jetbrains.kotlin.jvm'
     apply plugin: 'com.github.johnrengelman.shadow'
+    apply plugin: 'maven-publish'
 
     group = 'kor.toxicity'
-    version = '1.0.3-SNAPSHOT'
+    version = '1.0.4-SNAPSHOT'
 
     repositories {
         mavenCentral()

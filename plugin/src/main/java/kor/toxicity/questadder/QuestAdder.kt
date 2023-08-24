@@ -51,7 +51,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 class QuestAdder: JavaPlugin() {
     companion object {
 
-        const val version = "1.0.3"
+        const val version = "1.0.4"
 
         lateinit var nms: NMS
             private set
