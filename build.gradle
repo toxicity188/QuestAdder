@@ -5,14 +5,17 @@ plugins {
     id 'maven-publish'
 }
 
+def questAdderGroup = 'kor.toxicity'
+def questAdderVersion = '1.0.4-SNAPSHOT'
+
 allprojects {
     apply plugin: 'java'
     apply plugin: 'org.jetbrains.kotlin.jvm'
     apply plugin: 'com.github.johnrengelman.shadow'
     apply plugin: 'maven-publish'
 
-    group = 'kor.toxicity'
-    version = '1.0.4-SNAPSHOT'
+    group = questAdderGroup
+    version = questAdderVersion
 
     repositories {
         mavenCentral()
@@ -146,10 +149,24 @@ compileTestKotlin {
     }
 }
 
-publishing {
-    publications {
-        shadow(MavenPublication) { publication ->
-            project.shadow.component(publication)
+afterEvaluate {
+    publishing {
+        publications {
+            shadow(MavenPublication) { publication ->
+                project.shadow.component(publication)
+            }
+            paidRelease(MavenPublication) {
+
+                groupId = questAdderGroup
+                artifactId = 'final'
+                version = questAdderVersion
+            }
+            paidDebug(MavenPublication) {
+
+                groupId = questAdderGroup
+                artifactId = 'final-debug'
+                version = questAdderVersion
+            }
         }
     }
 }
