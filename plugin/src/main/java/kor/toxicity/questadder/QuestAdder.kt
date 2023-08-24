@@ -22,6 +22,7 @@ import kor.toxicity.questadder.util.gui.ButtonGui
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButton
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButtonType
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.event.ClickEvent
 import org.bstats.bukkit.Metrics
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -36,6 +37,10 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.java.JavaPlugin
 import org.jetbrains.annotations.ApiStatus.Internal
 import java.io.File
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.EnumMap
@@ -45,6 +50,9 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 class QuestAdder: JavaPlugin() {
     companion object {
+
+        const val version = "1.0.3"
+
         lateinit var nms: NMS
             private set
         lateinit var animator: PlayerAnimator
@@ -376,6 +384,30 @@ class QuestAdder: JavaPlugin() {
         Metrics(this,19565)
         load()
         send("plugin enabled.")
+        try {
+            val get = HttpClient.newHttpClient().send(
+                HttpRequest.newBuilder()
+                .uri(URI.create("https://api.spigotmc.org/legacy/update.php?resource=112227/"))
+                .GET()
+                .build(), HttpResponse.BodyHandlers.ofString()).body()
+            if (version != get) {
+                warn("new version found: $get")
+                warn("download: https://www.spigotmc.org/resources/questadder.112227/")
+                pluginManager.registerEvents(object : Listener {
+                    @EventHandler
+                    fun join(e: PlayerJoinEvent) {
+                        val player = e.player
+                        if (player.isOp) {
+                            player.info("new version found: $get")
+                            player.info("download: https://www.spigotmc.org/resources/questadder.112227/".asClearComponent().clickEvent(
+                                ClickEvent.openUrl("https://www.spigotmc.org/resources/questadder.112227/")))
+                        }
+                    }
+                },this)
+            }
+        } catch (ex: Exception) {
+            warn("unable to check for updates: ${ex.message ?: ex.javaClass.simpleName}")
+        }
     }
 
     override fun onDisable() {
