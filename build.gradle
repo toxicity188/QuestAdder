@@ -148,25 +148,3 @@ compileTestKotlin {
         jvmTarget = "17"
     }
 }
-
-afterEvaluate {
-    publishing {
-        publications {
-            shadow(MavenPublication) { publication ->
-                project.shadow.component(publication)
-            }
-            paidRelease(MavenPublication) {
-
-                groupId = questAdderGroup
-                artifactId = 'final'
-                version = questAdderVersion
-            }
-            paidDebug(MavenPublication) {
-
-                groupId = questAdderGroup
-                artifactId = 'final-debug'
-                version = questAdderVersion
-            }
-        }
-    }
-}
