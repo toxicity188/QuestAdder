@@ -285,6 +285,7 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
 
                         private var referencedEntity = current.npc.npc.entity
                         private val display = current.display ?: QuestAdder.nms.createArmorStand(current.player,referencedEntity.location).apply {
+                            setText(Component.empty())
                             current.display = this
                         }
                         override fun end() {

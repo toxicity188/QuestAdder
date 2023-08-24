@@ -1,7 +1,6 @@
 package kor.toxicity.questadder.util.event.type;
 
 import com.nisovin.magicspells.events.SpellCastedEvent;
-import com.nisovin.magicspells.events.SpellTargetEvent;
 import kor.toxicity.questadder.QuestAdder;
 import kor.toxicity.questadder.util.action.AbstractAction;
 import kor.toxicity.questadder.util.event.AbstractEvent;
