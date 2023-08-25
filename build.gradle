@@ -6,7 +6,7 @@ plugins {
 }
 
 def questAdderGroup = 'kor.toxicity'
-def questAdderVersion = '1.0.4-SNAPSHOT'
+def questAdderVersion = '1.0.5-SNAPSHOT'
 
 allprojects {
     apply plugin: 'java'

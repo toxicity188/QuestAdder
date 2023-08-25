@@ -376,6 +376,9 @@ object DialogManager: QuestAdderManager {
     fun getQuest(name: String) = questMap[name]
     fun getQnA(name: String) = qnaMap[name]
     fun getNPC(uuid: UUID) = actualNPCMap[uuid]
+    fun getNPC(name: String) = actualNPCMap.values.firstOrNull {
+        it.questNPC.key == name
+    }
     fun getAllNPC(): Set<ActualNPC> = HashSet(actualNPCMap.values)
 
     private fun dialogReload(adder: QuestAdder) {

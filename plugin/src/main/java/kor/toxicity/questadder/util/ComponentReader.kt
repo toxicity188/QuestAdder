@@ -44,11 +44,29 @@ class ComponentReader<T : Any>(string: String) {
             }
         }
 
+        fun splitFunction(string: String): List<String> {
+            var index = 0
+            var length = 0
+            val list = ArrayList<String>()
+            while (length < string.length) {
+                if (string.substring(length,length + 1) == "%") {
+                    if (length < string.lastIndex && string.substring(length + 1, length + 2) == "%") {
+                        length ++
+                    } else {
+                        list.add(string.substring(index,length).replace("%%","%"))
+                        index = length + 1
+                    }
+                }
+                length++
+            }
+            list.add(string.substring(index).replace("%%","%"))
+            return list
+        }
+
 
         private val pattern = Pattern.compile("<((?<name>([a-zA-Z]+)):(?<value>(\\w|,|_|-|#|:)+))>")
 
         private fun getNullBuilder(d: ComponentData) = StringComponentBuilder("<none>",d)
-        private fun getPercentBuilder(d: ComponentData) = StringComponentBuilder("%",d)
 
         private val textColorMap = mapOf(
             "BLACK" to NamedTextColor.BLACK,
@@ -159,41 +177,37 @@ class ComponentReader<T : Any>(string: String) {
 
     init {
         val comp = ComponentData()
-        val split = string.replace('&','§').split('%')
+        val split = splitFunction(string.replace('&','§'))
         split.forEachIndexed { index, s ->
+            if (s == "") return@forEachIndexed
             if (index % 2 == 0) {
-                if (index != 0 && index != split.lastIndex && s == "") components.add {
-                    getPercentBuilder(comp)
-                } else {
-                    for (s1 in parseString(s)) {
-                        val matcher = pattern.matcher(s1)
-                        if (matcher.find()) {
-                            dataApply[matcher.group("name")]?.let {
-                                it(matcher.group("value"),comp)?.let { component ->
-                                    components.add {
-                                        component
-                                    }
+                for (s1 in parseString(s)) {
+                    val matcher = pattern.matcher(s1)
+                    if (matcher.find()) {
+                        dataApply[matcher.group("name")]?.let {
+                            it(matcher.group("value"),comp)?.let { component ->
+                                components.add {
+                                    component
                                 }
                             }
-                        } else {
-                            val copy = comp.copy()
-                            comp.gradient?.let {
-                                val builder = GradientComponentBuilder(s1,copy,it)
-                                components.add {
-                                    builder
-                                }
-                                comp.gradient = null
-                            } ?: run {
-                                val builder = StringComponentBuilder(s1,copy)
-                                components.add {
-                                    builder
-                                }
+                        }
+                    } else {
+                        val copy = comp.copy()
+                        comp.gradient?.let {
+                            val builder = GradientComponentBuilder(s1,copy,it)
+                            components.add {
+                                builder
+                            }
+                            comp.gradient = null
+                        } ?: run {
+                            val builder = StringComponentBuilder(s1,copy)
+                            components.add {
+                                builder
                             }
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 FunctionBuilder.evaluate(s).let { p ->
                     val copy = comp.copy()
                     components.add { t ->

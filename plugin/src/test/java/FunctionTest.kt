@@ -5,7 +5,7 @@ class FunctionTest {
     @Test
     fun testFunction() {
         try {
-            println(FunctionBuilder.evaluate("plus(1.0,2.0) == 3").apply(Any()))
+            println(Number::class.java.isAssignableFrom(FunctionBuilder.evaluate("true").getReturnType()))
         } catch (ex: Exception) {
             ex.printStackTrace()
             println("test failure!")

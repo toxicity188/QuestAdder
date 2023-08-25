@@ -50,6 +50,9 @@ object ActionBuilder {
 
         put("give",ActGive::class.java)
         put("take",ActTake::class.java)
+
+        put("command", ActCommand::class.java)
+        put("money", ActMoney::class.java)
     }
     private val eventMap = HashMap<String,Class<out AbstractEvent<*>>>().apply {
         put("join", EventJoin::class.java)

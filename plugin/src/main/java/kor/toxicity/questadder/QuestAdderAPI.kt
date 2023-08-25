@@ -19,7 +19,8 @@ import java.util.UUID
 @Suppress("UNUSED")
 object QuestAdderAPI {
     /**
-     * Set the item database of QuestAdder.
+     * Add the item database of QuestAdder.
+     * @param itemDatabase a database of item.
      * @since 1.0
      */
     fun addItemDatabase(itemDatabase: ItemDatabase) {
@@ -47,7 +48,7 @@ object QuestAdderAPI {
     /**
      * Get the dialog.
      * @since 1.0
-     * @param name The yaml key of dialog
+     * @param name The yaml key of the dialog
      * @return The object of dialog or null
      */
     fun getDialog(name: String) = DialogManager.getDialog(name)
@@ -55,21 +56,21 @@ object QuestAdderAPI {
     /**
      * Get the quest.
      * @since 1.0
-     * @param name The yaml key of quest
+     * @param name The yaml key of the quest
      * @return The object of dialog or null
      */
     fun getQuest(name: String) = DialogManager.getQuest(name)
     /**
      * Get the action.
      * @since 1.0
-     * @param name The yaml key of action
+     * @param name The yaml key of the action
      * @return the object of action or null
      */
     fun getAction(name: String) = DialogManager.getAction(name)
     /**
      * Get the location.
      * @since 1.0
-     * @param name The yaml key of location
+     * @param name The yaml key of the location
      * @return The object of location or null
      */
     fun getLocation(name: String) = LocationManager.getLocation(name)
@@ -93,6 +94,14 @@ object QuestAdderAPI {
      * @since 1.0.3
      */
     fun getNPC(uuid: UUID) = DialogManager.getNPC(uuid)
+    /**
+     * Get NPC object from given uuid.
+     *
+     * @param name A yaml key of the NPC
+     * @return An object of NPC of null
+     * @since 1.0.5
+     */
+    fun getNPC(name: String) = DialogManager.getNPC(name)
 
     /**
      * Get all NPC in server.

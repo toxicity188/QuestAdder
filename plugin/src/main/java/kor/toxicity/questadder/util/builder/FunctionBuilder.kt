@@ -28,7 +28,7 @@ object FunctionBuilder {
     private val stringPattern = Pattern.compile("^\'(?<string>(\\w|\'\'|\\W|^\')+)\'$")
     private val map = HashMap<HashedClass, MutableMap<String, MutableMap<HashedClassList, ArgumentFunction>>>()
     private val operatorMap = HashMap<HashedClass,MutableMap<String, StoredQuestOperator>>()
-    private val booleanStringArray = arrayOf("true", "false")
+    private val booleanStringArray = setOf("true", "false")
     private val numberArray = arrayOf(
         '0','1','2','3','4','5','6','7','8','9'
     )
@@ -452,54 +452,58 @@ object FunctionBuilder {
                     return stringParsed
                 }
             }
-        } else if (booleanStringArray.contains(string)) {
-            val booleanParsed = when (string) {
-                "true" -> true
-                else -> false
+        } else {
+            val removeSpace = string.replace(" ","")
+            if (booleanStringArray.contains(removeSpace)) {
+                val booleanParsed = when (removeSpace) {
+                    "true" -> true
+                    else -> false
+                }
+                object : WrappedFunction {
+                    override fun getType(): Class<*> {
+                        return Null::class.java
+                    }
+
+                    override fun apply(t: Any): Any {
+                        return booleanParsed
+                    }
+
+                    override fun getName(): String {
+                        return booleanParsed.toString()
+                    }
+
+                    override fun getReturnType(): Class<*> {
+                        return Boolean::class.java
+                    }
+                }
+            } else try {
+                val numberEquation = removeSpace.toDouble()
+                object : WrappedFunction {
+                    override fun getReturnType(): Class<*> {
+                        return Number::class.java
+                    }
+
+                    override fun apply(t: Any): Any {
+                        return numberEquation
+                    }
+
+                    override fun getName(): String {
+                        return numberEquation.toString()
+                    }
+
+                    override fun getType(): Class<*> {
+                        return Null::class.java
+                    }
+                }
+            } catch (ex: Exception) {
+                if (removeSpace != "null") QuestAdder.warn("compile error: unknown type: $removeSpace")
+                nullFunction
             }
-            object : WrappedFunction {
-                override fun getType(): Class<*> {
-                    return Null::class.java
-                }
-
-                override fun apply(t: Any): Any {
-                    return booleanParsed
-                }
-
-                override fun getName(): String {
-                    return booleanParsed.toString()
-                }
-
-                override fun getReturnType(): Class<*> {
-                    return Boolean::class.java
-                }
-            }
-        } else try {
-            val numberEquation = string.toDouble()
-            object : WrappedFunction {
-                override fun getReturnType(): Class<*> {
-                    return Number::class.java
-                }
-
-                override fun apply(t: Any): Any {
-                    return numberEquation
-                }
-
-                override fun getName(): String {
-                    return numberEquation.toString()
-                }
-
-                override fun getType(): Class<*> {
-                    return Null::class.java
-                }
-            }
-        } catch (ex: Exception) {
-            if (string != "null") QuestAdder.warn("compile error: unknown type: $string")
-            nullFunction
         }
     }
 
     fun evaluate(parameter: String, clazz: Class<*> = Any::class.java): WrappedFunction {
+        if (parameter == "") return nullFunction
         fun functionMatch(clazz: Class<*>, target: List<String>): WrappedFunction? {
             fun find(clazz: Class<*>, target: String): WrappedFunction? {
                 val matcher = functionPattern.matcher(target)

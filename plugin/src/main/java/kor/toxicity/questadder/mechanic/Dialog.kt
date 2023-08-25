@@ -9,6 +9,7 @@ import kor.toxicity.questadder.manager.SlateManager
 import kor.toxicity.questadder.mechanic.npc.ActualNPC
 import kor.toxicity.questadder.nms.VirtualArmorStand
 import kor.toxicity.questadder.util.ComponentReader
+import kor.toxicity.questadder.util.Null
 import kor.toxicity.questadder.util.SoundData
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
@@ -493,73 +494,52 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
                 }
             }
         }
-        fun isNotNumber(result: Any?) {
-            error("runtime error: the value \"$result\" is not a number!")
-        }
-        fun isNull() {
-            error("runtime error: the value is null!")
-        }
+        fun throwRuntimeError() = error("runtime error: unable to load the function.")
         section.findStringList("index","Index","Indexes","indexes")?.forEach {
             val matcher = ANNOTATION_PATTERN.matcher(it)
             while (matcher.find()) {
                 val name = matcher.group("name")
                 val value = matcher.group("value")
                 val func = FunctionBuilder.evaluate(matcher.replaceAll(""))
+                if (!Number::class.java.isAssignableFrom(func.getReturnType())) {
+                    error("type mismatch error: index must be a number.")
+                    continue
+                }
                 when (name.lowercase()) {
                     "set" -> addLastAction { current ->
-                        when (val get = func.apply(current.event)) {
-                            null -> isNull()
-                            !is Number -> isNotNumber(get)
-                            else -> {
-                                QuestAdder.getPlayerData(current.player)?.run {
-                                    npcIndexes[value] = get.toInt()
-                                }
+                        (func.apply(current.event) as? Number)?.let { get ->
+                            QuestAdder.getPlayerData(current.player)?.run {
+                                npcIndexes[value] = get.toInt()
                             }
-                        }
+                        } ?: throwRuntimeError()
                     }
                     "add" -> addLastAction { current ->
-                        when (val get = func.apply(current.event)) {
-                            null -> isNull()
-                            !is Number -> isNotNumber(get)
-                            else -> {
-                                QuestAdder.getPlayerData(current.player)?.run {
-                                    npcIndexes[value] = (npcIndexes[value] ?: 0) + get.toInt()
-                                }
+                        (func.apply(current.event) as? Number)?.let { get ->
+                            QuestAdder.getPlayerData(current.player)?.run {
+                                npcIndexes[value] = (npcIndexes[value] ?: 0) + get.toInt()
                             }
-                        }
+                        } ?: throwRuntimeError()
                     }
                     "subtract" -> addLastAction { current ->
-                        when (val get = func.apply(current.event)) {
-                            null -> isNull()
-                            !is Number -> isNotNumber(get)
-                            else -> {
-                                QuestAdder.getPlayerData(current.player)?.run {
-                                    npcIndexes[value] = (npcIndexes[value] ?: 0) - get.toInt()
-                                }
+                        (func.apply(current.event) as? Number)?.let { get ->
+                            QuestAdder.getPlayerData(current.player)?.run {
+                                npcIndexes[value] = (npcIndexes[value] ?: 0) - get.toInt()
                             }
-                        }
+                        } ?: throwRuntimeError()
                     }
                     "multiply" -> addLastAction { current ->
-                        when (val get = func.apply(current.event)) {
-                            null -> isNull()
-                            !is Number -> isNotNumber(get)
-                            else -> {
-                                QuestAdder.getPlayerData(current.player)?.run {
-                                    npcIndexes[value] = (npcIndexes[value] ?: 0) * get.toInt()
-                                }
+                        (func.apply(current.event) as? Number)?.let { get ->
+                            QuestAdder.getPlayerData(current.player)?.run {
+                                npcIndexes[value] = (npcIndexes[value] ?: 0) * get.toInt()
                             }
-                        }
+                        } ?: throwRuntimeError()
                     }
                     "divide" -> addLastAction { current ->
-                        when (val get = func.apply(current.event)) {
-                            null -> isNull()
-                            !is Number -> isNotNumber(get)
-                            else -> {
-                                QuestAdder.getPlayerData(current.player)?.run {
-                                    npcIndexes[value] = (npcIndexes[value] ?: 0) / get.toInt()
-                                }
+                        (func.apply(current.event) as? Number)?.let { get ->
+                            QuestAdder.getPlayerData(current.player)?.run {
+                                npcIndexes[value] = (npcIndexes[value] ?: 0) / get.toInt()
                             }
-                        }
+                        } ?: throwRuntimeError()
                     }
                 }
             }
@@ -574,66 +554,78 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
                         QuestAdder.getPlayerData(current.player)?.remove(value)
                     }
                 } else {
-                    val func = FunctionBuilder.evaluate(matcher.replaceAll(""))
+                    val replacedMatcher = matcher.replaceAll("")
+                    val func = FunctionBuilder.evaluate(replacedMatcher)
+                    if (func.getReturnType() == Null::class.java) {
+                        error("null error: this function returns null: $replacedMatcher")
+                        continue
+                    }
+                    fun checkNumber(): Boolean {
+                        val ret = Number::class.java.isAssignableFrom(func.getReturnType())
+                        if (!ret) error("type mismatch error: this operation requires a number.")
+                        return ret
+                    }
                     when (name.lowercase()) {
                         "set" -> addLastAction { current ->
-                            val get = func.apply(current.event)
-                            get?.let { any ->
+                            func.apply(current.event)?.let { any ->
                                 QuestAdder.getPlayerData(current.player)?.set(value,any)
-                            } ?: isNull()
+                            } ?: throwRuntimeError()
                         }
                         "putifabsent" -> addLastAction { current ->
-                            val get = func.apply(current.event)
-                            get?.let { any ->
+                            func.apply(current.event)?.let { any ->
                                 QuestAdder.getPlayerData(current.player)?.putIfAbsent(value,any)
-                            } ?: isNull()
+                            } ?: throwRuntimeError()
                         }
-                        "add" -> addLastAction { current ->
-                            QuestAdder.getPlayerData(current.player)?.let { data ->
-                                val original = data.get(value)
-                                val get = func.apply(current.event)
-                                if (get is Number) data.set(value, (if (original is Number) original.toDouble() else 0.0) + get.toDouble())
-                                else {
-                                    isNotNumber(get)
+                        "add" -> {
+                            if (!checkNumber()) continue
+                            addLastAction { current ->
+                                QuestAdder.getPlayerData(current.player)?.let { data ->
+                                    val original = data.get(value)
+                                    (func.apply(current.event) as? Number)?.let { get ->
+                                        data.set(value, (if (original is Number) original.toDouble() else 0.0) + get.toDouble())
+                                    } ?: throwRuntimeError()
                                 }
                             }
                         }
-                        "subtract" -> addLastAction { current ->
-                            QuestAdder.getPlayerData(current.player)?.let { data ->
-                                val original = data.get(value)
-                                val get = func.apply(current.event)
-                                if (get is Number) data.set(
-                                    value,
-                                    (if (original is Number) original.toDouble() else 0.0) - get.toDouble()
-                                )
-                                else {
-                                    isNotNumber(get)
+                        "subtract" -> {
+                            if (!checkNumber()) continue
+                            addLastAction { current ->
+                                QuestAdder.getPlayerData(current.player)?.let { data ->
+                                    val original = data.get(value)
+                                    (func.apply(current.event) as? Number)?.let { get ->
+                                        data.set(
+                                            value,
+                                            (if (original is Number) original.toDouble() else 0.0) - get.toDouble()
+                                        )
+                                    } ?: throwRuntimeError()
                                 }
                             }
                         }
-                        "multiply" -> addLastAction { current ->
-                            QuestAdder.getPlayerData(current.player)?.let { data ->
-                                val original = data.get(value)
-                                val get = func.apply(current.event)
-                                if (get is Number) data.set(
-                                    value,
-                                    (if (original is Number) original.toDouble() else 0.0) * get.toDouble()
-                                )
-                                else {
-                                    isNotNumber(get)
+                        "multiply" -> {
+                            if (!checkNumber()) continue
+                            addLastAction { current ->
+                                QuestAdder.getPlayerData(current.player)?.let { data ->
+                                    val original = data.get(value)
+                                    (func.apply(current.event) as? Number)?.let { get ->
+                                        data.set(
+                                            value,
+                                            (if (original is Number) original.toDouble() else 0.0) * get.toDouble()
+                                        )
+                                    } ?: throwRuntimeError()
                                 }
                             }
                         }
-                        "divide" -> addLastAction { current ->
-                            QuestAdder.getPlayerData(current.player)?.let { data ->
-                                val original = data.get(value)
-                                val get = func.apply(current.event)
-                                if (get is Number) data.set(
-                                    value,
-                                    (if (original is Number) original.toDouble() else 0.0) / get.toDouble()
-                                )
-                                else {
-                                    isNotNumber(get)
+                        "divide" -> {
+                            if (!checkNumber()) continue
+                            addLastAction { current ->
+                                QuestAdder.getPlayerData(current.player)?.let { data ->
+                                    val original = data.get(value)
+                                    (func.apply(current.event) as? Number)?.let { get ->
+                                        data.set(
+                                            value,
+                                            (if (original is Number) original.toDouble() else 0.0) / get.toDouble()
+                                        )
+                                    } ?: throwRuntimeError()
                                 }
                             }
                         }
