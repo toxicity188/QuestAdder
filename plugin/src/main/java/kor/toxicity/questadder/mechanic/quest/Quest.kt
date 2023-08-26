@@ -30,7 +30,7 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
 
     val name = (section.findString("name","Name") ?: key).replace('&','§')
 
-    private val reward = section.findConfig("Reward","reward","Rewards","rewards")?.let {
+    val reward = section.findConfig("Reward","reward","Rewards","rewards")?.let {
         RewardSet(it)
     }
     private val recommend = section.findStringList("recommend")?.map {
@@ -190,7 +190,7 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
 
     fun isCompleted(player: Player): Boolean {
         val data = QuestAdder.getPlayerData(player) ?: return false
-        if (data.questVariables[key]?.state != QuestState.HAS) return false
+        if (data.questVariables[key]?.state != QuestRecord.HAS) return false
         val invokeEvent = QuestInvokeEvent(this,player).apply {
             callEvent()
         }
@@ -199,11 +199,13 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
             get is Boolean && get
         }
     }
-    fun isCleared(player: Player) = QuestAdder.getPlayerData(player)?.questVariables?.get(key)?.state == QuestState.COMPLETE
+    fun isCleared(player: Player) = QuestAdder.getPlayerData(player)?.questVariables?.get(key)?.state == QuestRecord.COMPLETE
     fun isReady(player: Player) = reward?.isReady(player) ?: true
 
+    fun getState(player: Player) = if (isCleared(player)) QuestState.CLEAR else if (isCompleted(player)) QuestState.COMPLETE else if (has(player)) QuestState.HAS else QuestState.HAS_NOT
+
     fun has(player: Player) = QuestAdder.getPlayerData(player)?.hasQuest(key) ?: false
-    fun getIcon(player: Player): ItemStack {
+    fun getIcon(player: Player, suffix: List<Component> = QuestAdder.Config.questSuffix): ItemStack {
         val event = QuestInvokeEvent(this,player).apply {
             callEvent()
         }
@@ -256,7 +258,7 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
                         add(QuestAdder.Prefix.left.append(QuestAdder.Config.timeFormat.format(left - ChronoUnit.MINUTES.between(data.time,LocalDateTime.now())).asClearComponent().color(
                             WHITE)))
                     }
-                    addAll(QuestAdder.Config.questSuffix)
+                    addAll(suffix)
                 })
                 if (cond.all {
                     it

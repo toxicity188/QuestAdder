@@ -6,13 +6,13 @@ import com.google.gson.TypeAdapterFactory
 import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
-import kor.toxicity.questadder.mechanic.quest.QuestState
+import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import java.time.LocalDateTime
 import java.util.Base64
 
 class QuestData (
     val time: LocalDateTime,
-    var state: QuestState,
+    var state: QuestRecord,
     val variable: MutableMap<String,Long>
 ) {
     companion object {
@@ -53,7 +53,7 @@ class QuestData (
 
     private data class QuestGsonData(
         val time: String,
-        val state: QuestState,
+        val state: QuestRecord,
         val variable: MutableMap<String,Long>
     )
 }

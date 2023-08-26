@@ -2,7 +2,7 @@ package kor.toxicity.questadder.mechanic.npc
 
 import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.data.PlayerData
-import kor.toxicity.questadder.mechanic.quest.QuestState
+import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.nms.VirtualEntity
 import net.citizensnpcs.api.npc.NPC
 import net.kyori.adventure.text.Component
@@ -76,8 +76,8 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC) {
             questNPC.indicate[it]?.let { quest ->
                 data.questVariables[quest.key]?.state?.let { state ->
                     when (state) {
-                        QuestState.HAS ->  if (quest.isCompleted(player)) State.COMPLETE else State.HAS
-                        QuestState.COMPLETE -> State.ALREADY_COMPLETED
+                        QuestRecord.HAS ->  if (quest.isCompleted(player)) State.COMPLETE else State.HAS
+                        QuestRecord.COMPLETE -> State.ALREADY_COMPLETED
                     }
                 } ?: State.READY_TO_REQUEST
             }

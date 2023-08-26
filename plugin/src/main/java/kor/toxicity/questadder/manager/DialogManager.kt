@@ -10,7 +10,7 @@ import kor.toxicity.questadder.mechanic.QnA
 import kor.toxicity.questadder.mechanic.npc.ActualNPC
 import kor.toxicity.questadder.mechanic.npc.QuestNPC
 import kor.toxicity.questadder.mechanic.quest.Quest
-import kor.toxicity.questadder.mechanic.quest.QuestState
+import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.action.RegistrableAction
 import kor.toxicity.questadder.util.builder.ActionBuilder
@@ -183,7 +183,7 @@ object DialogManager: QuestAdderManager {
                     var index = 0
                     var typeIndex = 0
                     val originalQuestData = playerData.questVariables.mapNotNull {
-                        if (it.value.state == QuestState.HAS) questMap[it.key] else null
+                        if (it.value.state == QuestRecord.HAS) questMap[it.key] else null
                     }.toMutableList()
                     val types = TreeSet<String>().apply {
                         for (originalQuestDatum in originalQuestData) {
@@ -379,6 +379,7 @@ object DialogManager: QuestAdderManager {
     fun getNPC(name: String) = actualNPCMap.values.firstOrNull {
         it.questNPC.key == name
     }
+    fun getQuestNPC(name: String) = questNpcMap[name]
     fun getAllNPC(): Set<ActualNPC> = HashSet(actualNPCMap.values)
 
     private fun dialogReload(adder: QuestAdder) {

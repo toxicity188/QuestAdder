@@ -63,6 +63,10 @@ class QuestNPC(adder: QuestAdder, file: File, val key: String, section: Configur
     val renderDistance = section.findDouble(16.0,"render-distance","RenderDistance").coerceAtLeast(3.0)
 
     fun getIndex(player: Player) = QuestAdder.getPlayerData(player)?.npcIndexes?.get(key)
+    fun setIndex(player: Player, index: Int) = QuestAdder.getPlayerData(player)?.npcIndexes?.let {
+        it[key] = index
+        true
+    } ?: false
 
     override fun toString(): String {
         return name

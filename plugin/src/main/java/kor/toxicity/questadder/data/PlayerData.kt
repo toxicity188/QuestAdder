@@ -1,7 +1,7 @@
 package kor.toxicity.questadder.data
 
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.mechanic.quest.QuestState
+import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.util.Null
 import kor.toxicity.questadder.util.variable.SerializeManager
 import java.time.LocalDateTime
@@ -43,12 +43,12 @@ class PlayerData {
     fun getQuestVariable(quest: String, name: String) = questVariables[quest]?.variable?.get(name)
     fun setQuestVariable(quest: String, name: String, long: Long) = questVariables[quest]?.variable?.put(name,long)
     fun giveQuest(quest: String) {
-        questVariables[quest] = QuestData(LocalDateTime.now(),QuestState.HAS,HashMap())
+        questVariables[quest] = QuestData(LocalDateTime.now(),QuestRecord.HAS,HashMap())
     }
-    fun hasQuest(quest: String) = questVariables[quest]?.state == QuestState.HAS
+    fun hasQuest(quest: String) = questVariables[quest]?.state == QuestRecord.HAS
     fun removeQuest(quest: String) = questVariables.remove(quest)
     fun completeQuest(quest: String) {
-        questVariables[quest]?.state = QuestState.COMPLETE
+        questVariables[quest]?.state = QuestRecord.COMPLETE
     }
 
     fun getQuestKey() = questVariables.keys

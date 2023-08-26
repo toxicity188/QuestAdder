@@ -29,6 +29,19 @@ public final class QuestAdderExpansion extends PlaceholderExpansion {
 
             } else return "";
         }
+        else if (params.startsWith("index_")) {
+            var npc = DialogManager.INSTANCE.getQuestNPC(params.substring("index_".length()));
+            if (npc != null) {
+                var index = npc.getIndex(player);
+                if (index != null) return Integer.toString(index);
+            }
+        }
+        else if (params.startsWith("state_")) {
+            var quest = DialogManager.INSTANCE.getQuest(params.substring("state_".length()));
+            if (quest != null) {
+                return quest.getState(player).name();
+            }
+        }
         return null;
     }
 

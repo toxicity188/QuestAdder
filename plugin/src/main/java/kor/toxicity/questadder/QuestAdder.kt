@@ -10,7 +10,7 @@ import kor.toxicity.questadder.event.UserDataLoadEvent
 import kor.toxicity.questadder.event.UserDataAutoSaveEvent
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.*
-import kor.toxicity.questadder.mechanic.quest.QuestState
+import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.nms.NMS
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.SoundData
@@ -51,7 +51,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 class QuestAdder: JavaPlugin() {
     companion object {
 
-        const val version = "1.0.5"
+        const val version = "1.0.6"
 
         lateinit var nms: NMS
             private set
@@ -511,7 +511,7 @@ class QuestAdder: JavaPlugin() {
         private val remove = asyncTaskTimer(60 * 20, 60 * 20) {
             data.questVariables.entries.removeIf {
                 val quest = DialogManager.getQuest(it.key)
-                quest != null && quest.left > 0 && it.value.state == QuestState.HAS && ChronoUnit.MINUTES.between(it.value.time,LocalDateTime.now()) > quest.left
+                quest != null && quest.left > 0 && it.value.state == QuestRecord.HAS && ChronoUnit.MINUTES.between(it.value.time,LocalDateTime.now()) > quest.left
             }
         }
         init {

@@ -4,7 +4,7 @@ import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.data.PlayerData
 import kor.toxicity.questadder.data.QuestData
 import kor.toxicity.questadder.extension.getAsStringList
-import kor.toxicity.questadder.mechanic.quest.QuestState
+import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import org.bukkit.OfflinePlayer
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.MemoryConfiguration
@@ -43,7 +43,7 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
                                         val time = config.getString("time") ?: return@forEach
                                         val state = config.getString("state") ?: return@forEach
                                         try {
-                                            map[s] = QuestData(LocalDateTime.parse(time), QuestState.valueOf(state) , HashMap<String, Long>().apply {
+                                            map[s] = QuestData(LocalDateTime.parse(time), QuestRecord.valueOf(state) , HashMap<String, Long>().apply {
                                                 config.getConfigurationSection("variables")?.let { variable ->
                                                     variable.getKeys(false).forEach { key ->
                                                         put(key,variable.getLong(key))
