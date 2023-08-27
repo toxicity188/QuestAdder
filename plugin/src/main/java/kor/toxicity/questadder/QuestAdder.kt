@@ -3,6 +3,7 @@ package kor.toxicity.questadder
 import com.ticxo.playeranimator.PlayerAnimatorImpl
 import com.ticxo.playeranimator.api.PlayerAnimator
 import kor.toxicity.questadder.command.CommandAPI
+import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.event.ButtonGuiOpenEvent
 import kor.toxicity.questadder.event.ReloadEndEvent
 import kor.toxicity.questadder.event.ReloadStartEvent
@@ -15,6 +16,8 @@ import kor.toxicity.questadder.nms.NMS
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.SoundData
 import kor.toxicity.questadder.util.TimeFormat
+import kor.toxicity.questadder.util.action.type.ActCast
+import kor.toxicity.questadder.util.action.type.ActSkill
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.database.StandardDatabaseSupplier
 import kor.toxicity.questadder.util.event.type.*
@@ -51,7 +54,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 class QuestAdder: JavaPlugin() {
     companion object {
 
-        const val version = "1.0.6"
+        const val VERSION = "1.0.7"
 
         lateinit var nms: NMS
             private set
@@ -280,6 +283,23 @@ class QuestAdder: JavaPlugin() {
                 }
             }
         }
+        .addCommand("run") {
+            aliases = arrayOf("실행")
+            description = "run the action."
+            usage = "run <action> [args]"
+            opOnly = true
+            allowedSender = arrayOf(SenderType.PLAYER)
+            executor = { sender, args ->
+                val arg = args.toMutableList().apply {
+                    removeAt(0)
+                    removeAt(0)
+                }.toTypedArray()
+                DialogManager.getAction(args[1])?.apply(sender as Player, *arg) ?: sender.warn("unable to found the action: ${args[1]}")
+            }
+            tabComplete = { _, args ->
+                if (args.size == 2) DialogManager.getActionKeys() else null
+            }
+        }
 
 
     override fun onEnable() {
@@ -323,11 +343,15 @@ class QuestAdder: JavaPlugin() {
             addEvent("spellforget", EventSpellForget::class.java)
             addEvent("buffstart", EventBuffStart::class.java)
             addEvent("buffend", EventBuffEnd::class.java)
+
+            addAction("cast", ActCast::class.java)
         }
         if (pluginManager.isPluginEnabled("MythicMobs")) ActionBuilder.run {
             addEvent("mythicdamage", EventMythicDamage::class.java)
             addEvent("mythicheal", EventMythicHeal::class.java)
             addEvent("mythickill", EventMythicKill::class.java)
+
+            addAction("skill", ActSkill::class.java)
         }
         if (pluginManager.isPluginEnabled("SuperiorSkyblock2")) ActionBuilder.run {
             addEvent("islandopen", EventIslandOpen::class.java)
@@ -390,7 +414,7 @@ class QuestAdder: JavaPlugin() {
                 .uri(URI.create("https://api.spigotmc.org/legacy/update.php?resource=112227/"))
                 .GET()
                 .build(), HttpResponse.BodyHandlers.ofString()).body()
-            if (version != get) {
+            if (VERSION != get) {
                 warn("new version found: $get")
                 warn("download: https://www.spigotmc.org/resources/questadder.112227/")
                 pluginManager.registerEvents(object : Listener {

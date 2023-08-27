@@ -136,6 +136,9 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
                         QuestAdder.warn("syntax error: the variable must be have some event. ($key in ${file.name})")
                         return@forEach
                     }
+                    val action = config.findStringList("Action","Actions","actions","action")?.let { act ->
+                        ActionBuilder.create(adder, act)
+                    }
                     val conditions = config.findStringList("Conditions","Condition","conditions","condition")?.map {s ->
                         FunctionBuilder.evaluate(s)
                     } ?: emptyList()
@@ -155,6 +158,7 @@ class Quest(adder: QuestAdder, file: File, val key: String, section: Configurati
                                     lore?.createComponent(questEvent)?.let { component ->
                                         QuestAdder.nms.sendAdvancementMessage(player,toast ?: item.write(questEvent),component)
                                     }
+                                    action?.invoke(player,questEvent)
                                 }
                                 data.setQuestVariable(key,name,(newValue + 1).coerceAtMost(max))
                             }

@@ -14,4 +14,6 @@ interface NMS {
     fun createCommand(name: String, executor: CommandExecutor): RuntimeCommand
     fun sendAdvancementMessage(player: Player, itemStack: ItemStack, component: Component)
     fun getVersion(): NMSVersion
+    fun updateCommand()
+    fun changeFakeItemInHand(player: Player, itemStack: ItemStack, targetPlayer: Collection<Player>)
 }

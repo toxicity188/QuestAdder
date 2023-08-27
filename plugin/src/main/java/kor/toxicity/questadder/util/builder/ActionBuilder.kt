@@ -44,6 +44,7 @@ object ActionBuilder {
         put("subtract",ActSubtract::class.java)
         put("multiply",ActMultiply::class.java)
         put("divide",ActDivide::class.java)
+        put("index", ActIndex::class.java)
 
         put("warp", ActWarp::class.java)
         put("evaluate",ActEvaluate::class.java)
@@ -53,6 +54,7 @@ object ActionBuilder {
 
         put("command", ActCommand::class.java)
         put("money", ActMoney::class.java)
+        put("cinematic", ActCinematic::class.java)
     }
     private val eventMap = HashMap<String,Class<out AbstractEvent<*>>>().apply {
         put("join", EventJoin::class.java)
@@ -143,9 +145,13 @@ object ActionBuilder {
 
     fun create(adder: QuestAdder, parameters: Collection<String>, unsafe: Boolean = false): CancellableAction? {
         val playerTask = HashMap<UUID,BukkitTask>()
-        val empty: AbstractAction = object : AbstractAction(adder) {
+        val empty: CancellableAction = object : CancellableAction(adder) {
             override fun invoke(player: Player, event: QuestAdderEvent) {
                 playerTask.remove(player.uniqueId)
+            }
+
+            override fun cancel(player: Player) {
+
             }
         }
         var action = empty
@@ -154,19 +160,28 @@ object ActionBuilder {
             val matcher = delayPattern.matcher(parameter)
             if (matcher.find()) {
                 val d = matcher.group("delay").toLong()
-                action = object : AbstractAction(adder) {
+                action = object : CancellableAction(adder) {
                     override fun invoke(player: Player, event: QuestAdderEvent) {
                         playerTask[player.uniqueId] = QuestAdder.taskLater(d) {
                             t.invoke(player,event)
                         }
                     }
+
+                    override fun cancel(player: Player) {
+                        t.cancel(player)
+                    }
                 }
             } else {
                 createAction(adder,parameter)?.let {
-                    action = object : AbstractAction(adder) {
+                    action = object : CancellableAction(adder) {
                         override fun invoke(player: Player, event: QuestAdderEvent) {
                             it.invoke(player,event)
                             t.invoke(player,event)
+                        }
+
+                        override fun cancel(player: Player) {
+                            if (it is CancellableAction) it.cancel(player)
+                            t.cancel(player)
                         }
                     }
                 }

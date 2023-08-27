@@ -6,16 +6,22 @@ import com.comphenix.protocol.events.PacketAdapter
 import com.comphenix.protocol.events.PacketEvent
 import kor.toxicity.questadder.QuestAdder
 import org.bukkit.Bukkit
+import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryOpenEvent
+import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerGameModeChangeEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerItemHeldEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.event.player.PlayerTeleportEvent
+import org.bukkit.inventory.ItemStack
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -57,8 +63,24 @@ object SlateManager: QuestAdderManager {
                 if (slateMap.containsKey(e.whoClicked.uniqueId)) e.isCancelled = true
             }
             @EventHandler
+            fun click(e: InventoryOpenEvent) {
+                if (slateMap.containsKey(e.player.uniqueId)) e.isCancelled = true
+            }
+            @EventHandler
             fun interact(e: PlayerInteractEvent) {
                 if (slateMap.containsKey(e.player.uniqueId)) e.isCancelled = true
+            }
+            @EventHandler
+            fun changeHeldItem(e: PlayerItemHeldEvent) {
+                if (slateMap.containsKey(e.player.uniqueId)) e.isCancelled = true
+            }
+            @EventHandler
+            fun itemSwap(e: PlayerSwapHandItemsEvent) {
+                if (slateMap.contains(e.player.uniqueId)) e.isCancelled = true
+            }
+            @EventHandler
+            fun drop(e: PlayerDropItemEvent) {
+                if (slateMap.contains(e.player.uniqueId)) e.isCancelled = true
             }
         },adder)
         ProtocolLibrary.getProtocolManager().run {
@@ -101,15 +123,21 @@ object SlateManager: QuestAdderManager {
         slateMap.remove(player.uniqueId)?.cancel(back)
     }
 
+    private val air = ItemStack(Material.AIR)
     private class SlateData(val player: Player) {
         private val location = player.location
+        private val mainHandItem = player.inventory.itemInMainHand
         init {
             player.isInvisible = true
+            player.allowFlight = true
+            QuestAdder.nms.changeFakeItemInHand(player, air, Bukkit.getOnlinePlayers())
         }
 
         fun cancel(back: Boolean = true) {
             if (back) player.teleport(location)
             player.isInvisible = false
+            player.allowFlight = false
+            QuestAdder.nms.changeFakeItemInHand(player, mainHandItem, Bukkit.getOnlinePlayers())
         }
     }
 }

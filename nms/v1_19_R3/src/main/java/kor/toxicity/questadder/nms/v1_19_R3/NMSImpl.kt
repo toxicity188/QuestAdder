@@ -74,7 +74,9 @@ class NMSImpl: NMS {
             }
         }
     }
-
+    override fun updateCommand() {
+        (Bukkit.getServer() as CraftServer).syncCommands()
+    }
     override fun createArmorStand(player: Player, location: Location): VirtualArmorStand {
         return VirtualArmorStandImpl(player, location)
     }
@@ -142,5 +144,11 @@ class NMSImpl: NMS {
     }
     override fun getVersion(): NMSVersion {
         return NMSVersion.V1_19_R3
+    }
+    override fun changeFakeItemInHand(player: Player, itemStack: ItemStack, targetPlayer: Collection<Player>) {
+        val packet = PacketPlayOutEntityEquipment(player.entityId, listOf(Pair(EnumItemSlot.a,CraftItemStack.asNMSCopy(itemStack))))
+        targetPlayer.forEach {
+            (it as CraftPlayer).handle.b.a(packet)
+        }
     }
 }

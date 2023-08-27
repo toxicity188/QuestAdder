@@ -151,4 +151,35 @@ object QuestAdderAPI {
      * @since 1.0.3
      */
     fun getConfig() = QuestAdder.Config
+
+    /**
+     * @return A keys of all of loaded dialogs.
+     * @since 1.0.7
+     */
+    fun getDialogKeys() = DialogManager.getDialogKeys()
+    /**
+     * @return A keys of all of loaded quests.
+     * @since 1.0.7
+     */
+    fun getQuestKeys() = DialogManager.getQuestKeys()
+    /**
+     * @return A keys of all of loaded QnAs.
+     * @since 1.0.7
+     */
+    fun getQnaKeys() = DialogManager.getQnAKeys()
+    /**
+     * @return A keys of all of loaded Actions.
+     * @since 1.0.7
+     */
+    fun getActionKeys() = DialogManager.getActionKeys()
+    /**
+     * @return A keys of all of loaded NPCs.
+     * @since 1.0.7
+     */
+    fun getNPCKeys() = DialogManager.getNPCKeys()
+    /**
+     * @return A keys of all of loaded quest NPCs.
+     * @since 1.0.7
+     */
+    fun getQuestNPCKeys() = DialogManager.getQuestNPCKeys()
 }

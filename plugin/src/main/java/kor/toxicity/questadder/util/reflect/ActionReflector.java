@@ -4,6 +4,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import kor.toxicity.questadder.QuestAdder;
+import kor.toxicity.questadder.util.builder.FunctionBuilder;
+import kor.toxicity.questadder.util.function.WrappedFunction;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
@@ -96,7 +98,10 @@ public class ActionReflector<T extends DataObject> {
         },JsonElement::getAsJsonObject),
         STRING(new Class[]{
                 String.class
-        },JsonElement::getAsString)
+        },JsonElement::getAsString),
+        WRAPPED_FUNCTION(new Class[]{
+                WrappedFunction.class
+        },e -> FunctionBuilder.INSTANCE.evaluate(e.getAsString(), Object.class))
 
         ;
         private final Class<?>[] classes;

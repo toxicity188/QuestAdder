@@ -376,6 +376,14 @@ object DialogManager: QuestAdderManager {
     fun getQuest(name: String) = questMap[name]
     fun getQnA(name: String) = qnaMap[name]
     fun getNPC(uuid: UUID) = actualNPCMap[uuid]
+
+    fun getDialogKeys() = dialogMap.keys.toList()
+    fun getActionKeys() = actionMap.keys.toList()
+    fun getQuestKeys() = questMap.keys.toList()
+    fun getQnAKeys() = qnaMap.keys.toList()
+    fun getNPCKeys() = actualNPCMap.keys.toList()
+    fun getQuestNPCKeys() = questNpcMap.keys.toList()
+
     fun getNPC(name: String) = actualNPCMap.values.firstOrNull {
         it.questNPC.key == name
     }
@@ -485,6 +493,7 @@ object DialogManager: QuestAdderManager {
             send("${qnaMap.size} of QnAs has successfully loaded.")
             send("${questNpcMap.size} of NPCs successfully loaded.")
         }
+        QuestAdder.nms.updateCommand()
         val iterator = selectedQuestMap.iterator()
         while (iterator.hasNext()) {
             val entry = iterator.next()

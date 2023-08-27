@@ -25,8 +25,8 @@ data class NamedLocation(val key: String, val material: Material, val customMode
                 section.getDouble("x"),
                 section.getDouble("y"),
                 section.getDouble("z"),
-                section.getDouble("pitch").toFloat(),
-                section.getDouble("yaw").toFloat()
+                section.getDouble("yaw").toFloat(),
+                section.getDouble("pitch").toFloat()
             ))
         }
     }
