@@ -1,6 +1,8 @@
 package kor.toxicity.questadder.mechanic.npc
 
 import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.api.mechanic.IActualNPC
+import kor.toxicity.questadder.api.mechanic.IQuestNPC
 import kor.toxicity.questadder.data.PlayerData
 import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.nms.VirtualEntity
@@ -12,7 +14,7 @@ import org.bukkit.inventory.ItemStack
 import org.jetbrains.annotations.ApiStatus.Internal
 import java.util.UUID
 
-class ActualNPC(val npc: NPC, val questNPC: QuestNPC) {
+class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
 
     private val playerDisplayMap = HashMap<UUID,PlayerDisplay>()
 
@@ -72,9 +74,9 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC) {
     private inner class PlayerDisplay(val player: Player, val data: PlayerData) {
         private var state: State? = null
         private var thread: EntityThread? = null
-        private fun getState() = data.npcIndexes[questNPC.key]?.let {
+        private fun getState() = data.npcIndexes[questNPC.npcKey]?.let {
             questNPC.indicate[it]?.let { quest ->
-                data.questVariables[quest.key]?.state?.let { state ->
+                data.questVariables[quest.questKey]?.state?.let { state ->
                     when (state) {
                         QuestRecord.HAS ->  if (quest.isCompleted(player)) State.COMPLETE else State.HAS
                         QuestRecord.COMPLETE -> State.ALREADY_COMPLETED
@@ -135,5 +137,11 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC) {
         NOT_EXIST
     }
 
+    override fun toCitizensNPC(): NPC {
+        return npc
+    }
 
+    override fun toQuestNPC(): IQuestNPC {
+        return questNPC
+    }
 }

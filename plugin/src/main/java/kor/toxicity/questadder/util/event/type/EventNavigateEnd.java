@@ -1,8 +1,7 @@
 package kor.toxicity.questadder.util.event.type;
 
 import kor.toxicity.questadder.QuestAdder;
-import kor.toxicity.questadder.event.NavigateEndEvent;
-import kor.toxicity.questadder.event.NavigateFailEvent;
+import kor.toxicity.questadder.api.event.NavigateEndEvent;
 import kor.toxicity.questadder.util.action.AbstractAction;
 import kor.toxicity.questadder.util.event.AbstractEvent;
 

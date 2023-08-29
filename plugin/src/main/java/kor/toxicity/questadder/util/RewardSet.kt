@@ -1,7 +1,9 @@
 package kor.toxicity.questadder.util
 
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.event.GiveRewardEvent
+import kor.toxicity.questadder.api.event.GiveRewardEvent
+import kor.toxicity.questadder.api.util.IRewardSet
+import kor.toxicity.questadder.api.util.IRewardSetContent
 import kor.toxicity.questadder.extension.addMoney
 import kor.toxicity.questadder.extension.give
 import kor.toxicity.questadder.extension.storage
@@ -10,10 +12,10 @@ import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
-class RewardSet(section: ConfigurationSection) {
-    val money = section.getDouble("money").coerceAtLeast(0.0)
-    val exp = section.getDouble("exp").coerceAtLeast(0.0)
-    val items = section.getConfigurationSection("items")?.run {
+class RewardSet(section: ConfigurationSection): IRewardSet {
+    val rewardSetMoney = section.getDouble("money").coerceAtLeast(0.0)
+    val rewardSetExp = section.getDouble("exp").coerceAtLeast(0.0)
+    val rewardSetItems = section.getConfigurationSection("items")?.run {
         getKeys(false).mapNotNull {
             getConfigurationSection(it)?.let { config ->
                 try {
@@ -28,24 +30,32 @@ class RewardSet(section: ConfigurationSection) {
     }?.toTypedArray() ?: emptyArray()
 
     private val itemAmount = HashMap<ItemStack,Int>().apply {
-        for (item in items) {
-            val clone = item.item.clone().apply {
+        for (item in rewardSetItems) {
+            val clone = item.contentItem.clone().apply {
                 amount = 1
             }
-            put(clone,(get(clone) ?: 0) + item.item.amount)
+            put(clone,(get(clone) ?: 0) + item.contentItem.amount)
         }
     }
 
 
-    class RewardSetItem internal constructor(section: ConfigurationSection) {
-        val item = section.getString("item")?.let {
+    class RewardSetItem internal constructor(section: ConfigurationSection): IRewardSetContent {
+        val contentItem = section.getString("item")?.let {
             ItemManager.getItem(it)
         } ?: throw RuntimeException("the reward item doesn't exist.")
-        val chance = section.getDouble("chance").coerceAtLeast(0.0).coerceAtMost(100.0)
+        val contentChance = section.getDouble("chance").coerceAtLeast(0.0).coerceAtMost(100.0)
+
+        override fun getChance(): Double {
+            return contentChance
+        }
+
+        override fun getItem(): ItemStack {
+            return contentItem
+        }
     }
 
     fun give(player: Player): GiveRewardEvent {
-        val event = GiveRewardEvent(player,this).apply {
+        val event = GiveRewardEvent(player, this).apply {
             callEvent()
         }
         if (!event.isCancelled) {
@@ -58,5 +68,17 @@ class RewardSet(section: ConfigurationSection) {
     }
     fun isReady(player: Player) = itemAmount.all {
         player.storage(it.key) >= it.value
+    }
+
+    override fun getExp(): Double {
+        return rewardSetExp
+    }
+
+    override fun getMoney(): Double {
+        return rewardSetMoney
+    }
+
+    override fun getItems(): Array<out IRewardSetContent> {
+        return rewardSetItems.copyOf()
     }
 }

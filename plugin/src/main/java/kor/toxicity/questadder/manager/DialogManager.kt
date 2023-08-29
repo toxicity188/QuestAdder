@@ -1,9 +1,9 @@
 package kor.toxicity.questadder.manager
 
 import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.api.event.*
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
-import kor.toxicity.questadder.event.*
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.mechanic.Dialog
 import kor.toxicity.questadder.mechanic.QnA
@@ -26,6 +26,7 @@ import net.citizensnpcs.api.CitizensAPI
 import net.citizensnpcs.api.event.CitizensReloadEvent
 import net.citizensnpcs.api.event.NPCDespawnEvent
 import net.citizensnpcs.api.event.NPCSpawnEvent
+import net.citizensnpcs.api.event.SpawnReason
 import net.citizensnpcs.api.npc.NPC
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -113,12 +114,10 @@ object DialogManager: QuestAdderManager {
                     val questNpc = it.questNPC
                     QuestAdder.getPlayerData(player)?.let { data ->
                         if (questNpc.dialogs.isNotEmpty()) {
-                            val dialog = questNpc.dialogs[(data.npcIndexes.getOrPut(it.questNPC.key) {
+                            val dialog = questNpc.dialogs[(data.npcIndexes.getOrPut(it.questNPC.npcKey) {
                                 0
                             }).coerceAtLeast(0).coerceAtMost(questNpc.dialogs.lastIndex)]
-                            if (!TalkStartEvent(player,dialog,it).apply {
-                                callEvent()
-                                }.isCancelled) dialog.start(e.player,it)
+                            if (TalkStartEvent(player, dialog, it).callEvent()) dialog.start(e.player,it)
                         }
                     }
                 }
@@ -146,7 +145,8 @@ object DialogManager: QuestAdderManager {
                 val str = args.toMutableList().apply {
                     removeAt(0)
                 }.joinToString(" ")
-                ComponentReader<PlayerParseEvent>(str).createComponent(PlayerParseEvent(sender as Player).apply {
+                ComponentReader<PlayerParseEvent>(str).createComponent(
+                    PlayerParseEvent(sender as Player).apply {
                     callEvent()
                 })?.let { component ->
                     sender.info(component)
@@ -165,7 +165,10 @@ object DialogManager: QuestAdderManager {
                             removeAt(0)
                             removeAt(0)
                             removeAt(0)
-                        }.joinToString(" ")).apply(PlayerParseEvent(player).apply {
+                        }.joinToString(" ")).apply(
+                            PlayerParseEvent(
+                                player
+                            ).apply {
                             callEvent()
                         })?.let {
                             QuestAdder.getPlayerData(player)?.set(args[2],it)
@@ -199,7 +202,7 @@ object DialogManager: QuestAdderManager {
                             inventory.setItem(i,null)
                         }
                         questData.subList(index, (index + 9 * maxIndex).coerceAtMost(questData.size)).forEachIndexed { index, quest ->
-                            inventory.setItem(startIndex + index, quest.getIcon(sender))
+                            inventory.setItem(startIndex + index, quest.getIcon(sender, QuestAdder.Config.questSuffix))
                         }
                         sender.updateInventory()
                     }
@@ -221,7 +224,7 @@ object DialogManager: QuestAdderManager {
                                                             itemMeta = itemMeta?.apply {
                                                                 setCustomModelData(namedLocation.customModelData)
                                                                 displayName(namedLocation.name)
-                                                                val l = namedLocation.location
+                                                                val l = namedLocation.bukkitLocation
                                                                 lore(listOf(
                                                                     Component.empty(),
                                                                     QuestAdder.Prefix.info.append("x: ${l.x.withComma()}, y: ${l.y.withComma()}, z: ${l.z.withComma()}".asClearComponent().color(
@@ -245,33 +248,48 @@ object DialogManager: QuestAdderManager {
                                                         if (clickedItem.type == Material.AIR) return
                                                         val t = clickedSlot - 9
                                                         if (t < 0 || t > loc.lastIndex) return
-                                                        NavigateStartEvent(player,loc[t]).callEvent()
+                                                        NavigateStartEvent(
+                                                            player,
+                                                            loc[t]
+                                                        ).callEvent()
                                                         NavigationManager.startNavigate(player,loc[t])
                                                         safeEnd = true
                                                         player.closeInventory()
                                                     }
                                                 })
-                                            } ?: NavigateFailEvent(player).callEvent()
+                                            } ?: NavigateFailEvent(
+                                                player
+                                            ).callEvent()
                                         } else {
                                             NavigationManager.endNavigate(player)
-                                            NavigateEndEvent(player).callEvent()
+                                            NavigateEndEvent(player)
+                                                .callEvent()
                                             player.closeInventory()
                                         }
                                     }
                                     MouseButton.RIGHT -> {
                                         if (selectedQuestMap.remove(player.uniqueId) == null) {
                                             selectedQuestMap[player.uniqueId] = quest
-                                            QuestSelectEvent(quest, player).callEvent()
+                                            QuestSelectEvent(
+                                                quest,
+                                                player
+                                            ).callEvent()
                                         }
                                     }
                                     MouseButton.SHIFT_LEFT -> {
                                         if (quest.cancellable) {
-                                            QuestSurrenderEvent(quest, sender).callEvent()
+                                            QuestSurrenderEvent(
+                                                quest,
+                                                sender
+                                            ).callEvent()
                                             quest.remove(sender)
                                             questData.remove(quest)
                                             initialize(inv.inventory)
                                         } else {
-                                            QuestSurrenderFailEvent(quest, sender).callEvent()
+                                            QuestSurrenderFailEvent(
+                                                quest,
+                                                sender
+                                            ).callEvent()
                                         }
                                     }
 
@@ -279,7 +297,7 @@ object DialogManager: QuestAdderManager {
                                 }
                             }
                         }
-                        PlayerGuiButtonType.values().forEach {
+                        PlayerGuiButtonType.entries.forEach {
                             val t = QuestAdder.Config.getPlayerGuiButton(it) ?: return@forEach
                             val action: (GuiData,MouseButton) -> Unit = when (it) {
                                 PlayerGuiButtonType.PAGE_BEFORE -> {
@@ -385,7 +403,7 @@ object DialogManager: QuestAdderManager {
     fun getQuestNPCKeys() = questNpcMap.keys.toList()
 
     fun getNPC(name: String) = actualNPCMap.values.firstOrNull {
-        it.questNPC.key == name
+        it.questNPC.npcKey == name
     }
     fun getQuestNPC(name: String) = questNpcMap[name]
     fun getAllNPC(): Set<ActualNPC> = HashSet(actualNPCMap.values)
@@ -484,7 +502,7 @@ object DialogManager: QuestAdderManager {
         loadConfig("npcs", npcReader)
 
         CitizensAPI.getNPCRegistry().forEach {
-            registerNPC(it)
+            if (it.isSpawned) registerNPC(it)
         }
         Bukkit.getConsoleSender().run {
             send("${actionMap.size} of actions has successfully loaded.")
@@ -497,7 +515,7 @@ object DialogManager: QuestAdderManager {
         val iterator = selectedQuestMap.iterator()
         while (iterator.hasNext()) {
             val entry = iterator.next()
-            val quest = questMap[entry.value.key]
+            val quest = questMap[entry.value.questKey]
             if (quest == null) iterator.remove()
             else entry.setValue(quest)
         }

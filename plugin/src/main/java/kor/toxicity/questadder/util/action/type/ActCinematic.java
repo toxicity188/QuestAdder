@@ -1,7 +1,7 @@
 package kor.toxicity.questadder.util.action.type;
 
 import kor.toxicity.questadder.QuestAdder;
-import kor.toxicity.questadder.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.manager.LocationManager;
 import kor.toxicity.questadder.util.action.CancellableAction;
 import kor.toxicity.questadder.util.reflect.DataField;
@@ -52,8 +52,9 @@ public class ActCinematic extends CancellableAction {
         var loc2 = LocationManager.INSTANCE.getLocation(to);
         if (loc2 == null) throw new RuntimeException("The location named \"" + to + "\" does not exist.");
 
-        var reference1 = loc1.getLocation();
-        var reference2 = loc2.getLocation();
+        var reference1 = loc1.getBukkitLocation();
+        var reference2 = loc2.getBukkitLocation();
+
         var yaw = getYaw(reference1);
 
 
@@ -63,7 +64,14 @@ public class ActCinematic extends CancellableAction {
         var x = reference1.getX();
 
         var addPitch = reference2.getPitch() - pitch;
-        var addYaw = getYaw(reference2) - yaw;
+
+        var yaw2 = getYaw(reference2);
+        var addYaw1 = yaw2 - yaw;
+        var addYaw2 = -yaw - (360 - yaw2);
+
+        var addYaw = Math.abs(addYaw1) < Math.abs(addYaw2) ? addYaw1 : addYaw2;
+
+
         var addZ = reference2.getZ() - z;
         var addY = reference2.getY() - y;
         var addX = reference2.getX() - x;

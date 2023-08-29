@@ -11,6 +11,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.util.Vector;
 
+import java.util.HashSet;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 public class EventWalk extends AbstractEvent<PlayerMoveEvent> {
@@ -40,23 +42,30 @@ public class EventWalk extends AbstractEvent<PlayerMoveEvent> {
             if (w == null) throw new RuntimeException("the world \"" + world + "\" doesn't exist.");
             predicate = predicate.and(p -> p.getWorld().equals(w));
         }
+        if (type != null) {
+            predicate = predicate.and(p -> p.getLocation().add(0,-1,0).getBlock().getType() == type);
+        }
         if (location != null) {
             var split = location.split(",");
             if (split.length == 3) {
                 try {
+                    var hash = new HashSet<UUID>();
                     var vec = new Vector(
                             Double.parseDouble(split[0]),
                             Double.parseDouble(split[1]),
                             Double.parseDouble(split[2])
                     );
-                    predicate = predicate.and(p -> p.getLocation().toVector().distance(vec) <= range);
+                    predicate = predicate.and(p -> {
+                        if (p.getLocation().toVector().distance(vec) <= range) return hash.add(p.getUniqueId());
+                        else {
+                            hash.remove(p.getUniqueId());
+                            return false;
+                        }
+                    });
                 } catch (NumberFormatException ex) {
                     throw new RuntimeException("location format must be \"x,y,z\"");
                 }
             } else throw new RuntimeException("location format must be \"x,y,z\"");
-        }
-        if (type != null) {
-            predicate = predicate.and(p -> p.getLocation().add(0,-1,0).getBlock().getType() == type);
         }
         location = null;
         world = null;

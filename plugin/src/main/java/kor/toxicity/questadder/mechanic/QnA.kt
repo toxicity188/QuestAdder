@@ -1,12 +1,12 @@
 package kor.toxicity.questadder.mechanic
 
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.event.DialogStartEvent
-import kor.toxicity.questadder.event.QuestAdderPlayerEvent
+import kor.toxicity.questadder.api.event.DialogStartEvent
+import kor.toxicity.questadder.api.event.QuestAdderPlayerEvent
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.DialogManager
+import kor.toxicity.questadder.mechanic.npc.ActualNPC
 import kor.toxicity.questadder.util.ItemWriter
-import kor.toxicity.questadder.util.gui.Gui
 import kor.toxicity.questadder.util.gui.GuiData
 import kor.toxicity.questadder.util.gui.GuiExecutor
 import kor.toxicity.questadder.util.gui.MouseButton
@@ -70,7 +70,7 @@ class QnA(adder: QuestAdder, file: File, key: String, section: ConfigurationSect
                 button: MouseButton
             ) {
                 if (isPlayerInventory) return
-                qnaItemMap[clickedSlot]?.dialogs?.random()?.start(player,event.npc)
+                qnaItemMap[clickedSlot]?.dialogs?.random()?.start(player,event.npc as ActualNPC)
             }
         })
     }

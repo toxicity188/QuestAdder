@@ -1,7 +1,7 @@
 package kor.toxicity.questadder.manager
 
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.event.NavigateCompleteEvent
+import kor.toxicity.questadder.api.event.NavigateCompleteEvent
 import kor.toxicity.questadder.extension.WHITE
 import kor.toxicity.questadder.extension.asComponent
 import kor.toxicity.questadder.extension.rotateYaw
@@ -40,7 +40,7 @@ object NavigationManager: QuestAdderManager {
     }
 
     fun startNavigate(player: Player, location: NamedLocation) {
-        if (player.world != location.location.world) return
+        if (player.world != location.bukkitLocation.world) return
         threadMap.put(player.uniqueId, NavigationThread(player,location))?.cancel()
     }
     fun onNavigate(player: Player) = threadMap.containsKey(player.uniqueId)
@@ -49,7 +49,7 @@ object NavigationManager: QuestAdderManager {
     }
 
     private class NavigationThread(private val player: Player, val destination: NamedLocation) {
-        val destinationLocation = destination.location
+        val destinationLocation = destination.bukkitLocation
         private val initialLocation = player.location
         private val display: VirtualEntity = try {
             QuestAdder.nms.createItemDisplay(player,initialLocation)
@@ -134,7 +134,10 @@ object NavigationManager: QuestAdderManager {
                     if (player.location.distance(it.destinationLocation) < 3) {
                         it.cancel()
                         threadMap.remove(player.uniqueId)
-                        NavigateCompleteEvent(player,it.destination).callEvent()
+                        NavigateCompleteEvent(
+                            player,
+                            it.destination
+                        ).callEvent()
                     } else it.update()
                 }
             }

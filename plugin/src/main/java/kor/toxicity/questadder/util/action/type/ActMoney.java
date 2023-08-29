@@ -1,7 +1,7 @@
 package kor.toxicity.questadder.util.action.type;
 
 import kor.toxicity.questadder.QuestAdder;
-import kor.toxicity.questadder.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.extension.PlayersKt;
 import kor.toxicity.questadder.util.action.AbstractAction;
 import kor.toxicity.questadder.util.builder.FunctionBuilder;

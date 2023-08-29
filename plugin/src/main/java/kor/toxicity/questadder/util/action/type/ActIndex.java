@@ -1,7 +1,7 @@
 package kor.toxicity.questadder.util.action.type;
 
 import kor.toxicity.questadder.QuestAdder;
-import kor.toxicity.questadder.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.manager.DialogManager;
 import kor.toxicity.questadder.mechanic.npc.QuestNPC;
 import kor.toxicity.questadder.util.action.AbstractAction;

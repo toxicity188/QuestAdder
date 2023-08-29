@@ -1,6 +1,7 @@
 dependencies {
     compileOnly(group: "com.github.PlaceholderAPI", name: "PlaceholderAPI", version: "master-SNAPSHOT")
     compileOnly(project(":plugin"))
+    compileOnly(project(":api"))
 }
 
 version = ""

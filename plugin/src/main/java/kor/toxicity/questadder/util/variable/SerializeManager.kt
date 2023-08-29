@@ -2,6 +2,7 @@ package kor.toxicity.questadder.util.variable
 
 import kor.toxicity.questadder.util.HashedClass
 import kor.toxicity.questadder.util.Null
+import kor.toxicity.questadder.util.reflect.PrimitiveType
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.ItemStack
@@ -38,7 +39,7 @@ object SerializeManager {
                 return string
             }
         })
-        put(HashedClass(Boolean::class.java), object : VariableSerializer {
+        val boolean = object : VariableSerializer {
             override fun deserialize(string: String): Any {
                 return when (string) {
                     "true" -> true
@@ -49,7 +50,9 @@ object SerializeManager {
             override fun serialize(any: Any): String {
                 return any.toString()
             }
-        })
+        }
+        put(HashedClass(PrimitiveType.BOOLEAN.primitive), boolean)
+        put(HashedClass(PrimitiveType.BOOLEAN.reference), boolean)
         put(HashedClass(ItemStack::class.java), object : VariableSerializer {
             override fun serialize(any: Any): String {
                 return Base64.getEncoder().encodeToString((any as ItemStack).serializeAsBytes())

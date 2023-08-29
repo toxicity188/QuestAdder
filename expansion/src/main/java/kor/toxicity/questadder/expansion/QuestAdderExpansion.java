@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.expansion;
 
-import kor.toxicity.questadder.event.QuestInvokeEvent;
+import kor.toxicity.questadder.api.event.QuestInvokeEvent;
 import kor.toxicity.questadder.manager.DialogManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;

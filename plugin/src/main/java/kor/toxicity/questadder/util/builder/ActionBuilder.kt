@@ -3,7 +3,7 @@ package kor.toxicity.questadder.util.builder
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.event.QuestAdderEvent
+import kor.toxicity.questadder.api.event.QuestAdderEvent
 import kor.toxicity.questadder.extension.ANNOTATION_PATTERN
 import kor.toxicity.questadder.extension.findStringList
 import kor.toxicity.questadder.extension.info
@@ -16,6 +16,7 @@ import kor.toxicity.questadder.util.action.type.*
 import kor.toxicity.questadder.util.event.AbstractEvent
 import kor.toxicity.questadder.util.event.type.*
 import kor.toxicity.questadder.util.reflect.ActionReflector
+import kor.toxicity.questadder.util.reflect.PrimitiveType
 import org.bukkit.command.CommandExecutor
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
@@ -55,6 +56,8 @@ object ActionBuilder {
         put("command", ActCommand::class.java)
         put("money", ActMoney::class.java)
         put("cinematic", ActCinematic::class.java)
+
+        put("randomaction", ActRandomAction::class.java)
     }
     private val eventMap = HashMap<String,Class<out AbstractEvent<*>>>().apply {
         put("join", EventJoin::class.java)
@@ -79,6 +82,8 @@ object ActionBuilder {
         put("respawn", EventRespawn::class.java)
         put("sneak", EventSneak::class.java)
         put("sprint", EventSprint::class.java)
+
+        put("resourecpack", EventResourcePack::class.java)
 
         put("navigatestart",EventNavigateStart::class.java)
         put("navigatefail",EventNavigateFail::class.java)
@@ -212,68 +217,69 @@ object ActionBuilder {
         return section.findStringList("Action","Actions","actions","action")?.let {
             create(adder,it,unsafe)
         }?.let { action ->
-            var predicate: (Player,QuestAdderEvent) -> Boolean = { _, _ ->
+            var predicate: (Player, QuestAdderEvent) -> Boolean = { _, _ ->
                 true
             }
-            section.findStringList("Event","Events","event","events")?.forEach {
-                createEvent(adder,action,it)
-            }
             section.findStringList("Condition","Conditions","conditions","condition")?.forEach { s ->
-                val original = predicate
                 val matcher = ANNOTATION_PATTERN.matcher(s)
                 if (matcher.find()) {
-                    val function = FunctionBuilder.evaluate(matcher.replaceAll(""))
                     val name = matcher.group("name")
                     val value = matcher.group("value")
+                    val function = FunctionBuilder.evaluate(matcher.replaceAll(""))
+                    val retType = function.getReturnType()
+                    if (retType != PrimitiveType.BOOLEAN.primitive && retType != PrimitiveType.BOOLEAN.reference) {
+                        QuestAdder.warn("compile error: this argument is not a boolean: $s")
+                        return@forEach
+                    }
                     when (name) {
                         "cast" -> {
                             adder.addLazyTask {
+                                val original = predicate
                                 val castActions = value.split(',').mapNotNull {
                                     DialogManager.getAction(it)
                                 }
                                 if (castActions.isNotEmpty()) {
                                     predicate = { player, event ->
                                         val get = function.apply(event)
-                                        original(player,event) && if (get is Boolean) {
-                                            if (get) {
-                                                castActions.random().invoke(player, event)
-                                                true
-                                            } else false
+                                        original(player,event) && if (get as Boolean) {
+                                            castActions.random().invoke(player, event)
+                                            true
                                         } else false
                                     }
-                                }
+                                } else QuestAdder.warn("unable to load the dialog: $s")
                             }
                         }
                         "castinstead" -> {
                             adder.addLazyTask {
+                                val original = predicate
                                 val castActions = value.split(',').mapNotNull {
                                     DialogManager.getAction(it)
                                 }
                                 if (castActions.isNotEmpty()) {
                                     predicate = { player, event ->
                                         val get = function.apply(event)
-                                        original(player,event) && if (get is Boolean) {
-                                            if (get) {
-                                                castActions.random().invoke(player, event)
-                                                false
-                                            } else true
-                                        } else false
+                                        original(player,event) && if (get as Boolean) {
+                                            castActions.random().invoke(player, event)
+                                            false
+                                        } else true
                                     }
-                                }
+                                } else QuestAdder.warn("unable to load the dialog: $s")
                             }
                         }
                         else -> {
+                            val original = predicate
                             predicate = { player, event ->
                                 val get = function.apply(event)
-                                original(player,event) && get is Boolean && get
+                                original(player,event) && get as Boolean
                             }
                         }
                     }
                 } else {
+                    val original = predicate
                     val function = FunctionBuilder.evaluate(s)
                     predicate = { player, event ->
                         val get = function.apply(event)
-                        original(player,event) && get is Boolean && get
+                        original(player,event) && get as Boolean
                     }
                 }
             }
@@ -285,6 +291,9 @@ object ActionBuilder {
                 override fun cancel(player: Player) {
                     action.cancel(player)
                 }
+            }
+            section.findStringList("Event","Events","event","events")?.forEach {
+                createEvent(adder,obj,it)
             }
             val command = ArrayList<RuntimeCommand>()
             section.findStringList("Command","command","commands","Commands")?.let { sl ->

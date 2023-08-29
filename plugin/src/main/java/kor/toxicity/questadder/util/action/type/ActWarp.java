@@ -1,7 +1,7 @@
 package kor.toxicity.questadder.util.action.type;
 
 import kor.toxicity.questadder.QuestAdder;
-import kor.toxicity.questadder.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.manager.LocationManager;
 import kor.toxicity.questadder.util.NamedLocation;
 import kor.toxicity.questadder.util.action.AbstractAction;
@@ -26,6 +26,6 @@ public class ActWarp extends AbstractAction {
 
     @Override
     public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
-        player.teleport(loc.getLocation());
+        player.teleport(loc.getBukkitLocation());
     }
 }

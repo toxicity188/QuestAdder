@@ -1,20 +1,21 @@
 package kor.toxicity.questadder.data
 
 import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.api.util.IPlayerData
 import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.util.Null
 import kor.toxicity.questadder.util.variable.SerializeManager
 import java.time.LocalDateTime
 import java.util.concurrent.ConcurrentHashMap
 
-class PlayerData {
+class PlayerData: IPlayerData {
     private val variables = HashMap<String,Any>()
     val questVariables: MutableMap<String,QuestData> = ConcurrentHashMap()
     val npcIndexes = HashMap<String,Int>()
 
     fun saveVariables() = ArrayList<Triple<String,String,String>>().apply {
         variables.forEach {
-            SerializeManager.trySerialize(it.value)?.let { str ->
+            if (!it.key.startsWith('_')) SerializeManager.trySerialize(it.value)?.let { str ->
                 add(Triple(it.key,it.value.javaClass.name,str))
             }
         }

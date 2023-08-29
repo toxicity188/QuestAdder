@@ -1,13 +1,13 @@
 package kor.toxicity.questadder.manager
 
 import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.api.item.ItemDatabase
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.extension.getAsItemStack
 import kor.toxicity.questadder.extension.give
 import kor.toxicity.questadder.extension.info
 import kor.toxicity.questadder.extension.warn
-import kor.toxicity.questadder.item.ItemDatabase
 import kor.toxicity.questadder.item.ItemsAdderItemDataBase
 import kor.toxicity.questadder.item.OraxenItemDataBase
 import org.bukkit.Bukkit

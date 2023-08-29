@@ -4,11 +4,11 @@ import com.ticxo.playeranimator.PlayerAnimatorImpl
 import com.ticxo.playeranimator.api.PlayerAnimator
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
-import kor.toxicity.questadder.event.ButtonGuiOpenEvent
-import kor.toxicity.questadder.event.ReloadEndEvent
-import kor.toxicity.questadder.event.ReloadStartEvent
-import kor.toxicity.questadder.event.UserDataLoadEvent
-import kor.toxicity.questadder.event.UserDataAutoSaveEvent
+import kor.toxicity.questadder.api.event.ButtonGuiOpenEvent
+import kor.toxicity.questadder.api.event.ReloadEndEvent
+import kor.toxicity.questadder.api.event.ReloadStartEvent
+import kor.toxicity.questadder.api.event.UserDataLoadEvent
+import kor.toxicity.questadder.api.event.UserDataAutoSaveEvent
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.*
 import kor.toxicity.questadder.mechanic.quest.QuestRecord
@@ -90,6 +90,7 @@ class QuestAdder: JavaPlugin() {
 
         private val managerList = mutableListOf(
             ResourcePackManager,
+            CallbackManager,
             NavigationManager,
             SlateManager,
             LocationManager,
@@ -163,7 +164,7 @@ class QuestAdder: JavaPlugin() {
             }
             playerGuiButton.clear()
             section.getConfigurationSection("player-gui-layout")?.let {
-                PlayerGuiButtonType.values().forEach { type ->
+                PlayerGuiButtonType.entries.forEach { type ->
                     it.getConfigurationSection(type.name.lowercase().replace('_','-'))?.let { config ->
                         try {
                             playerGuiButton[type] = PlayerGuiButton(config)
@@ -540,7 +541,7 @@ class QuestAdder: JavaPlugin() {
         }
         init {
             task {
-                UserDataLoadEvent(player,data).callEvent()
+                UserDataLoadEvent(player, data).callEvent()
             }
         }
         fun save() {

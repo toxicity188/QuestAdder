@@ -13,6 +13,7 @@ softdepend:
   - WorldGuard
   - MagicSpells
   - MythicMobs
+  - MultiWorld
   - SuperiorSkyblock2
 commands:
   questadder:

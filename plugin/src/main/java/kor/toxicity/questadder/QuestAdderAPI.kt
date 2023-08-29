@@ -1,6 +1,6 @@
 package kor.toxicity.questadder
 
-import kor.toxicity.questadder.item.ItemDatabase
+import kor.toxicity.questadder.api.item.ItemDatabase
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.manager.ItemManager
 import kor.toxicity.questadder.manager.LocationManager

@@ -5,6 +5,7 @@ import com.comphenix.protocol.ProtocolLibrary
 import com.comphenix.protocol.events.PacketAdapter
 import com.comphenix.protocol.events.PacketEvent
 import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.api.event.TalkStartEvent
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -42,6 +43,10 @@ object SlateManager: QuestAdderManager {
                 }
             }
 
+            @EventHandler
+            fun talk(e: TalkStartEvent) {
+                if (slateMap.containsKey(e.player.uniqueId)) e.isCancelled = true
+            }
             @EventHandler
             fun quit(e: PlayerQuitEvent) {
                 stop(e.player)

@@ -5,8 +5,8 @@ import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldguard.WorldGuard
 import com.sk89q.worldguard.protection.regions.ProtectedRegion
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.event.RegionEnterEvent
-import kor.toxicity.questadder.event.RegionExitEvent
+import kor.toxicity.questadder.api.event.RegionEnterEvent
+import kor.toxicity.questadder.api.event.RegionExitEvent
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -63,10 +63,10 @@ object WorldGuardManager: QuestAdderManager {
             }
             if (enterSet.isNotEmpty() && exitSet.isNotEmpty()) QuestAdder.task {
                 enterSet.forEach {
-                    RegionEnterEvent(player,it).callEvent()
+                    RegionEnterEvent(player, it).callEvent()
                 }
                 exitSet.forEach {
-                    RegionExitEvent(player,it).callEvent()
+                    RegionExitEvent(player, it).callEvent()
                 }
             }
         }

@@ -1,7 +1,8 @@
 package kor.toxicity.questadder.mechanic
 
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.event.DialogStartEvent
+import kor.toxicity.questadder.api.event.DialogStartEvent
+import kor.toxicity.questadder.api.mechanic.IDialog
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.manager.GestureManager
@@ -31,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
 import kotlin.collections.HashMap
 
-class Dialog(adder: QuestAdder, file: File, val key: String, section: ConfigurationSection) {
+class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: ConfigurationSection): IDialog {
     private interface TypingExecutor {
         fun initialize(talker: Component?)
         fun run(talk: Component)
@@ -59,7 +60,11 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
         val current: DialogCurrent
 
         constructor(player: Player, questNPC: ActualNPC) {
-            this.current = DialogCurrent(player, questNPC, DialogStartEvent(player, questNPC, this@Dialog).apply {
+            this.current = DialogCurrent(player, questNPC, DialogStartEvent(
+                player,
+                questNPC,
+                this@Dialog
+            ).apply {
                 callEvent()
             },this)
         }
@@ -166,7 +171,7 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
         private val playerTask = ConcurrentHashMap<UUID,DialogRun>()
         private val defaultExecutor = object : TypingManager {
             override fun create(current: DialogCurrent): TypingExecutor {
-                val selectedInv = current.npc.questNPC.inventory ?: createInventory("talking with ${current.npc.questNPC.key}".asComponent(),5)
+                val selectedInv = current.npc.questNPC.inventory ?: createInventory("talking with ${current.npc.questNPC.npcKey}".asComponent(),5)
                 val inv = current.inventory?.apply {
                     current.player.openInventory(inventory)
                 } ?: selectedInv.open(current.player, object :
@@ -328,7 +333,7 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
             config.getKeys(false).forEach {
                 config.getAsSoundData(it)?.let { sound ->
                     put(it,sound)
-                } ?: QuestAdder.warn("syntax error: unable to find sound data: $it ($key in ${file.name})")
+                } ?: QuestAdder.warn("syntax error: unable to find sound data: $it ($dialogKey in ${file.name})")
             }
         }
     }
@@ -383,7 +388,7 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
             }
         }
         fun error(message: String) {
-            QuestAdder.warn("$message ($key in ${file.name})")
+            QuestAdder.warn("$message ($dialogKey in ${file.name})")
         }
         section.findStringList("talk","Talk")?.let { t ->
             t.forEach {
@@ -807,5 +812,9 @@ class Dialog(adder: QuestAdder, file: File, val key: String, section: Configurat
         playerTask[uuid] = run.apply {
             start()
         }
+    }
+
+    override fun getKey(): String {
+        return dialogKey
     }
 }

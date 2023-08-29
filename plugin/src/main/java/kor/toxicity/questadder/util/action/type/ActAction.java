@@ -1,8 +1,7 @@
 package kor.toxicity.questadder.util.action.type;
 
 import kor.toxicity.questadder.QuestAdder;
-import kor.toxicity.questadder.event.ActionInvokeEvent;
-import kor.toxicity.questadder.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.manager.DialogManager;
 import kor.toxicity.questadder.util.action.AbstractAction;
 import kor.toxicity.questadder.util.builder.FunctionBuilder;
@@ -20,7 +19,7 @@ public class ActAction extends AbstractAction {
     @DataField(aliases = "n",throwIfNull = true)
     public String name;
 
-    @DataField(aliases = "i",throwIfNull = true)
+    @DataField(aliases = "i")
     public String instead;
     public ActAction(@NotNull QuestAdder adder) {
         super(adder);
@@ -35,7 +34,7 @@ public class ActAction extends AbstractAction {
         adder.addLazyTask(() -> {
             action = DialogManager.INSTANCE.getAction(name);
             if (action == null) throwNotFundError(name);
-            if (condition != null) {
+            if (condition != null && instead != null) {
                 ins = DialogManager.INSTANCE.getAction(instead);
                 if (ins == null) throwNotFundError(instead);
             }

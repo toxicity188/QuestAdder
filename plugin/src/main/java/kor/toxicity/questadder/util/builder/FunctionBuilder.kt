@@ -1,7 +1,7 @@
 package kor.toxicity.questadder.util.builder
 
 import kor.toxicity.questadder.QuestAdder
-import kor.toxicity.questadder.event.*
+import kor.toxicity.questadder.api.event.*
 import kor.toxicity.questadder.extension.storage
 import kor.toxicity.questadder.extension.totalAmount
 import kor.toxicity.questadder.manager.ItemManager
@@ -207,7 +207,7 @@ object FunctionBuilder {
             e.dialog
         }
         addFunction("npc") { e: NPCEvent, _ ->
-            e.npc.questNPC
+            e.npc.toQuestNPC()
         }
         addFunction("location") { e: LocationEvent, _ ->
             e.namedLocation

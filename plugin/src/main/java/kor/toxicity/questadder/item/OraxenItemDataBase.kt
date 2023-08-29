@@ -1,6 +1,8 @@
 package kor.toxicity.questadder.item
 
 import io.th0rgal.oraxen.api.OraxenItems
+import kor.toxicity.questadder.api.item.ItemDatabase
+import kor.toxicity.questadder.api.item.ItemPair
 import org.bukkit.inventory.ItemStack
 
 class OraxenItemDataBase: ItemDatabase {

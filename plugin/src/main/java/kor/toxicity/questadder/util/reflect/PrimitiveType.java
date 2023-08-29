@@ -22,6 +22,14 @@ public enum PrimitiveType {
         this.reference = reference;
     }
 
+    public Class<?> getPrimitive() {
+        return primitive;
+    }
+
+    public Class<?> getReference() {
+        return reference;
+    }
+
     public static @NotNull Class<?> convertToReferenceClass(@NotNull Class<?> primitive) {
         var clazz = Arrays.stream(values()).filter(e -> e.primitive == primitive).findFirst().map(e -> e.reference).orElse(null);
         return (clazz != null) ? clazz : Objects.requireNonNull(primitive);
