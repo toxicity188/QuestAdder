@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 public class ActWarp extends AbstractAction {
     @DataField(aliases = {"loc", "l"}, throwIfNull = true)
     public String location;
+    @DataField
+    public boolean packet = false;
 
     public ActWarp(@NotNull QuestAdder adder) {
         super(adder);
@@ -26,6 +28,7 @@ public class ActWarp extends AbstractAction {
 
     @Override
     public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
-        player.teleport(loc.getBukkitLocation());
+        if (packet) QuestAdder.Companion.getNms().changePosition(player,loc.getLocation());
+        else player.teleport(loc.getLocation());
     }
 }

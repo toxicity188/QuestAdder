@@ -42,6 +42,12 @@ public final class QuestAdderExpansion extends PlaceholderExpansion {
                 return quest.getState(player).name();
             }
         }
+        else if (params.startsWith("name_")) {
+            var quest = DialogManager.INSTANCE.getQuest(params.substring("name_".length()));
+            if (quest != null) {
+                return quest.getName();
+            }
+        }
         return null;
     }
 

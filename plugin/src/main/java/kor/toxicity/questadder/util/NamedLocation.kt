@@ -9,7 +9,7 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.configuration.ConfigurationSection
 
-data class NamedLocation(val locationKey: String, val material: Material, val customModelData: Int, val name: Component, val bukkitLocation: Location): INamedLocation {
+data class NamedLocation(private val locationKey: String, val material: Material, val customModelData: Int, val name: Component, private val bukkitLocation: Location): INamedLocation {
     companion object {
         fun fromConfig(key: String, section: ConfigurationSection): NamedLocation? {
             val world = section.getString("world")?.let { w ->

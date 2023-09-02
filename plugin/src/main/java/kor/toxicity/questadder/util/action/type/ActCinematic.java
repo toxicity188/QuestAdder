@@ -29,6 +29,8 @@ public class ActCinematic extends CancellableAction {
     public int iterate;
     @DataField(aliases = "p")
     public long period;
+    @DataField
+    public boolean packet = false;
 
     private BiConsumer<Integer,Player> consumer;
 
@@ -52,8 +54,8 @@ public class ActCinematic extends CancellableAction {
         var loc2 = LocationManager.INSTANCE.getLocation(to);
         if (loc2 == null) throw new RuntimeException("The location named \"" + to + "\" does not exist.");
 
-        var reference1 = loc1.getBukkitLocation();
-        var reference2 = loc2.getBukkitLocation();
+        var reference1 = loc1.getLocation();
+        var reference2 = loc2.getLocation();
 
         var yaw = getYaw(reference1);
 
@@ -90,7 +92,8 @@ public class ActCinematic extends CancellableAction {
             );
         }).toList();
 
-        consumer = (i,p) -> p.teleport(loc.get(i));
+        if (packet) consumer = (i,p) -> QuestAdder.Companion.getNms().changePosition(p,loc.get(i));
+        else consumer = (i,p) -> p.teleport(loc.get(i));
     }
 
     @Override

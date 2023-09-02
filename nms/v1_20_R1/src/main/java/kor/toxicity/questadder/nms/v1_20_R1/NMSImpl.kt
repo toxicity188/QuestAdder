@@ -17,6 +17,7 @@ import net.minecraft.world.entity.Display
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.EnumItemSlot
+import net.minecraft.world.entity.RelativeMovement
 import net.minecraft.world.entity.decoration.EntityArmorStand
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -151,5 +152,17 @@ class NMSImpl: NMS {
         targetPlayer.forEach {
             (it as CraftPlayer).handle.c.a(packet)
         }
+    }
+
+    override fun changePosition(player: Player, location: Location) {
+        (player as CraftPlayer).handle.c.a(PacketPlayOutPosition(
+            location.x,
+            location.y,
+            location.z,
+            location.yaw,
+            location.pitch,
+            RelativeMovement.entries.toSet(),
+            player.entityId
+        ))
     }
 }

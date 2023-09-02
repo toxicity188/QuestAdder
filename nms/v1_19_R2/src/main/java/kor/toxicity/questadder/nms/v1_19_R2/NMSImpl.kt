@@ -11,6 +11,7 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import net.minecraft.network.chat.IChatBaseComponent
 import net.minecraft.network.protocol.game.*
+import net.minecraft.network.protocol.game.PacketPlayOutPosition.EnumPlayerTeleportFlags
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.EnumItemSlot
 import net.minecraft.world.entity.decoration.EntityArmorStand
@@ -116,5 +117,17 @@ class NMSImpl: NMS {
         targetPlayer.forEach {
             (it as CraftPlayer).handle.b.a(packet)
         }
+    }
+    override fun changePosition(player: Player, location: Location) {
+        (player as CraftPlayer).handle.b.a(PacketPlayOutPosition(
+            location.x,
+            location.y,
+            location.z,
+            location.yaw,
+            location.pitch,
+            EnumPlayerTeleportFlags.entries.toSet(),
+            player.entityId,
+            true
+        ))
     }
 }

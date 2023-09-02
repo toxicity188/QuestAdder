@@ -224,7 +224,7 @@ object DialogManager: QuestAdderManager {
                                                             itemMeta = itemMeta?.apply {
                                                                 setCustomModelData(namedLocation.customModelData)
                                                                 displayName(namedLocation.name)
-                                                                val l = namedLocation.bukkitLocation
+                                                                val l = namedLocation.location
                                                                 lore(listOf(
                                                                     Component.empty(),
                                                                     QuestAdder.Prefix.info.append("x: ${l.x.withComma()}, y: ${l.y.withComma()}, z: ${l.z.withComma()}".asClearComponent().color(

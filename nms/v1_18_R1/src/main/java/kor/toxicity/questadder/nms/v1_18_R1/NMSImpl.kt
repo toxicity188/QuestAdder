@@ -121,4 +121,16 @@ class NMSImpl: NMS {
             (it as CraftPlayer).handle.b.a(packet)
         }
     }
+    override fun changePosition(player: Player, location: Location) {
+        (player as CraftPlayer).handle.b.a(PacketPlayOutPosition(
+            location.x,
+            location.y,
+            location.z,
+            location.yaw,
+            location.pitch,
+            PacketPlayOutPosition.EnumPlayerTeleportFlags.entries.toSet(),
+            player.entityId,
+            true
+        ))
+    }
 }

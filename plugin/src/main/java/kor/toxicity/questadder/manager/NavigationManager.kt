@@ -40,7 +40,7 @@ object NavigationManager: QuestAdderManager {
     }
 
     fun startNavigate(player: Player, location: NamedLocation) {
-        if (player.world != location.bukkitLocation.world) return
+        if (player.world != location.location.world) return
         threadMap.put(player.uniqueId, NavigationThread(player,location))?.cancel()
     }
     fun onNavigate(player: Player) = threadMap.containsKey(player.uniqueId)
@@ -49,7 +49,7 @@ object NavigationManager: QuestAdderManager {
     }
 
     private class NavigationThread(private val player: Player, val destination: NamedLocation) {
-        val destinationLocation = destination.bukkitLocation
+        val destinationLocation = destination.location
         private val initialLocation = player.location
         private val display: VirtualEntity = try {
             QuestAdder.nms.createItemDisplay(player,initialLocation)

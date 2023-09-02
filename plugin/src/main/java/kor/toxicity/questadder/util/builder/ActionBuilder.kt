@@ -58,6 +58,9 @@ object ActionBuilder {
         put("cinematic", ActCinematic::class.java)
 
         put("randomaction", ActRandomAction::class.java)
+
+        put("startnavigate", ActStartNavigate::class.java)
+        put("endnavigate", ActEndNavigate::class.java)
     }
     private val eventMap = HashMap<String,Class<out AbstractEvent<*>>>().apply {
         put("join", EventJoin::class.java)

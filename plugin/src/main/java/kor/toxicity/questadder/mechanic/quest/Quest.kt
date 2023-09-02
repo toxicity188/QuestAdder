@@ -25,7 +25,7 @@ import java.time.temporal.ChronoUnit
 import java.util.SortedSet
 import java.util.TreeSet
 
-class Quest(adder: QuestAdder, file: File, val questKey: String, section: ConfigurationSection): IQuest {
+class Quest(adder: QuestAdder, file: File, val questKey: String, section: ConfigurationSection): IQuest, Comparable<Quest> {
     companion object {
         private val success = "Success!".asComponent(YELLOW).clear().decorate(TextDecoration.BOLD)
     }
@@ -53,13 +53,11 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
     } ?: throw RuntimeException("the quest has no icon.")
     private val toast = section.findConfig("toast")?.let {
         ItemStack(it.findString("type","Type")?.let { s ->
-            section.getString("toast")?.let {
-                try {
-                    Material.valueOf(s.uppercase())
-                } catch (ex: Exception) {
-                    QuestAdder.warn("not found error: the material named \"$s\" doesn't exist.")
-                    null
-                }
+            try {
+                Material.valueOf(s.uppercase())
+            } catch (ex: Exception) {
+                QuestAdder.warn("not found error: the material named \"$s\" doesn't exist.")
+                null
             }
         } ?: Material.BOOK).apply {
             itemMeta = itemMeta?.apply {
@@ -68,6 +66,7 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
         }
     }
     private val condition = ArrayList<Pair<ComponentReader<QuestInvokeEvent>,WrappedFunction>>()
+    private val priority = section.findInt(-1,"priority","Priority")
 
     private var onRemove: (QuestAdderPlayerEvent) -> Unit = {}
     private var onComplete: (QuestAdderPlayerEvent) -> Unit = {}
@@ -305,12 +304,16 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
 
         other as Quest
 
-        if (questKey != other.questKey) return false
-
-        return true
+        return questKey == other.questKey
     }
 
     override fun hashCode(): Int {
         return questKey.hashCode()
     }
+
+    override fun compareTo(other: Quest): Int {
+        if (priority >= 0 && other.priority >= 0) return priority.compareTo(other.priority)
+        return questKey.compareTo(other.questKey)
+    }
+
 }

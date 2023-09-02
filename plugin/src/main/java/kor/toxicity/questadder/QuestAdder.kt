@@ -5,6 +5,8 @@ import com.ticxo.playeranimator.api.PlayerAnimator
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.api.event.ButtonGuiOpenEvent
+import kor.toxicity.questadder.api.event.PluginLoadEndEvent
+import kor.toxicity.questadder.api.event.PluginLoadStartEvent
 import kor.toxicity.questadder.api.event.ReloadEndEvent
 import kor.toxicity.questadder.api.event.ReloadStartEvent
 import kor.toxicity.questadder.api.event.UserDataLoadEvent
@@ -54,7 +56,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 class QuestAdder: JavaPlugin() {
     companion object {
 
-        const val VERSION = "1.0.7"
+        const val VERSION = "1.0.8"
 
         lateinit var nms: NMS
             private set
@@ -407,31 +409,35 @@ class QuestAdder: JavaPlugin() {
             }
         },this)
         Metrics(this,19565)
-        load()
-        send("plugin enabled.")
-        try {
-            val get = HttpClient.newHttpClient().send(
-                HttpRequest.newBuilder()
-                .uri(URI.create("https://api.spigotmc.org/legacy/update.php?resource=112227/"))
-                .GET()
-                .build(), HttpResponse.BodyHandlers.ofString()).body()
-            if (VERSION != get) {
-                warn("new version found: $get")
-                warn("download: https://www.spigotmc.org/resources/questadder.112227/")
-                pluginManager.registerEvents(object : Listener {
-                    @EventHandler
-                    fun join(e: PlayerJoinEvent) {
-                        val player = e.player
-                        if (player.isOp) {
-                            player.info("new version found: $get")
-                            player.info("download: https://www.spigotmc.org/resources/questadder.112227/".asClearComponent().clickEvent(
-                                ClickEvent.openUrl("https://www.spigotmc.org/resources/questadder.112227/")))
+        task {
+            PluginLoadStartEvent().callEvent()
+            load()
+            PluginLoadEndEvent().callEvent()
+            send("plugin enabled.")
+            try {
+                val get = HttpClient.newHttpClient().send(
+                    HttpRequest.newBuilder()
+                        .uri(URI.create("https://api.spigotmc.org/legacy/update.php?resource=112227/"))
+                        .GET()
+                        .build(), HttpResponse.BodyHandlers.ofString()).body()
+                if (VERSION != get) {
+                    warn("new version found: $get")
+                    warn("download: https://www.spigotmc.org/resources/questadder.112227/")
+                    pluginManager.registerEvents(object : Listener {
+                        @EventHandler
+                        fun join(e: PlayerJoinEvent) {
+                            val player = e.player
+                            if (player.isOp) {
+                                player.info("new version found: $get")
+                                player.info("download: https://www.spigotmc.org/resources/questadder.112227/".asClearComponent().clickEvent(
+                                    ClickEvent.openUrl("https://www.spigotmc.org/resources/questadder.112227/")))
+                            }
                         }
-                    }
-                },this)
+                    },this)
+                }
+            } catch (ex: Exception) {
+                warn("unable to check for updates: ${ex.message ?: ex.javaClass.simpleName}")
             }
-        } catch (ex: Exception) {
-            warn("unable to check for updates: ${ex.message ?: ex.javaClass.simpleName}")
         }
     }
 

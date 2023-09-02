@@ -13,10 +13,7 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import net.minecraft.network.chat.IChatBaseComponent
 import net.minecraft.network.protocol.game.*
 import net.minecraft.server.network.PlayerConnection
-import net.minecraft.world.entity.Display
-import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.EntityTypes
-import net.minecraft.world.entity.EnumItemSlot
+import net.minecraft.world.entity.*
 import net.minecraft.world.entity.decoration.EntityArmorStand
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -150,5 +147,16 @@ class NMSImpl: NMS {
         targetPlayer.forEach {
             (it as CraftPlayer).handle.b.a(packet)
         }
+    }
+    override fun changePosition(player: Player, location: Location) {
+        (player as CraftPlayer).handle.b.a(PacketPlayOutPosition(
+            location.x,
+            location.y,
+            location.z,
+            location.yaw,
+            location.pitch,
+            RelativeMovement.entries.toSet(),
+            player.entityId
+        ))
     }
 }
