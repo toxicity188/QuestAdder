@@ -65,6 +65,11 @@ object ActionBuilder {
 
         put("input", ActInput::class.java)
         put("dialog", ActDialog::class.java)
+
+        put("stopsound", ActStopSound::class.java)
+
+        put("potion",ActPotion::class.java)
+        put("clearpotion",ActClearPotion::class.java)
     }
     private val eventMap = HashMap<String,Class<out AbstractEvent<*>>>().apply {
         put("join", EventJoin::class.java)

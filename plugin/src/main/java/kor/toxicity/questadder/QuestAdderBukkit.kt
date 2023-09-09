@@ -94,7 +94,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
 
         override fun <T: Event> registerEvent(event: AbstractEvent<T>, clazz: Class<T>) {
             Bukkit.getPluginManager().registerEvent(clazz, listener, EventPriority.MONITOR,{ _, e ->
-                if (clazz.isAssignableFrom(e::class.java) && ThreadLocalRandom.current().nextDouble(100.0) <= event.chance) event.invoke(clazz.cast(event))
+                if (clazz.isAssignableFrom(e::class.java) && ThreadLocalRandom.current().nextDouble(100.0) <= event.chance) event.invoke(clazz.cast(e))
             }, plugin)
         }
 
