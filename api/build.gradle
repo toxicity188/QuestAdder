@@ -1,8 +1,15 @@
 afterEvaluate {
     publishing {
         publications {
-            shadow(MavenPublication) { publication ->
-                project.shadow.component(publication)
+            paidRelease(MavenPublication) {
+                groupId = this.group
+                artifactId = 'final'
+                version = this.version
+            }
+            paidDebug(MavenPublication) {
+                groupId = this.group
+                artifactId = 'final-debug'
+                version = this.version
             }
         }
     }
