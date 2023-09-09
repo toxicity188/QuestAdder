@@ -3,7 +3,9 @@ package kor.toxicity.questadder.util.reflect;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import kor.toxicity.questadder.QuestAdder;
+import kor.toxicity.questadder.QuestAdderBukkit;
+import kor.toxicity.questadder.api.util.DataField;
+import kor.toxicity.questadder.api.util.DataObject;
 import kor.toxicity.questadder.util.builder.FunctionBuilder;
 import kor.toxicity.questadder.util.function.WrappedFunction;
 
@@ -33,7 +35,7 @@ public class ActionReflector<T extends DataObject> {
                 if (type.isEnum()) {
                     var upperCase = entry.getValue().getAsString().toUpperCase();
                     value = Arrays.stream(type.getEnumConstants()).filter(obj -> upperCase.equals(obj.toString())).findFirst().orElse(null);
-                    if (value == null) QuestAdder.Companion.warn("not found error: no enum constant \"" + upperCase + "\" found.");
+                    if (value == null) QuestAdderBukkit.Companion.warn("not found error: no enum constant \"" + upperCase + "\" found.");
                 } else {
                     var parse = DataType.findByClass(type);
                     value = (parse != null) ? parse.apply(entryValue) : null;
@@ -55,7 +57,7 @@ public class ActionReflector<T extends DataObject> {
         object.initialize();
     }
     private void throwReflectionError(String n) {
-        QuestAdder.Companion.warn("reflection error: cannot invoke field \"" + n + "\".");
+        QuestAdderBukkit.Companion.warn("reflection error: cannot invoke field \"" + n + "\".");
     }
 
     public T getResult() {

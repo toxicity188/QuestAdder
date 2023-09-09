@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.mechanic.npc
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.mechanic.IActualNPC
 import kor.toxicity.questadder.api.mechanic.IQuestNPC
 import kor.toxicity.questadder.data.PlayerData
@@ -18,7 +18,7 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
 
     private val playerDisplayMap = HashMap<UUID,PlayerDisplay>()
 
-    private val thread = QuestAdder.asyncTaskTimer(questNPC.thread,questNPC.thread) {
+    private val thread = QuestAdderBukkit.asyncTaskTimer(questNPC.thread,questNPC.thread) {
         val entity = npc.entity
         val loc = entity.location
         val players = Bukkit.getOnlinePlayers().filter {
@@ -38,11 +38,11 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
             }
         }
         players.forEach {
-            QuestAdder.getPlayerData(it)?.let { data ->
+            QuestAdderBukkit.getPlayerData(it)?.let { data ->
                 playerDisplayMap.put(it.uniqueId,PlayerDisplay(it,data))?.remove()
             }
         }
-        if (task.isNotEmpty()) QuestAdder.task {
+        if (task.isNotEmpty()) QuestAdderBukkit.task {
             task.forEach {
                 it()
             }
@@ -94,17 +94,17 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
                 state = newState
                 thread?.remove()
                 thread = when (state) {
-                    State.COMPLETE -> EntityThread(QuestAdder.nms.createArmorStand(player,npc.entity.location).apply {
+                    State.COMPLETE -> EntityThread(QuestAdderBukkit.nms.createArmorStand(player,npc.entity.location).apply {
                         setText(Component.empty())
-                        setItem(ItemStack(QuestAdder.Config.defaultResourcePackItem).apply {
+                        setItem(ItemStack(QuestAdderBukkit.Config.defaultResourcePackItem).apply {
                             itemMeta = itemMeta?.apply {
                                 setCustomModelData(4)
                             }
                         })
                     })
-                    State.READY_TO_REQUEST -> EntityThread(QuestAdder.nms.createArmorStand(player,npc.entity.location).apply {
+                    State.READY_TO_REQUEST -> EntityThread(QuestAdderBukkit.nms.createArmorStand(player,npc.entity.location).apply {
                         setText(Component.empty())
-                        setItem(ItemStack(QuestAdder.Config.defaultResourcePackItem).apply {
+                        setItem(ItemStack(QuestAdderBukkit.Config.defaultResourcePackItem).apply {
                             itemMeta = itemMeta?.apply {
                                 setCustomModelData(3)
                             }
@@ -117,7 +117,7 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
 
         private inner class EntityThread(val entity: VirtualEntity) {
 
-            private val task = QuestAdder.asyncTaskTimer(1,1) {
+            private val task = QuestAdderBukkit.asyncTaskTimer(1,1) {
                 entity.teleport(npc.entity.location.apply {
                     pitch = 0F
                     yaw = player.location.yaw - 180F

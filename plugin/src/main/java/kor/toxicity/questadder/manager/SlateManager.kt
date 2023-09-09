@@ -4,7 +4,7 @@ import com.comphenix.protocol.PacketType
 import com.comphenix.protocol.ProtocolLibrary
 import com.comphenix.protocol.events.PacketAdapter
 import com.comphenix.protocol.events.PacketEvent
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.TalkStartEvent
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -30,7 +30,7 @@ object SlateManager: QuestAdderManager {
 
     private val slateMap = ConcurrentHashMap<UUID,SlateData>()
 
-    override fun start(adder: QuestAdder) {
+    override fun start(adder: QuestAdderBukkit) {
         Bukkit.getPluginManager().registerEvents(object : Listener {
             private fun stop(player: Player) {
                 slateMap.remove(player.uniqueId)?.cancel()
@@ -102,8 +102,8 @@ object SlateManager: QuestAdderManager {
         }
     }
 
-    override fun reload(adder: QuestAdder) {
-        QuestAdder.task {
+    override fun reload(adder: QuestAdderBukkit) {
+        QuestAdderBukkit.task {
             for (mutableEntry in slateMap) {
                 mutableEntry.value.cancel()
             }
@@ -111,7 +111,7 @@ object SlateManager: QuestAdderManager {
         }
     }
 
-    override fun end(adder: QuestAdder) {
+    override fun end(adder: QuestAdderBukkit) {
     }
 
     fun slate(player: Player, back: Boolean = true) {
@@ -135,14 +135,14 @@ object SlateManager: QuestAdderManager {
         init {
             player.isInvisible = true
             player.allowFlight = true
-            QuestAdder.nms.changeFakeItemInHand(player, air, Bukkit.getOnlinePlayers())
+            QuestAdderBukkit.nms.changeFakeItemInHand(player, air, Bukkit.getOnlinePlayers())
         }
 
         fun cancel(back: Boolean = true) {
             if (back) player.teleport(location)
             player.isInvisible = false
             player.allowFlight = false
-            QuestAdder.nms.changeFakeItemInHand(player, mainHandItem, Bukkit.getOnlinePlayers())
+            QuestAdderBukkit.nms.changeFakeItemInHand(player, mainHandItem, Bukkit.getOnlinePlayers())
         }
     }
 }

@@ -5,7 +5,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.stream.JsonWriter
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.extension.parseChar
 import kor.toxicity.questadder.util.ResourcePackData
 import org.bukkit.Material
@@ -40,7 +40,7 @@ object ResourcePackManager: QuestAdderManager {
     private val emptyConfig = MemoryConfiguration()
     private val fontMap = HashMap<String,String>()
 
-    override fun start(adder: QuestAdder) {
+    override fun start(adder: QuestAdderBukkit) {
     }
 
     private var dataList = ArrayList<ResourcePackData>()
@@ -49,7 +49,7 @@ object ResourcePackManager: QuestAdderManager {
     }
     fun getImageFont(name: String) = fontMap[name]
 
-    override fun reload(adder: QuestAdder) {
+    override fun reload(adder: QuestAdderBukkit) {
         val resource = File(adder.dataFolder, "resources").apply {
             mkdir()
         }
@@ -111,7 +111,7 @@ object ResourcePackManager: QuestAdderManager {
                         load(yaml)
                     }
                 } catch (ex: Exception) {
-                    QuestAdder.warn("unable to read this file: ${yaml.name}")
+                    QuestAdderBukkit.warn("unable to read this file: ${yaml.name}")
                     null
                 }
             } ?: emptyConfig
@@ -205,13 +205,13 @@ object ResourcePackManager: QuestAdderManager {
                         },it)
                     }
                 }
-                saveCustomModelData(QuestAdder.Config.defaultResourcePackItem, assetsMap.entries)
+                saveCustomModelData(QuestAdderBukkit.Config.defaultResourcePackItem, assetsMap.entries)
                 materialMap.forEach {
                     saveCustomModelData(it.key,it.value.entries)
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                QuestAdder.warn("unable to make a resource pack.")
+                QuestAdderBukkit.warn("unable to make a resource pack.")
             }
         }
     }
@@ -352,6 +352,6 @@ object ResourcePackManager: QuestAdderManager {
         }
     }
 
-    override fun end(adder: QuestAdder) {
+    override fun end(adder: QuestAdderBukkit) {
     }
 }

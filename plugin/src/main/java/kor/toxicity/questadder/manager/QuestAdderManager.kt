@@ -1,9 +1,9 @@
 package kor.toxicity.questadder.manager
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 
 interface QuestAdderManager {
-    fun start(adder: QuestAdder)
-    fun reload(adder: QuestAdder)
-    fun end(adder: QuestAdder)
+    fun start(adder: QuestAdderBukkit)
+    fun reload(adder: QuestAdderBukkit)
+    fun end(adder: QuestAdderBukkit)
 }

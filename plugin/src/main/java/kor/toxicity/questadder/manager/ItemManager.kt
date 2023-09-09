@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.manager
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.item.ItemDatabase
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
@@ -26,7 +26,7 @@ object ItemManager: QuestAdderManager {
         }
     }
 
-    override fun start(adder: QuestAdder) {
+    override fun start(adder: QuestAdderBukkit) {
         Bukkit.getPluginManager().run {
             if (isPluginEnabled("ItemsAdder")) itemDatabaseList.add(ItemsAdderItemDataBase())
             if (isPluginEnabled("Oraxen")) itemDatabaseList.add(OraxenItemDataBase())
@@ -62,7 +62,7 @@ object ItemManager: QuestAdderManager {
         itemDatabaseList.add(database)
     }
 
-    override fun reload(adder: QuestAdder) {
+    override fun reload(adder: QuestAdderBukkit) {
         itemMap.clear()
         val iterator = itemDatabaseList.iterator()
         while (iterator.hasNext()) {
@@ -78,13 +78,13 @@ object ItemManager: QuestAdderManager {
                     itemMap.putIfAbsent(it,i)
                     Unit
                 } ?: run {
-                    QuestAdder.warn("syntax error: $it (${file.name})")
+                    QuestAdderBukkit.warn("syntax error: $it (${file.name})")
                 }
             }
         }
     }
 
-    override fun end(adder: QuestAdder) {
+    override fun end(adder: QuestAdderBukkit) {
     }
 
 }

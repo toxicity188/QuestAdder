@@ -1,6 +1,5 @@
 package kor.toxicity.questadder.util.gui
 
-import kor.toxicity.questadder.QuestAdder
 import kor.toxicity.questadder.extension.*
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit

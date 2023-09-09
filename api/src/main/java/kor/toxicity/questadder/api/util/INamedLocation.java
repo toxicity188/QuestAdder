@@ -6,5 +6,5 @@ import org.jetbrains.annotations.Nullable;
 
 public interface INamedLocation {
     @NotNull String getKey();
-    @Nullable Location getLocation();
+    @NotNull Location getLocation();
 }

@@ -1,7 +1,8 @@
 package kor.toxicity.questadder.manager
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.NavigateCompleteEvent
+import kor.toxicity.questadder.api.util.INamedLocation
 import kor.toxicity.questadder.extension.WHITE
 import kor.toxicity.questadder.extension.asComponent
 import kor.toxicity.questadder.extension.rotateYaw
@@ -39,7 +40,7 @@ object NavigationManager: QuestAdderManager {
         return degree
     }
 
-    fun startNavigate(player: Player, location: NamedLocation) {
+    fun startNavigate(player: Player, location: INamedLocation) {
         if (player.world != location.location.world) return
         threadMap.put(player.uniqueId, NavigationThread(player,location))?.cancel()
     }
@@ -48,36 +49,36 @@ object NavigationManager: QuestAdderManager {
         threadMap.remove(player.uniqueId)?.cancel()
     }
 
-    private class NavigationThread(private val player: Player, val destination: NamedLocation) {
+    private class NavigationThread(private val player: Player, val destination: INamedLocation) {
         val destinationLocation = destination.location
         private val initialLocation = player.location
         private val display: VirtualEntity = try {
-            QuestAdder.nms.createItemDisplay(player,initialLocation)
+            QuestAdderBukkit.nms.createItemDisplay(player,initialLocation)
         } catch (ex: Exception) {
-            QuestAdder.nms.createArmorStand(player,initialLocation).apply {
+            QuestAdderBukkit.nms.createArmorStand(player,initialLocation).apply {
                 setText(Component.empty())
             }
         }.apply {
-            setItem(ItemStack(QuestAdder.Config.defaultResourcePackItem).apply {
+            setItem(ItemStack(QuestAdderBukkit.Config.defaultResourcePackItem).apply {
                 itemMeta = itemMeta?.apply {
                     setCustomModelData(1)
                 }
             })
         }
         private val text: VirtualEntity = try {
-            QuestAdder.nms.createTextDisplay(player,initialLocation)
+            QuestAdderBukkit.nms.createTextDisplay(player,initialLocation)
         } catch (ex: Exception) {
-            QuestAdder.nms.createArmorStand(player,initialLocation)
+            QuestAdderBukkit.nms.createArmorStand(player,initialLocation)
         }
 
         private val textVector = if (text is VirtualTextDisplay) 0.4 else -1.6
 
         private val pillar = try {
-            QuestAdder.nms.createItemDisplay(player,destinationLocation.clone().apply {
+            QuestAdderBukkit.nms.createItemDisplay(player,destinationLocation.clone().apply {
                 pitch = 0F
                 yaw = 0F
             }).apply {
-                setItem(ItemStack(QuestAdder.Config.defaultResourcePackItem).apply {
+                setItem(ItemStack(QuestAdderBukkit.Config.defaultResourcePackItem).apply {
                     itemMeta = itemMeta?.apply {
                         setCustomModelData(2)
                     }
@@ -121,7 +122,7 @@ object NavigationManager: QuestAdderManager {
         }
     }
 
-    override fun start(adder: QuestAdder) {
+    override fun start(adder: QuestAdderBukkit) {
         Bukkit.getPluginManager().registerEvents(object : Listener {
             @EventHandler
             fun quit(e: PlayerQuitEvent) {
@@ -152,9 +153,9 @@ object NavigationManager: QuestAdderManager {
         },adder)
     }
 
-    override fun reload(adder: QuestAdder) {
+    override fun reload(adder: QuestAdderBukkit) {
     }
 
-    override fun end(adder: QuestAdder) {
+    override fun end(adder: QuestAdderBukkit) {
     }
 }

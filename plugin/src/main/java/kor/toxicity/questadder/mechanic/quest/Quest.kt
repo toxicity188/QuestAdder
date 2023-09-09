@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.mechanic.quest
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
+import kor.toxicity.questadder.api.QuestAdder
 import kor.toxicity.questadder.api.event.*
 import kor.toxicity.questadder.api.mechanic.IQuest
 import kor.toxicity.questadder.extension.*
@@ -8,7 +9,7 @@ import kor.toxicity.questadder.manager.LocationManager
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.ItemWriter
 import kor.toxicity.questadder.util.RewardSet
-import kor.toxicity.questadder.util.action.AbstractAction
+import kor.toxicity.questadder.api.mechanic.AbstractAction
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.util.function.WrappedFunction
@@ -56,7 +57,7 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
             try {
                 Material.valueOf(s.uppercase())
             } catch (ex: Exception) {
-                QuestAdder.warn("not found error: the material named \"$s\" doesn't exist.")
+                QuestAdderBukkit.warn("not found error: the material named \"$s\" doesn't exist.")
                 null
             }
         } ?: Material.BOOK).apply {
@@ -84,15 +85,15 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
             c.getKeys(false).forEach { s ->
                 c.getConfigurationSection(s)?.let { config ->
                     val s1 = config.findString("lore","Lore") ?: run {
-                        QuestAdder.warn("syntax error: the condition must be have lore.")
+                        QuestAdderBukkit.warn("syntax error: the condition must be have lore.")
                         return@forEach
                     }
                     val s2 = config.findString("condition","Condition") ?: run {
-                        QuestAdder.warn("syntax error: the condition not found.")
+                        QuestAdderBukkit.warn("syntax error: the condition not found.")
                         return@forEach
                     }
                     condition.add(ComponentReader<QuestInvokeEvent>(s1) to FunctionBuilder.evaluate(s2))
-                } ?: QuestAdder.warn("syntax error: the value $s is not configuration section. ($questKey in ${file.name})")
+                } ?: QuestAdderBukkit.warn("syntax error: the value $s is not configuration section. ($questKey in ${file.name})")
             }
         }
         section.findStringList("onRemove","on-remove")?.let { c ->
@@ -127,14 +128,14 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
             c.getKeys(false).forEach {
                 c.getConfigurationSection(it)?.let { config ->
                     val name = config.findString("name","Name") ?: run {
-                        QuestAdder.warn("syntax error: the variable must be named. ($questKey in ${file.name})")
+                        QuestAdderBukkit.warn("syntax error: the variable must be named. ($questKey in ${file.name})")
                         return@forEach
                     }
                     val lore = config.findString("lore","Lore")?.let { s ->
                         ComponentReader<QuestInvokeEvent>(s)
                     }
                     val event = config.findStringList("Event","event","Events","events") ?: run {
-                        QuestAdder.warn("syntax error: the variable must be have some event. ($questKey in ${file.name})")
+                        QuestAdderBukkit.warn("syntax error: the variable must be have some event. ($questKey in ${file.name})")
                         return@forEach
                     }
                     val action = config.findStringList("Action","Actions","actions","action")?.let { act ->
@@ -156,11 +157,11 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
                                     val t = wf.apply(questEvent)
                                     t is Boolean && t
                                 }) {
-                                val data  = QuestAdder.getPlayerData(player) ?: return
+                                val data  = QuestAdderBukkit.getPlayerData(player) ?: return
                                 val newValue = (data.getQuestVariable(questKey,name) ?: 0)
                                 if (newValue + 1 == max) {
                                     lore?.createComponent(questEvent)?.let { component ->
-                                        QuestAdder.nms.sendAdvancementMessage(player,toast ?: item.write(questEvent),component)
+                                        QuestAdderBukkit.nms.sendAdvancementMessage(player,toast ?: item.write(questEvent),component)
                                     }
                                     action?.invoke(player,questEvent)
                                 }
@@ -172,25 +173,25 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
                         ActionBuilder.createEvent(adder,obj,s)
                     }
 
-                } ?: QuestAdder.warn("syntax error: the value $it is not configuration section. ($questKey in ${file.name})")
+                } ?: QuestAdderBukkit.warn("syntax error: the value $it is not configuration section. ($questKey in ${file.name})")
             }
         }
     }
     override fun give(player: Player) {
-        QuestAdder.getPlayerData(player)?.giveQuest(questKey)
+        QuestAdderBukkit.getPlayerData(player)?.giveQuest(questKey)
         onGive(QuestGiveEvent(this, player).apply {
             callEvent()
         })
     }
     override fun remove(player: Player) {
-        QuestAdder.getPlayerData(player)?.removeQuest(questKey)
+        QuestAdderBukkit.getPlayerData(player)?.removeQuest(questKey)
         onRemove(QuestRemoveEvent(this, player).apply {
             callEvent()
         })
     }
     override fun complete(player: Player) {
         val reward = reward?.give(player)
-        QuestAdder.getPlayerData(player)?.completeQuest(questKey)
+        QuestAdderBukkit.getPlayerData(player)?.completeQuest(questKey)
         onComplete(
             QuestCompleteEvent(
                 this,
@@ -204,7 +205,7 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
     }
 
     override fun isCompleted(player: Player): Boolean {
-        val data = QuestAdder.getPlayerData(player) ?: return false
+        val data = QuestAdderBukkit.getPlayerData(player) ?: return false
         if (data.questVariables[questKey]?.state != QuestRecord.HAS) return false
         val invokeEvent = QuestInvokeEvent(this, player).apply {
             callEvent()
@@ -214,22 +215,22 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
             get is Boolean && get
         }
     }
-    override fun isCleared(player: Player) = QuestAdder.getPlayerData(player)?.questVariables?.get(questKey)?.state == QuestRecord.COMPLETE
+    override fun isCleared(player: Player) = QuestAdderBukkit.getPlayerData(player)?.questVariables?.get(questKey)?.state == QuestRecord.COMPLETE
     override fun isReady(player: Player) = reward?.isReady(player) ?: true
 
     fun getState(player: Player) = if (isCleared(player)) QuestState.CLEAR else if (isCompleted(player)) QuestState.COMPLETE else if (has(player)) QuestState.HAS else QuestState.HAS_NOT
 
-    override fun has(player: Player) = QuestAdder.getPlayerData(player)?.hasQuest(questKey) ?: false
+    override fun has(player: Player) = QuestAdderBukkit.getPlayerData(player)?.hasQuest(questKey) ?: false
     override fun getIcon(player: Player, suffix: List<Component>): ItemStack {
         val event = QuestInvokeEvent(this, player).apply {
             callEvent()
         }
-        val data = QuestAdder.getPlayerData(player)?.questVariables?.get(questKey)
+        val data = QuestAdderBukkit.getPlayerData(player)?.questVariables?.get(questKey)
         val cond = condition.map {
             val get = it.second.apply(event)
             if (get is Boolean) get
             else {
-                QuestAdder.warn("runtime error: the value $get is not a boolean!")
+                QuestAdderBukkit.warn("runtime error: the value $get is not a boolean!")
                 false
             }
         }
@@ -241,41 +242,41 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
                     }
                     recommend?.let {
                         add(Component.empty())
-                        add(QuestAdder.Prefix.recommend)
+                        add(QuestAdderBukkit.Prefix.recommend)
                         it.forEach { r ->
                             add(r.createComponent(event) ?: Component.text("error!"))
                         }
                     }
                     if (condition.isNotEmpty()) {
                         add(Component.empty())
-                        add(QuestAdder.Prefix.condition)
+                        add(QuestAdderBukkit.Prefix.condition)
                         for ((index,pair) in condition.withIndex()) {
                             val component = pair.first.createComponent(event) ?: Component.empty()
 
-                            add(QuestAdder.Prefix.conditionLore.append(if (cond[index]) component.deepClear().deepDecorate(TextDecoration.STRIKETHROUGH).append(
+                            add(QuestAdderBukkit.Prefix.conditionLore.append(if (cond[index]) component.deepClear().deepDecorate(TextDecoration.STRIKETHROUGH).append(
                                 Component.space().deepClear()).append(success) else component))
                         }
                     }
                     reward?.let {
                         add(Component.empty())
-                        add(QuestAdder.Prefix.reward)
-                        add(QuestAdder.Prefix.rewardLore.append(it.rewardSetMoney.withComma().asClearComponent().color(WHITE).append(QuestAdder.Suffix.money)))
-                        add(QuestAdder.Prefix.rewardLore.append(it.rewardSetExp.withComma().asClearComponent().color(WHITE).append(QuestAdder.Suffix.exp)))
+                        add(QuestAdderBukkit.Prefix.reward)
+                        add(QuestAdderBukkit.Prefix.rewardLore.append(it.rewardSetMoney.withComma().asClearComponent().color(WHITE).append(QuestAdderBukkit.Suffix.money)))
+                        add(QuestAdderBukkit.Prefix.rewardLore.append(it.rewardSetExp.withComma().asClearComponent().color(WHITE).append(QuestAdderBukkit.Suffix.exp)))
                         it.rewardSetItems.forEach { i ->
                             var comp = i.contentItem.getNameComponent()
                             if (i.contentChance < 100.0) comp = comp.append(" (${i.contentChance.withComma()}%)".asClearComponent().color(
                                 GRAY))
-                            add(QuestAdder.Prefix.rewardLore.append(comp))
+                            add(QuestAdderBukkit.Prefix.rewardLore.append(comp))
                         }
                     }
                     if (left > 0 && data != null) {
                         add(Component.empty())
-                        add(QuestAdder.Prefix.left.append(QuestAdder.Config.timeFormat.format(left - ChronoUnit.MINUTES.between(data.time,LocalDateTime.now())).asClearComponent().color(
+                        add(QuestAdderBukkit.Prefix.left.append(QuestAdderBukkit.Config.timeFormat.format(left - ChronoUnit.MINUTES.between(data.time,LocalDateTime.now())).asClearComponent().color(
                             WHITE)))
                     }
                     addAll(suffix)
                 })
-                if (cond.all {
+                if (cond.isNotEmpty() && cond.all {
                     it
                     }) addEnchant(Enchantment.DURABILITY,1, true)
             }

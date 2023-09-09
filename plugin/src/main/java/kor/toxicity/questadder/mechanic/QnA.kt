@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.mechanic
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.DialogStartEvent
 import kor.toxicity.questadder.api.event.QuestAdderPlayerEvent
 import kor.toxicity.questadder.extension.*
@@ -17,7 +17,7 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import java.io.File
 
-class QnA(adder: QuestAdder, file: File, key: String, section: ConfigurationSection) {
+class QnA(adder: QuestAdderBukkit, file: File, key: String, section: ConfigurationSection) {
     private val name = section.findString("name","Name")?.colored()
     private val size = section.findInt(3,"size","Size")
     private val center = size / 2 * 9 + 4
@@ -33,10 +33,10 @@ class QnA(adder: QuestAdder, file: File, key: String, section: ConfigurationSect
                             }
                             Unit
                         } catch (ex: Exception) {
-                            QuestAdder.warn("unable to load the qna item: $it ($key in ${file.name})")
-                            QuestAdder.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
+                            QuestAdderBukkit.warn("unable to load the qna item: $it ($key in ${file.name})")
+                            QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
                         }
-                    } ?: QuestAdder.warn("syntax error: the key \"$it\" is not a configuration section. ($key in ${file.name})")
+                    } ?: QuestAdderBukkit.warn("syntax error: the key \"$it\" is not a configuration section. ($key in ${file.name})")
                 }
             }
         }

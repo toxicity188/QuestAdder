@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.manager
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.util.gui.Gui
 import kor.toxicity.questadder.util.gui.MouseButton
 import org.bukkit.Bukkit
@@ -11,7 +11,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent
 
 object GuiManager: QuestAdderManager {
 
-    override fun start(adder: QuestAdder) {
+    override fun start(adder: QuestAdderBukkit) {
         Bukkit.getPluginManager().registerEvents(object : Listener {
             @EventHandler
             fun click(e: InventoryClickEvent) {
@@ -41,13 +41,13 @@ object GuiManager: QuestAdderManager {
         },adder)
     }
 
-    override fun reload(adder: QuestAdder) {
-        QuestAdder.task {
+    override fun reload(adder: QuestAdderBukkit) {
+        QuestAdderBukkit.task {
             closeAll()
         }
     }
 
-    override fun end(adder: QuestAdder) {
+    override fun end(adder: QuestAdderBukkit) {
         closeAll()
     }
     private fun closeAll() {

@@ -5,7 +5,7 @@ import com.mojang.math.Transformation
 import eu.endercentral.crazy_advancements.JSONMessage
 import eu.endercentral.crazy_advancements.advancement.AdvancementDisplay
 import eu.endercentral.crazy_advancements.advancement.ToastNotification
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.nms.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
@@ -22,7 +22,6 @@ import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.craftbukkit.v1_19_R3.CraftServer
 import org.bukkit.craftbukkit.v1_19_R3.CraftWorld
-import org.bukkit.craftbukkit.v1_19_R3.entity.CraftArmorStand
 import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer
 import org.bukkit.craftbukkit.v1_19_R3.inventory.CraftItemStack
 import org.bukkit.craftbukkit.v1_19_R3.util.CraftChatMessage
@@ -63,7 +62,7 @@ class NMSImpl: NMS {
                 return executor.onCommand(sender,this,commandLabel,args)
             }
         }
-        if (!map.register("questadder",obj)) QuestAdder.warn("unable to register command: $name")
+        if (!map.register("questadder",obj)) QuestAdderBukkit.warn("unable to register command: $name")
         return object: RuntimeCommand {
             override fun unregister() {
                 map.knownCommands.remove("questadder:$name")
@@ -72,7 +71,14 @@ class NMSImpl: NMS {
         }
     }
     override fun updateCommand() {
-        (Bukkit.getServer() as CraftServer).syncCommands()
+        (Bukkit.getServer() as CraftServer).run {
+            syncCommands()
+            val dispatcher = server.au.b().d
+            val minecraft = server.vanillaCommandDispatcher
+            for (child in minecraft.a().root.children) {
+                dispatcher.a().root.addChild(child)
+            }
+        }
     }
     override fun createArmorStand(player: Player, location: Location): VirtualArmorStand {
         return VirtualArmorStandImpl(player, location)

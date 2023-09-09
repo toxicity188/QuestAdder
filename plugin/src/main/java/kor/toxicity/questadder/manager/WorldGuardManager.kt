@@ -4,7 +4,7 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldguard.WorldGuard
 import com.sk89q.worldguard.protection.regions.ProtectedRegion
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.RegionEnterEvent
 import kor.toxicity.questadder.api.event.RegionExitEvent
 import org.bukkit.Bukkit
@@ -20,7 +20,7 @@ object WorldGuardManager: QuestAdderManager {
 
     private val userThreadMap = ConcurrentHashMap<UUID,UserThread>()
 
-    override fun start(adder: QuestAdder) {
+    override fun start(adder: QuestAdderBukkit) {
         Bukkit.getPluginManager().registerEvents(object : Listener {
             @EventHandler
             fun join(e: PlayerJoinEvent) {
@@ -34,10 +34,10 @@ object WorldGuardManager: QuestAdderManager {
         },adder)
     }
 
-    override fun reload(adder: QuestAdder) {
+    override fun reload(adder: QuestAdderBukkit) {
     }
 
-    override fun end(adder: QuestAdder) {
+    override fun end(adder: QuestAdderBukkit) {
     }
 
 
@@ -46,7 +46,7 @@ object WorldGuardManager: QuestAdderManager {
         private val platform = WorldGuard.getInstance().platform
         private var oldSet: Set<ProtectedRegion> = emptySet()
 
-        val task = QuestAdder.asyncTaskTimer(5,5) {
+        val task = QuestAdderBukkit.asyncTaskTimer(5,5) {
             val location = player.location
             val newSet = platform.regionContainer.get(BukkitAdapter.adapt(player.world))?.getApplicableRegions(
                 BlockVector3.at(location.blockX,location.blockY,location.blockZ))?.toSet() ?: emptySet()
@@ -61,7 +61,7 @@ object WorldGuardManager: QuestAdderManager {
                     if (!newSet.contains(it)) add(it)
                 }
             }
-            if (enterSet.isNotEmpty() && exitSet.isNotEmpty()) QuestAdder.task {
+            if (enterSet.isNotEmpty() && exitSet.isNotEmpty()) QuestAdderBukkit.task {
                 enterSet.forEach {
                     RegionEnterEvent(player, it).callEvent()
                 }

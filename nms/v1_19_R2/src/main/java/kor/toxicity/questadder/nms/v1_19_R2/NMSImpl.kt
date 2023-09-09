@@ -4,7 +4,7 @@ import com.mojang.datafixers.util.Pair
 import eu.endercentral.crazy_advancements.JSONMessage
 import eu.endercentral.crazy_advancements.advancement.AdvancementDisplay
 import eu.endercentral.crazy_advancements.advancement.ToastNotification
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.nms.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
@@ -60,7 +60,7 @@ class NMSImpl: NMS {
                 return executor.onCommand(sender,this,commandLabel,args)
             }
         }
-        if (!map.register("questadder",obj)) QuestAdder.warn("unable to register command: $name")
+        if (!map.register("questadder",obj)) QuestAdderBukkit.warn("unable to register command: $name")
         return object: RuntimeCommand {
             override fun unregister() {
                 map.knownCommands.remove("questadder:$name")
@@ -69,7 +69,14 @@ class NMSImpl: NMS {
         }
     }
     override fun updateCommand() {
-        (Bukkit.getServer() as CraftServer).syncCommands()
+        (Bukkit.getServer() as CraftServer).run {
+            syncCommands()
+            val dispatcher = server.aB()
+            val minecraft = server.vanillaCommandDispatcher
+            for (child in minecraft.a().root.children) {
+                dispatcher.a().root.addChild(child)
+            }
+        }
     }
     override fun createArmorStand(player: Player, location: Location): VirtualArmorStand {
         return VirtualArmorStandImpl(player, location)

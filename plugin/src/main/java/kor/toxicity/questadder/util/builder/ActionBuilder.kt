@@ -2,19 +2,20 @@ package kor.toxicity.questadder.util.builder
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
+import kor.toxicity.questadder.api.QuestAdder
 import kor.toxicity.questadder.api.event.QuestAdderEvent
 import kor.toxicity.questadder.extension.ANNOTATION_PATTERN
 import kor.toxicity.questadder.extension.findStringList
 import kor.toxicity.questadder.extension.info
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.nms.RuntimeCommand
-import kor.toxicity.questadder.util.action.AbstractAction
-import kor.toxicity.questadder.util.action.CancellableAction
-import kor.toxicity.questadder.util.action.RegistrableAction
-import kor.toxicity.questadder.util.action.type.*
-import kor.toxicity.questadder.util.event.AbstractEvent
-import kor.toxicity.questadder.util.event.type.*
+import kor.toxicity.questadder.api.mechanic.AbstractAction
+import kor.toxicity.questadder.api.mechanic.CancellableAction
+import kor.toxicity.questadder.api.mechanic.RegistrableAction
+import kor.toxicity.questadder.api.mechanic.AbstractEvent
+import kor.toxicity.questadder.util.action.*
+import kor.toxicity.questadder.util.event.*
 import kor.toxicity.questadder.util.reflect.ActionReflector
 import kor.toxicity.questadder.util.reflect.PrimitiveType
 import org.bukkit.command.CommandExecutor
@@ -30,28 +31,28 @@ object ActionBuilder {
     private val delayPattern = Pattern.compile("delay (?<delay>[0-9]+)")
 
     private val actionMap = HashMap<String,Class<out AbstractAction>>().apply {
-        put("message",ActMessage::class.java)
-        put("title",ActTitle::class.java)
+        put("message", ActMessage::class.java)
+        put("title", ActTitle::class.java)
 
-        put("slate",ActSlate::class.java)
-        put("action",ActAction::class.java)
-        put("quest",ActQuest::class.java)
+        put("slate", ActSlate::class.java)
+        put("action", ActAction::class.java)
+        put("quest", ActQuest::class.java)
 
         put("sound", ActSound::class.java)
 
-        put("set",ActSet::class.java)
-        put("remove",ActRemove::class.java)
-        put("add",ActAdd::class.java)
-        put("subtract",ActSubtract::class.java)
-        put("multiply",ActMultiply::class.java)
-        put("divide",ActDivide::class.java)
+        put("set", ActSet::class.java)
+        put("remove", ActRemove::class.java)
+        put("add", ActAdd::class.java)
+        put("subtract", ActSubtract::class.java)
+        put("multiply", ActMultiply::class.java)
+        put("divide", ActDivide::class.java)
         put("index", ActIndex::class.java)
 
         put("warp", ActWarp::class.java)
-        put("evaluate",ActEvaluate::class.java)
+        put("evaluate", ActEvaluate::class.java)
 
-        put("give",ActGive::class.java)
-        put("take",ActTake::class.java)
+        put("give", ActGive::class.java)
+        put("take", ActTake::class.java)
 
         put("command", ActCommand::class.java)
         put("money", ActMoney::class.java)
@@ -61,11 +62,14 @@ object ActionBuilder {
 
         put("startnavigate", ActStartNavigate::class.java)
         put("endnavigate", ActEndNavigate::class.java)
+
+        put("input", ActInput::class.java)
+        put("dialog", ActDialog::class.java)
     }
     private val eventMap = HashMap<String,Class<out AbstractEvent<*>>>().apply {
         put("join", EventJoin::class.java)
         put("kill", EventKill::class.java)
-        put("attack",EventAttack::class.java)
+        put("attack", EventAttack::class.java)
         put("chat", EventChat::class.java)
         put("talk", EventTalk::class.java)
         put("quit", EventQuit::class.java)
@@ -88,10 +92,10 @@ object ActionBuilder {
 
         put("resourecpack", EventResourcePack::class.java)
 
-        put("navigatestart",EventNavigateStart::class.java)
-        put("navigatefail",EventNavigateFail::class.java)
-        put("navigateend",EventNavigateEnd::class.java)
-        put("navigatecomplete",EventNavigateComplete::class.java)
+        put("navigatestart", EventNavigateStart::class.java)
+        put("navigatefail", EventNavigateFail::class.java)
+        put("navigateend", EventNavigateEnd::class.java)
+        put("navigatecomplete", EventNavigateComplete::class.java)
 
         put("givereward", EventGiveReward::class.java)
         put("questgive", EventQuestGive::class.java)
@@ -118,8 +122,8 @@ object ActionBuilder {
                         p.second
                     ).result
                 } catch (ex: Exception) {
-                    QuestAdder.warn("unable to load this action: $parameter")
-                    QuestAdder.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
+                    QuestAdderBukkit.warn("unable to load this action: $parameter")
+                    QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
                     null
                 }
             }
@@ -130,12 +134,13 @@ object ActionBuilder {
             eventMap[p.first]?.let {
                 try {
                     ActionReflector(
-                        it.getConstructor(QuestAdder::class.java,AbstractAction::class.java).newInstance(adder,action),
+                        it.getConstructor(QuestAdder::class.java,
+                            AbstractAction::class.java).newInstance(adder,action),
                         p.second
                     ).result
                 } catch (ex: Exception) {
-                    QuestAdder.warn("unable to load this event: $parameter")
-                    QuestAdder.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
+                    QuestAdderBukkit.warn("unable to load this event: $parameter")
+                    QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
                     null
                 }
             }
@@ -170,7 +175,7 @@ object ActionBuilder {
                 val d = matcher.group("delay").toLong()
                 action = object : CancellableAction(adder) {
                     override fun invoke(player: Player, event: QuestAdderEvent) {
-                        playerTask[player.uniqueId] = QuestAdder.taskLater(d) {
+                        playerTask[player.uniqueId] = QuestAdderBukkit.taskLater(d) {
                             t.invoke(player,event)
                         }
                     }
@@ -231,7 +236,7 @@ object ActionBuilder {
                     val function = FunctionBuilder.evaluate(matcher.replaceAll(""))
                     val retType = function.getReturnType()
                     if (retType != PrimitiveType.BOOLEAN.primitive && retType != PrimitiveType.BOOLEAN.reference) {
-                        QuestAdder.warn("compile error: this argument is not a boolean: $s")
+                        QuestAdderBukkit.warn("compile error: this argument is not a boolean: $s")
                         return@forEach
                     }
                     when (name) {
@@ -249,7 +254,7 @@ object ActionBuilder {
                                             true
                                         } else false
                                     }
-                                } else QuestAdder.warn("unable to load the dialog: $s")
+                                } else QuestAdderBukkit.warn("unable to load the dialog: $s")
                             }
                         }
                         "castinstead" -> {
@@ -266,7 +271,7 @@ object ActionBuilder {
                                             false
                                         } else true
                                     }
-                                } else QuestAdder.warn("unable to load the dialog: $s")
+                                } else QuestAdderBukkit.warn("unable to load the dialog: $s")
                             }
                         }
                         else -> {
@@ -306,7 +311,7 @@ object ActionBuilder {
                     true
                 }
                 sl.forEach {
-                    command.add(QuestAdder.nms.createCommand(it.split(' ')[0],executor))
+                    command.add(QuestAdderBukkit.nms.createCommand(it.split(' ')[0],executor))
                 }
             }
             object : RegistrableAction(adder) {

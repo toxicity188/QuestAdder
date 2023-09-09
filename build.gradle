@@ -6,7 +6,7 @@ plugins {
 }
 
 def questAdderGroup = 'kor.toxicity'
-def questAdderVersion = '1.0.8-SNAPSHOT'
+def questAdderVersion = '1.0.9-SNAPSHOT'
 
 allprojects {
     apply plugin: 'java'
@@ -92,6 +92,7 @@ repositories {
 }
 
 dependencies {
+    implementation project(path: ':nms:v1_17_R1', configuration: 'shadow')
     implementation project(path: ':nms:v1_18_R1', configuration: 'shadow')
     implementation project(path: ':nms:v1_18_R2', configuration: 'shadow')
     implementation project(path: ':nms:v1_19_R1', configuration: 'shadow')
@@ -146,16 +147,5 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions {
         jvmTarget = "17"
-    }
-}
-
-
-afterEvaluate {
-    publishing {
-        publications {
-            shadow(MavenPublication) { publication ->
-                project.shadow.component(publication)
-            }
-        }
     }
 }

@@ -1,11 +1,9 @@
 package kor.toxicity.questadder.api.util;
 
-import org.bukkit.inventory.ItemStack;
-
-import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 public interface IRewardSet {
     double getExp();
     double getMoney();
-    IRewardSetContent[] getItems();
+    @NotNull IRewardSetContent[] getItems();
 }

@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.util.database
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.data.PlayerData
 import kor.toxicity.questadder.data.QuestData
 import kor.toxicity.questadder.extension.getAsStringList
@@ -17,7 +17,7 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
     YML {
         override fun supply(section: ConfigurationSection): Database {
             return object : Database {
-                private fun getFile(adder: QuestAdder, player: OfflinePlayer) = File(File(adder.dataFolder.apply {
+                private fun getFile(adder: QuestAdderBukkit, player: OfflinePlayer) = File(File(adder.dataFolder.apply {
                     mkdir()
                 },"users").apply {
                     mkdir()
@@ -26,7 +26,7 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
                 override fun close() {
                 }
 
-                override fun load(adder: QuestAdder, player: OfflinePlayer): PlayerData {
+                override fun load(adder: QuestAdderBukkit, player: OfflinePlayer): PlayerData {
                     val data = PlayerData()
                     try {
                         val collection = ArrayList<Triple<String, String, String>>()
@@ -51,7 +51,7 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
                                                 }
                                             })
                                         } catch (ex: Exception) {
-                                            QuestAdder.warn("unable to load quest data of \"${player.name}\"")
+                                            QuestAdderBukkit.warn("unable to load quest data of \"${player.name}\"")
                                         }
                                     }
                                 }
@@ -65,12 +65,12 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
                         data.questVariables.putAll(map)
                         data.loadVariables(collection)
                     } catch (ex: Exception) {
-                        QuestAdder.warn("unable to load the player data of ${player.uniqueId}.")
+                        QuestAdderBukkit.warn("unable to load the player data of ${player.uniqueId}.")
                     }
                     return data
                 }
 
-                override fun save(adder: QuestAdder, player: OfflinePlayer, playerData: PlayerData): Boolean {
+                override fun save(adder: QuestAdderBukkit, player: OfflinePlayer, playerData: PlayerData): Boolean {
                     val save = playerData.saveVariables()
                     return try {
                         YamlConfiguration().run {
@@ -126,7 +126,7 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
                     mysql.close()
                 }
 
-                override fun save(adder: QuestAdder, player: OfflinePlayer, playerData: PlayerData): Boolean {
+                override fun save(adder: QuestAdderBukkit, player: OfflinePlayer, playerData: PlayerData): Boolean {
                     val uuid = player.uniqueId.toString()
                     mysql.run {
                         prepareStatement("DELETE FROM variables WHERE uuid = '$uuid';").use {
@@ -167,7 +167,7 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
                     return true
                 }
 
-                override fun load(adder: QuestAdder, player: OfflinePlayer): PlayerData {
+                override fun load(adder: QuestAdderBukkit, player: OfflinePlayer): PlayerData {
                     val data = PlayerData()
                     val uuid = player.uniqueId.toString()
                     mysql.run {

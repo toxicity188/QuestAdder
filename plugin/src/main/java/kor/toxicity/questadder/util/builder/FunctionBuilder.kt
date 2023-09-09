@@ -1,9 +1,10 @@
 package kor.toxicity.questadder.util.builder
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.*
 import kor.toxicity.questadder.extension.storage
 import kor.toxicity.questadder.extension.totalAmount
+import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.manager.ItemManager
 import kor.toxicity.questadder.mechanic.npc.QuestNPC
 import kor.toxicity.questadder.util.HashedClass
@@ -172,7 +173,7 @@ object FunctionBuilder {
             "Hello world!"
         }
         addFunction("numOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
-            when (val n = QuestAdder.getPlayerData(args[0] as Player)?.get(args[1] as String)) {
+            when (val n = QuestAdderBukkit.getPlayerData(args[0] as Player)?.get(args[1] as String)) {
                 is Number -> n.toDouble()
                 is String -> try {
                     n.toDouble()
@@ -183,19 +184,22 @@ object FunctionBuilder {
             }
         }
         addFunction("strOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
-            QuestAdder.getPlayerData(args[0] as Player)?.get(args[1] as String).toString()
+            QuestAdderBukkit.getPlayerData(args[0] as Player)?.get(args[1] as String).toString()
         }
         addFunction("boolOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
-            QuestAdder.getPlayerData(args[0] as Player)?.get(args[1] as String).toString().toBoolean()
+            QuestAdderBukkit.getPlayerData(args[0] as Player)?.get(args[1] as String).toString().toBoolean()
         }
         addFunction("itemOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
-            QuestAdder.getPlayerData(args[0] as Player)?.get(args[1] as String) as? ItemStack
+            QuestAdderBukkit.getPlayerData(args[0] as Player)?.get(args[1] as String) as? ItemStack
         }
         addFunction("random", listOf(Number::class.java, Number::class.java)) { _: Null, args ->
             ThreadLocalRandom.current().nextDouble((args[0] as Number).toDouble(), (args[1] as Number).toDouble())
         }
-        addFunction("index", listOf(QuestNPC::class.java, Player::class.java)) { _: Null, args ->
-            (args[0] as QuestNPC).getIndex(args[1] as Player)
+        addFunction("index", listOf(Player::class.java, QuestNPC::class.java)) { _: Null, args ->
+            (args[1] as QuestNPC).getIndex(args[0] as Player)
+        }
+        addFunction("npcOf", listOf(String::class.java)) { _: Null, args ->
+            DialogManager.getQuestNPC(args[0] as String)
         }
         addFunction("player") { e: QuestAdderPlayerEvent, _ ->
             e.player
@@ -220,7 +224,7 @@ object FunctionBuilder {
             if (index >= 0 && index < e.args.size) e.args[index] else null
         }
         addFunction("var", listOf(String::class.java)) { e: QuestPlayerEvent, args ->
-            QuestAdder.getPlayerData(e.player)?.getQuestVariable(e.quest.key,args[0] as String) ?: 0L
+            QuestAdderBukkit.getPlayerData(e.player)?.getQuestVariable(e.quest.key,args[0] as String) ?: 0L
         }
         addFunction("exp") { e: QuestCompleteEvent, _ ->
             e.exp
@@ -496,7 +500,7 @@ object FunctionBuilder {
                     }
                 }
             } catch (ex: Exception) {
-                if (removeSpace != "null") QuestAdder.warn("compile error: unknown type: $removeSpace")
+                if (removeSpace != "null") QuestAdderBukkit.warn("compile error: unknown type: $removeSpace")
                 nullFunction
             }
         }

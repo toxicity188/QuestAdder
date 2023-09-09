@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.extension
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.manager.ItemManager
 import kor.toxicity.questadder.manager.ResourcePackManager
 import kor.toxicity.questadder.util.ResourcePackData
@@ -88,7 +88,7 @@ fun ConfigurationSection.getAsItemStack(key: String): ItemStack? = if (isItemSta
                                 )
                             )
                         } catch (ex: Exception) {
-                            QuestAdder.warn("다음 Attribute를 읽을 수 없습니다: $it")
+                            QuestAdderBukkit.warn("다음 Attribute를 읽을 수 없습니다: $it")
                         }
                     }
                 }
@@ -110,7 +110,7 @@ fun ConfigurationSection.getAsItemStack(key: String): ItemStack? = if (isItemSta
                         try {
                             addUnsafeEnchantment(enchant,str.toInt())
                         } catch (ex: Exception) {
-                            QuestAdder.warn("cannot apply this enchant: $key $str")
+                            QuestAdderBukkit.warn("cannot apply this enchant: $key $str")
                         }
                     }
                 }

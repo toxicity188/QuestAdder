@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.manager
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.extension.colored
@@ -19,7 +19,7 @@ object LocationManager: QuestAdderManager {
 
     private val locationMap = HashMap<String,NamedLocation>()
 
-    override fun start(adder: QuestAdder) {
+    override fun start(adder: QuestAdderBukkit) {
         val locationFolder = File(adder.dataFolder,"locations")
         adder.command.addCommandAPI("location", arrayOf("loc","좌표"), "location-related command.", true, CommandAPI("qa loc")
             .addCommand("create") {
@@ -33,7 +33,7 @@ object LocationManager: QuestAdderManager {
                         sender.warn("the location named \"${args[2]} already exists.")
                     } else {
                         val location = (sender as Player).location
-                        QuestAdder.asyncTask {
+                        QuestAdderBukkit.asyncTask {
                             try {
                                 val file = File(locationFolder.apply {
                                     mkdir()
@@ -104,21 +104,21 @@ object LocationManager: QuestAdderManager {
             })
     }
 
-    override fun reload(adder: QuestAdder) {
+    override fun reload(adder: QuestAdderBukkit) {
         locationMap.clear()
         adder.loadFolder("locations") { file, section ->
             section.getKeys(false).forEach {
                 section.getConfigurationSection(it)?.let { c ->
                     NamedLocation.fromConfig(it,c)?.let { location ->
                         locationMap[it] = location
-                    } ?: QuestAdder.warn("unable to read this location. ($it in ${file.name})")
-                }  ?: QuestAdder.warn("syntax error: the value is not a configuration section. ($it in ${file.name})")
+                    } ?: QuestAdderBukkit.warn("unable to read this location. ($it in ${file.name})")
+                }  ?: QuestAdderBukkit.warn("syntax error: the value is not a configuration section. ($it in ${file.name})")
             }
         }
         Bukkit.getConsoleSender().send("${locationMap.size} of locations has successfully loaded.")
     }
     fun getLocation(name: String) = locationMap[name]
 
-    override fun end(adder: QuestAdder) {
+    override fun end(adder: QuestAdderBukkit) {
     }
 }

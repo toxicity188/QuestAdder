@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.util
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.extension.EMPTY_DECORATION
 import kor.toxicity.questadder.extension.asComponent
 import kor.toxicity.questadder.extension.deepClear
@@ -110,7 +110,7 @@ class ComponentReader<T : Any>(string: String) {
                     try {
                         map[TextDecoration.valueOf(it.uppercase())] = TextDecoration.State.TRUE
                     } catch (ex: Exception) {
-                        QuestAdder.warn("syntax error: cannot find the decoration '$it'")
+                        QuestAdderBukkit.warn("syntax error: cannot find the decoration '$it'")
                     }
                 }
                 c.decoration = map
@@ -118,9 +118,9 @@ class ComponentReader<T : Any>(string: String) {
             },
             "space" to { s,_ ->
                 try {
-                    if (QuestAdder.nms.getVersion().version >= 19) SpaceComponentBuilder(s.toInt()) else LegacySpaceComponentBuilder(s.toInt())
+                    if (QuestAdderBukkit.nms.getVersion().version >= 19) SpaceComponentBuilder(s.toInt()) else LegacySpaceComponentBuilder(s.toInt())
                 } catch (ex: Exception) {
-                    QuestAdder.warn("number format error: the value \"$s\" is not an int.")
+                    QuestAdderBukkit.warn("number format error: the value \"$s\" is not an int.")
                     null
                 }
             },

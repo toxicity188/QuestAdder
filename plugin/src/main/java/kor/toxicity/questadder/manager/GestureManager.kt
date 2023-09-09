@@ -1,9 +1,8 @@
 package kor.toxicity.questadder.manager
 
-import com.comphenix.protocol.PacketType
 import com.comphenix.protocol.ProtocolLibrary
 import com.ticxo.playeranimator.api.model.player.PlayerModel
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.extension.send
 import net.citizensnpcs.api.npc.NPC
 import org.bukkit.Bukkit
@@ -13,25 +12,25 @@ import java.util.UUID
 
 object GestureManager: QuestAdderManager {
     private val gestureMap = HashMap<UUID,QuestPlayerModel>()
-    override fun start(adder: QuestAdder) {
+    override fun start(adder: QuestAdderBukkit) {
 
     }
 
-    override fun reload(adder: QuestAdder) {
+    override fun reload(adder: QuestAdderBukkit) {
         File(adder.dataFolder.apply {
             mkdir()
         },"gestures").run {
             mkdir()
             listFiles()?.forEach {
                 if (it.extension == "bbmodel") {
-                    QuestAdder.animator.animationManager.importAnimations("questadder",it)
+                    QuestAdderBukkit.animator.animationManager.importAnimations("questadder",it)
                 }
             }
         }
-        Bukkit.getConsoleSender().send("${QuestAdder.animator.animationManager.registry.size} of gestures has successfully loaded.")
+        Bukkit.getConsoleSender().send("${QuestAdderBukkit.animator.animationManager.registry.size} of gestures has successfully loaded.")
     }
 
-    override fun end(adder: QuestAdder) {
+    override fun end(adder: QuestAdderBukkit) {
     }
 
     fun play(player: Player, string: String, npc: NPC) {
@@ -40,12 +39,12 @@ object GestureManager: QuestAdderManager {
             gestureMap.put(player.uniqueId, object : QuestPlayerModel(entity) {
                 override fun spawn() {
                     spawn(player)
-                    QuestAdder.nms.removePlayer(player,entity)
+                    QuestAdderBukkit.nms.removePlayer(player,entity)
                 }
 
                 override fun despawn() {
                     despawn(player)
-                    QuestAdder.task {
+                    QuestAdderBukkit.task {
                         ProtocolLibrary.getProtocolManager().updateEntity(entity, listOf(player))
                     }
                     gestureMap.remove(player.uniqueId)
@@ -59,7 +58,7 @@ object GestureManager: QuestAdderManager {
             })?.cancel()
         } catch (ex: Exception) {
             ex.printStackTrace()
-            QuestAdder.warn("runtime error: unable to load gesture. (${npc.name})")
+            QuestAdderBukkit.warn("runtime error: unable to load gesture. (${npc.name})")
         }
     }
 

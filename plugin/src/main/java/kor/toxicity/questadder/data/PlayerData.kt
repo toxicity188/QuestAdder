@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.data
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.util.IPlayerData
 import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.util.Null
@@ -27,7 +27,7 @@ class PlayerData: IPlayerData {
                     variables[it.first] = value
                 }
             } catch (ex: Exception) {
-                QuestAdder.warn("unable to load player data named \"${it.first}\"")
+                QuestAdderBukkit.warn("unable to load player data named \"${it.first}\"")
             }
         }
     }

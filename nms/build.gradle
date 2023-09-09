@@ -4,5 +4,6 @@ subprojects {
     }
     dependencies {
         compileOnly project(":plugin")
+        compileOnly project(":api")
     }
 }

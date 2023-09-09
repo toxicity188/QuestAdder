@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.util
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.GiveRewardEvent
 import kor.toxicity.questadder.api.util.IRewardSet
 import kor.toxicity.questadder.api.util.IRewardSetContent
@@ -21,8 +21,8 @@ class RewardSet(section: ConfigurationSection): IRewardSet {
                 try {
                     RewardSetItem(config)
                 } catch (ex: Exception) {
-                    QuestAdder.warn("an error has occurred. $it")
-                    QuestAdder.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
+                    QuestAdderBukkit.warn("an error has occurred. $it")
+                    QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
                     null
                 }
             }

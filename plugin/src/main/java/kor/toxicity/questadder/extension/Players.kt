@@ -1,6 +1,6 @@
 package kor.toxicity.questadder.extension
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
 import net.kyori.adventure.text.Component
 import net.milkbowl.vault.economy.Economy
 import org.bukkit.Bukkit
@@ -13,11 +13,11 @@ import org.bukkit.inventory.ItemStack
 import java.text.DecimalFormat
 
 fun CommandSender.send(message: String) = send(message.colored())
-fun CommandSender.send(message: Component) = sendMessage(QuestAdder.Prefix.plugin.append(message))
+fun CommandSender.send(message: Component) = sendMessage(QuestAdderBukkit.Prefix.plugin.append(message))
 fun CommandSender.info(message: String) = info(message.colored())
-fun CommandSender.info(message: Component) = sendMessage(QuestAdder.Prefix.info.append(message))
+fun CommandSender.info(message: Component) = sendMessage(QuestAdderBukkit.Prefix.info.append(message))
 fun CommandSender.warn(message: String) = warn(message.colored())
-fun CommandSender.warn(message: Component) = sendMessage(QuestAdder.Prefix.warn.append(message))
+fun CommandSender.warn(message: Component) = sendMessage(QuestAdderBukkit.Prefix.warn.append(message))
 
 object Money {
     private val economy = try {

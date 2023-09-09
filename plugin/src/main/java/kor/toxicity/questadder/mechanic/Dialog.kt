@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.mechanic
 
-import kor.toxicity.questadder.QuestAdder
+import kor.toxicity.questadder.QuestAdderBukkit
+import kor.toxicity.questadder.api.QuestAdder
 import kor.toxicity.questadder.api.event.DialogStartEvent
 import kor.toxicity.questadder.api.mechanic.IDialog
 import kor.toxicity.questadder.extension.*
@@ -49,7 +50,7 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
         var run: DialogRun
     ) {
         var executor: TypingExecutor? = null
-        var typingSpeed = QuestAdder.Config.defaultTypingSpeed
+        var typingSpeed = QuestAdderBukkit.Config.defaultTypingSpeed
         val typingSoundMap = HashMap<String,SoundData>()
         var inventory: Gui.GuiHolder? = null
         var display: VirtualArmorStand? = null
@@ -120,7 +121,7 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                 }
             }
             current.safeEnd = true
-            current.executor!!.end()
+            current.executor?.end()
             qna?.let {
                 if (it.isNotEmpty()) {
                     it.random().open(
@@ -133,7 +134,7 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                     return
                 }
             }
-            QuestAdder.task {
+            QuestAdderBukkit.task {
                 current.player.closeInventory()
             }
         }
@@ -145,20 +146,20 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
         }
 
         private fun startTask() {
-            task = QuestAdder.taskTimer(current.typingSpeed,current.typingSpeed) {
+            task = QuestAdderBukkit.taskTimer(current.typingSpeed,current.typingSpeed) {
                 if (iterator.hasNext()) {
                     val next = iterator.nextLine()
                     if ((next as TextComponent).content() != "*") {
                         talkComponent = talkComponent.append(next)
                         (talkerComponent?.let {
-                            current.typingSoundMap[it.onlyText()] ?: QuestAdder.Config.defaultTypingSound
+                            current.typingSoundMap[it.onlyText()] ?: QuestAdderBukkit.Config.defaultTypingSound
                         } ?: current.npc.questNPC.soundData).play(current.player)
                         current.executor!!.run(talkComponent)
                     }
                 } else {
                     cancel()
                     started = false
-                    task = QuestAdder.taskLater(20) {
+                    task = QuestAdderBukkit.taskLater(20) {
                         start()
                     }
                 }
@@ -196,18 +197,18 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                     ) {
                         when (button) {
                             MouseButton.LEFT -> {
+                                current.run.start()
+                            }
+                            MouseButton.SHIFT_LEFT -> {
                                 current.typingSpeed = (current.typingSpeed - 1).coerceAtLeast(1)
                                 current.run.restart()
                             }
-                            MouseButton.SHIFT_LEFT -> {
-                                current.run.start()
-                            }
                             MouseButton.RIGHT -> {
-                                current.typingSpeed = (current.typingSpeed + 1).coerceAtMost(4)
-                                current.run.restart()
+                                current.run.end()
                             }
                             MouseButton.SHIFT_RIGHT -> {
-                                current.run.end()
+                                current.typingSpeed = (current.typingSpeed + 1).coerceAtMost(4)
+                                current.run.restart()
                             }
                             else -> {}
                         }
@@ -216,7 +217,7 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                 }).apply {
                     current.inventory = this
                 }
-                val item = ItemStack(QuestAdder.Config.defaultDialogItem)
+                val item = ItemStack(QuestAdderBukkit.Config.defaultDialogItem)
                 val meta = item.itemMeta
 
                 return object : TypingExecutor {
@@ -246,7 +247,7 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                     override fun end() {
                         if (!current.safeEnd) {
                             current.safeEnd = true
-                            QuestAdder.task {
+                            QuestAdderBukkit.task {
                                 current.player.closeInventory()
                                 current.inventory = null
                                 current.safeEnd = false
@@ -290,7 +291,7 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                     return object : TypingExecutor {
 
                         private var referencedEntity = current.npc.npc.entity
-                        private val display = current.display ?: QuestAdder.nms.createArmorStand(current.player,referencedEntity.location).apply {
+                        private val display = current.display ?: QuestAdderBukkit.nms.createArmorStand(current.player,referencedEntity.location).apply {
                             setText(Component.empty())
                             current.display = this
                         }
@@ -333,7 +334,7 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
             config.getKeys(false).forEach {
                 config.getAsSoundData(it)?.let { sound ->
                     put(it,sound)
-                } ?: QuestAdder.warn("syntax error: unable to find sound data: $it ($dialogKey in ${file.name})")
+                } ?: QuestAdderBukkit.warn("syntax error: unable to find sound data: $it ($dialogKey in ${file.name})")
             }
         }
     }
@@ -388,7 +389,7 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
             }
         }
         fun error(message: String) {
-            QuestAdder.warn("$message ($dialogKey in ${file.name})")
+            QuestAdderBukkit.warn("$message ($dialogKey in ${file.name})")
         }
         section.findStringList("talk","Talk")?.let { t ->
             t.forEach {
@@ -513,35 +514,35 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                 when (name.lowercase()) {
                     "set" -> addLastAction { current ->
                         (func.apply(current.event) as? Number)?.let { get ->
-                            QuestAdder.getPlayerData(current.player)?.run {
+                            QuestAdderBukkit.getPlayerData(current.player)?.run {
                                 npcIndexes[value] = get.toInt()
                             }
                         } ?: throwRuntimeError()
                     }
                     "add" -> addLastAction { current ->
                         (func.apply(current.event) as? Number)?.let { get ->
-                            QuestAdder.getPlayerData(current.player)?.run {
+                            QuestAdderBukkit.getPlayerData(current.player)?.run {
                                 npcIndexes[value] = (npcIndexes[value] ?: 0) + get.toInt()
                             }
                         } ?: throwRuntimeError()
                     }
                     "subtract" -> addLastAction { current ->
                         (func.apply(current.event) as? Number)?.let { get ->
-                            QuestAdder.getPlayerData(current.player)?.run {
+                            QuestAdderBukkit.getPlayerData(current.player)?.run {
                                 npcIndexes[value] = (npcIndexes[value] ?: 0) - get.toInt()
                             }
                         } ?: throwRuntimeError()
                     }
                     "multiply" -> addLastAction { current ->
                         (func.apply(current.event) as? Number)?.let { get ->
-                            QuestAdder.getPlayerData(current.player)?.run {
+                            QuestAdderBukkit.getPlayerData(current.player)?.run {
                                 npcIndexes[value] = (npcIndexes[value] ?: 0) * get.toInt()
                             }
                         } ?: throwRuntimeError()
                     }
                     "divide" -> addLastAction { current ->
                         (func.apply(current.event) as? Number)?.let { get ->
-                            QuestAdder.getPlayerData(current.player)?.run {
+                            QuestAdderBukkit.getPlayerData(current.player)?.run {
                                 npcIndexes[value] = (npcIndexes[value] ?: 0) / get.toInt()
                             }
                         } ?: throwRuntimeError()
@@ -556,7 +557,7 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                 val value = matcher.group("value")
                 if (name == "remove") {
                     addLastAction { current ->
-                        QuestAdder.getPlayerData(current.player)?.remove(value)
+                        QuestAdderBukkit.getPlayerData(current.player)?.remove(value)
                     }
                 } else {
                     val replacedMatcher = matcher.replaceAll("")
@@ -573,18 +574,18 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                     when (name.lowercase()) {
                         "set" -> addLastAction { current ->
                             func.apply(current.event)?.let { any ->
-                                QuestAdder.getPlayerData(current.player)?.set(value,any)
+                                QuestAdderBukkit.getPlayerData(current.player)?.set(value,any)
                             } ?: throwRuntimeError()
                         }
                         "putifabsent" -> addLastAction { current ->
                             func.apply(current.event)?.let { any ->
-                                QuestAdder.getPlayerData(current.player)?.putIfAbsent(value,any)
+                                QuestAdderBukkit.getPlayerData(current.player)?.putIfAbsent(value,any)
                             } ?: throwRuntimeError()
                         }
                         "add" -> {
                             if (!checkNumber()) continue
                             addLastAction { current ->
-                                QuestAdder.getPlayerData(current.player)?.let { data ->
+                                QuestAdderBukkit.getPlayerData(current.player)?.let { data ->
                                     val original = data.get(value)
                                     (func.apply(current.event) as? Number)?.let { get ->
                                         data.set(value, (if (original is Number) original.toDouble() else 0.0) + get.toDouble())
@@ -595,7 +596,7 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                         "subtract" -> {
                             if (!checkNumber()) continue
                             addLastAction { current ->
-                                QuestAdder.getPlayerData(current.player)?.let { data ->
+                                QuestAdderBukkit.getPlayerData(current.player)?.let { data ->
                                     val original = data.get(value)
                                     (func.apply(current.event) as? Number)?.let { get ->
                                         data.set(
@@ -609,7 +610,7 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                         "multiply" -> {
                             if (!checkNumber()) continue
                             addLastAction { current ->
-                                QuestAdder.getPlayerData(current.player)?.let { data ->
+                                QuestAdderBukkit.getPlayerData(current.player)?.let { data ->
                                     val original = data.get(value)
                                     (func.apply(current.event) as? Number)?.let { get ->
                                         data.set(
@@ -623,7 +624,7 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                         "divide" -> {
                             if (!checkNumber()) continue
                             addLastAction { current ->
-                                QuestAdder.getPlayerData(current.player)?.let { data ->
+                                QuestAdderBukkit.getPlayerData(current.player)?.let { data ->
                                     val original = data.get(value)
                                     (func.apply(current.event) as? Number)?.let { get ->
                                         data.set(
