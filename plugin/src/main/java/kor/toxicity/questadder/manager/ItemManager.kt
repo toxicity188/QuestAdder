@@ -2,34 +2,55 @@ package kor.toxicity.questadder.manager
 
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.item.ItemDatabase
+import kor.toxicity.questadder.api.item.JsonItemDatabase
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.extension.getAsItemStack
 import kor.toxicity.questadder.extension.give
 import kor.toxicity.questadder.extension.info
 import kor.toxicity.questadder.extension.warn
-import kor.toxicity.questadder.item.ItemsAdderItemDataBase
-import kor.toxicity.questadder.item.OraxenItemDataBase
+import kor.toxicity.questadder.hooker.item.ItemsAdderItemDatabase
+import kor.toxicity.questadder.hooker.item.MMOItemsItemDatabase
+import kor.toxicity.questadder.hooker.item.OraxenItemDatabase
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import java.util.regex.Pattern
 
 object ItemManager: QuestAdderManager {
 
     private var itemMap = HashMap<String,ItemStack>()
     private var itemDatabaseList = ArrayList<ItemDatabase>()
 
+    private val itemPattern = Pattern.compile("^(?<name>(([a-zA-Z]|[가-힣]|_|-|:)+))(?<argument>\\{[\\w|\\W]*})?$")
 
     fun getItem(name: String): ItemStack? {
-        return itemMap[name] ?: itemDatabaseList.firstNotNullOfOrNull {
-            it.getItem(name)
+        val matcher = itemPattern.matcher(name)
+        return try {
+            if (!matcher.find()) itemMap[name] ?: itemDatabaseList.firstNotNullOfOrNull {
+                it.getItem(name)
+            } else {
+                val n = matcher.group("name")
+                val a = matcher.group("argument")
+                return itemMap[n] ?: itemDatabaseList.firstNotNullOfOrNull {
+                    when (it) {
+                        is JsonItemDatabase -> it.getItem(n, a)
+                        else -> it.getItem(n)
+                    }
+                }
+            }
+        } catch (ex: Exception) {
+            QuestAdderBukkit.warn("unable to get this item: $name")
+            QuestAdderBukkit.warn("reason: ${ex.message ?: "unknown"}")
+            null
         }
     }
 
     override fun start(adder: QuestAdderBukkit) {
         Bukkit.getPluginManager().run {
-            if (isPluginEnabled("ItemsAdder")) itemDatabaseList.add(ItemsAdderItemDataBase())
-            if (isPluginEnabled("Oraxen")) itemDatabaseList.add(OraxenItemDataBase())
+            if (isPluginEnabled("ItemsAdder")) itemDatabaseList.add(ItemsAdderItemDatabase())
+            if (isPluginEnabled("Oraxen")) itemDatabaseList.add(OraxenItemDatabase())
+            if (isPluginEnabled("MMOItems")) itemDatabaseList.add(MMOItemsItemDatabase())
         }
         adder.command.addCommandAPI("item", arrayOf("i","아이템"),"item-related command.", true, CommandAPI("qa i")
             .addCommand("get") {

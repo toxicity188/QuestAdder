@@ -1,7 +1,7 @@
 name: QuestAdder
 version: '${version}'
 main: kor.toxicity.questadder.QuestAdderBukkit
-api-version: 1.16
+api-version: 1.17
 depend:
   - Citizens
   - ProtocolLib
@@ -15,6 +15,9 @@ softdepend:
   - MythicMobs
   - MultiWorld
   - SuperiorSkyblock2
+  - MythicLib
+  - MMOCore
+  - MMOItems
 commands:
   questadder:
     aliases:

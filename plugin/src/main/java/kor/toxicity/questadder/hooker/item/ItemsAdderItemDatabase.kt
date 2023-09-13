@@ -1,4 +1,4 @@
-package kor.toxicity.questadder.item
+package kor.toxicity.questadder.hooker.item
 
 import dev.lone.itemsadder.api.CustomStack
 import dev.lone.itemsadder.api.ItemsAdder
@@ -6,7 +6,7 @@ import kor.toxicity.questadder.api.item.ItemDatabase
 import kor.toxicity.questadder.api.item.ItemPair
 import org.bukkit.inventory.ItemStack
 
-class ItemsAdderItemDataBase: ItemDatabase {
+class ItemsAdderItemDatabase: ItemDatabase {
     override fun getItem(name: String): ItemStack? {
         return CustomStack.getInstance(name)?.itemStack
     }

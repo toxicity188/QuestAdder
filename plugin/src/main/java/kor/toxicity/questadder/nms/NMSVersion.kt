@@ -1,7 +1,6 @@
 package kor.toxicity.questadder.nms
 
 enum class NMSVersion(val version: Int, val subVersion: Int) {
-    V1_16_R3(16,3),
     V1_17_R1(17,1),
     V1_18_R1(18,1),
     V1_18_R2(18,2),

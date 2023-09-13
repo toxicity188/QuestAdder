@@ -10,7 +10,7 @@ public interface ItemDatabase {
 
     Collection<String> getKeys();
     @Nullable
-    ItemStack getItem(String name);
+    ItemStack getItem(@NotNull String name);
     @NotNull
     Collection<ItemPair> getItems();
     void reload();

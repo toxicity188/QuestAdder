@@ -18,6 +18,6 @@ public class EventSpellTarget extends AbstractEvent<SpellTargetEvent> {
     @Override
     public void invoke(SpellTargetEvent event) {
         if (name != null && !event.getSpell().getName().equals(name)) return;
-        if (event.getCaster() instanceof Player player) apply(player,event.getSpellArgs());
+        if (event.getCaster() instanceof Player player) apply(player);
     }
 }

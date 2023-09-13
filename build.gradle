@@ -6,7 +6,7 @@ plugins {
 }
 
 def questAdderGroup = 'kor.toxicity'
-def questAdderVersion = '1.0.9-SNAPSHOT'
+def questAdderVersion = '1.0.10-SNAPSHOT'
 
 allprojects {
     apply plugin: 'java'
@@ -54,6 +54,9 @@ allprojects {
         maven {
             url = 'https://repo.bg-software.com/repository/api/'
         }
+        maven {
+            url = 'https://nexus.phoenixdevt.fr/repository/maven-public/'
+        }
     }
 
     dependencies {
@@ -72,9 +75,12 @@ allprojects {
         compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.8.0"
         compileOnly 'com.sk89q.worldedit:worldedit-bukkit:7.3.0-SNAPSHOT'
         compileOnly 'com.sk89q.worldguard:worldguard-bukkit:7.1.0-SNAPSHOT'
-        compileOnly "com.github.TheComputerGeek2.MagicSpells:core:main-SNAPSHOT"
+        compileOnly fileTree("libs")
         compileOnly 'io.lumine:Mythic-Dist:5.3.5'
         compileOnly 'com.bgsoftware:SuperiorSkyblockAPI:2023.2'
+        compileOnly 'net.Indyuce:MMOCore-API:1.12-SNAPSHOT'
+        compileOnly 'net.Indyuce:MMOItems-API:6.9.5-SNAPSHOT'
+        compileOnly 'io.lumine:MythicLib-dist:1.6.2-SNAPSHOT'
     }
     tasks.named('test', Test) {
         useJUnitPlatform()

@@ -60,7 +60,7 @@ import java.util.concurrent.ThreadLocalRandom
 class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
     companion object: QuestAdder {
 
-        const val VERSION = "1.0.9"
+        const val VERSION = "1.0.10"
 
         private val listener = object : Listener {
         }
@@ -130,6 +130,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
 
         private val managerList = mutableListOf(
             ResourcePackManager,
+            HookerManager,
             CallbackManager,
             NavigationManager,
             SlateManager,
@@ -582,7 +583,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             }
         }
     }
-    private fun loadFile(fileName: String) = try {
+    fun loadFile(fileName: String) = try {
         YamlConfiguration().apply {
             load(File(dataFolder.apply {
                 mkdir()

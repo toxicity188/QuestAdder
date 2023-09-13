@@ -1,11 +1,11 @@
-package kor.toxicity.questadder.item
+package kor.toxicity.questadder.hooker.item
 
 import io.th0rgal.oraxen.api.OraxenItems
 import kor.toxicity.questadder.api.item.ItemDatabase
 import kor.toxicity.questadder.api.item.ItemPair
 import org.bukkit.inventory.ItemStack
 
-class OraxenItemDataBase: ItemDatabase {
+class OraxenItemDatabase: ItemDatabase {
 
     override fun getItem(name: String): ItemStack? {
         return OraxenItems.getItemById(name)?.build()
