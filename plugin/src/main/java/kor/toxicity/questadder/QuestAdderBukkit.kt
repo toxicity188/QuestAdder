@@ -23,6 +23,36 @@ import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.database.StandardDatabaseSupplier
 import kor.toxicity.questadder.api.mechanic.AbstractEvent
 import kor.toxicity.questadder.util.event.*
+import kor.toxicity.questadder.util.event.itemsadder.EventCustomBlockBreak
+import kor.toxicity.questadder.util.event.itemsadder.EventCustomBlockClick
+import kor.toxicity.questadder.util.event.itemsadder.EventCustomBlockPlace
+import kor.toxicity.questadder.util.event.magicspells.*
+import kor.toxicity.questadder.util.event.mmocore.EventMMOAttributeUse
+import kor.toxicity.questadder.util.event.mmocore.EventMMOChangeClass
+import kor.toxicity.questadder.util.event.mmocore.EventMMOCombat
+import kor.toxicity.questadder.util.event.mmocore.EventMMOExpGain
+import kor.toxicity.questadder.util.event.mmocore.EventMMOGuildChat
+import kor.toxicity.questadder.util.event.mmocore.EventMMOItemLock
+import kor.toxicity.questadder.util.event.mmocore.EventMMOItemUnlock
+import kor.toxicity.questadder.util.event.mmocore.EventMMOLevelUp
+import kor.toxicity.questadder.util.event.mmocore.EventMMOPartyChat
+import kor.toxicity.questadder.util.event.mmoitems.EventMMOApplyGemStone
+import kor.toxicity.questadder.util.event.mmoitems.EventMMOApplySoulbound
+import kor.toxicity.questadder.util.event.mmoitems.EventMMOBreakSoulbound
+import kor.toxicity.questadder.util.event.mmoitems.EventMMOConsume
+import kor.toxicity.questadder.util.event.mmoitems.EventMMOReforge
+import kor.toxicity.questadder.util.event.mmoitems.EventMMOUnsocketGemStone
+import kor.toxicity.questadder.util.event.mythiclib.EventMMOBlock
+import kor.toxicity.questadder.util.event.mythiclib.EventMMOCastSkill
+import kor.toxicity.questadder.util.event.mythiclib.EventMMODodge
+import kor.toxicity.questadder.util.event.mythiclib.EventMMOParry
+import kor.toxicity.questadder.util.event.mythicmobs.EventMythicDamage
+import kor.toxicity.questadder.util.event.mythicmobs.EventMythicHeal
+import kor.toxicity.questadder.util.event.mythicmobs.EventMythicKill
+import kor.toxicity.questadder.util.event.oraxen.*
+import kor.toxicity.questadder.util.event.superiorskyblock.*
+import kor.toxicity.questadder.util.event.worldguard.EventRegionEnter
+import kor.toxicity.questadder.util.event.worldguard.EventRegionExit
 import kor.toxicity.questadder.util.gui.ButtonGui
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButton
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButtonType
@@ -404,53 +434,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
                 addEvent("exit", EventRegionExit::class.java)
             }
         }
-        if (pluginManager.isPluginEnabled("MagicSpells")) ActionBuilder.run {
-            addEvent("spellcast", EventSpellCast::class.java)
-            addEvent("spelltarget", EventSpellTarget::class.java)
-            addEvent("spelldamage", EventSpellDamage::class.java)
-            addEvent("spelllearn", EventSpellLearn::class.java)
-            addEvent("spellforget", EventSpellForget::class.java)
-            addEvent("buffstart", EventBuffStart::class.java)
-            addEvent("buffend", EventBuffEnd::class.java)
-
-            addAction("cast", ActCast::class.java)
-        }
-        if (pluginManager.isPluginEnabled("MythicMobs")) ActionBuilder.run {
-            addEvent("mythicdamage", EventMythicDamage::class.java)
-            addEvent("mythicheal", EventMythicHeal::class.java)
-            addEvent("mythickill", EventMythicKill::class.java)
-
-            addAction("skill", ActSkill::class.java)
-        }
-        if (pluginManager.isPluginEnabled("SuperiorSkyblock2")) ActionBuilder.run {
-            addEvent("islandopen", EventIslandOpen::class.java)
-            addEvent("islandclose", EventIslandClose::class.java)
-            addEvent("islandquit", EventIslandQuit::class.java)
-            addEvent("islandrate", EventIslandRate::class.java)
-            addEvent("islandenter", EventIslandEnter::class.java)
-            addEvent("islandcreate", EventIslandCreate::class.java)
-            addEvent("islandchat", EventIslandChat::class.java)
-            addEvent("islandjoin", EventIslandJoin::class.java)
-            addEvent("islandinvite", EventIslandInvite::class.java)
-        }
-        if (pluginManager.isPluginEnabled("Oraxen")) ActionBuilder.run {
-            addEvent("oraxenfurniturebreak", EventOraxenFurnitureBreak::class.java)
-            addEvent("oraxennotebreak", EventOraxenNoteBreak::class.java)
-            addEvent("oraxenstringbreak", EventOraxenStringBreak::class.java)
-
-            addEvent("oraxenfurnitureplace", EventOraxenFurniturePlace::class.java)
-            addEvent("oraxennoteplace", EventOraxenNotePlace::class.java)
-            addEvent("oraxenstringplace", EventOraxenStringPlace::class.java)
-
-            addEvent("oraxenfurnitureclick", EventOraxenFurnitureClick::class.java)
-            addEvent("oraxennoteclick", EventOraxenNoteClick::class.java)
-            addEvent("oraxenstringclick", EventOraxenStringClick::class.java)
-        }
-        if (pluginManager.isPluginEnabled("ItemsAdder")) ActionBuilder.run {
-            addEvent("customblockbreak", EventCustomBlockBreak::class.java)
-            addEvent("customblockclick", EventCustomBlockClick::class.java)
-            addEvent("customblockplace", EventCustomBlockPlace::class.java)
-        }
+        addActionAndEvent()
         loadDatabase()
         managerList.forEach {
             it.start(this)
@@ -622,6 +606,82 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         fun cancel() {
             task.cancel()
             remove.cancel()
+        }
+    }
+
+    private fun addActionAndEvent() {
+        val pluginManager = Bukkit.getPluginManager()
+        if (pluginManager.isPluginEnabled("MagicSpells")) ActionBuilder.run {
+            addEvent("spellcast", EventSpellCast::class.java)
+            addEvent("spelltarget", EventSpellTarget::class.java)
+            addEvent("spelldamage", EventSpellDamage::class.java)
+            addEvent("spelllearn", EventSpellLearn::class.java)
+            addEvent("spellforget", EventSpellForget::class.java)
+            addEvent("buffstart", EventBuffStart::class.java)
+            addEvent("buffend", EventBuffEnd::class.java)
+
+            addAction("cast", ActCast::class.java)
+        }
+        if (pluginManager.isPluginEnabled("MythicMobs")) ActionBuilder.run {
+            addEvent("mythicdamage", EventMythicDamage::class.java)
+            addEvent("mythicheal", EventMythicHeal::class.java)
+            addEvent("mythickill", EventMythicKill::class.java)
+
+            addAction("skill", ActSkill::class.java)
+        }
+        if (pluginManager.isPluginEnabled("MythicLib")) ActionBuilder.run {
+            addEvent("mmoblock", EventMMOBlock::class.java)
+            addEvent("mmododge", EventMMODodge::class.java)
+            addEvent("mmoparry", EventMMOParry::class.java)
+            addEvent("mmocastskill", EventMMOCastSkill::class.java)
+        }
+        if (pluginManager.isPluginEnabled("MMOItems")) ActionBuilder.run {
+            addEvent("mmoreforge", EventMMOReforge::class.java)
+            addEvent("mmoapplygemstone", EventMMOApplyGemStone::class.java)
+            addEvent("mmounsocketgemstone", EventMMOUnsocketGemStone::class.java)
+            addEvent("mmoapplysoulbound", EventMMOApplySoulbound::class.java)
+            addEvent("mmobreaksoulbound", EventMMOBreakSoulbound::class.java)
+            addEvent("mmoconsume", EventMMOConsume::class.java)
+        }
+        if (pluginManager.isPluginEnabled("MMOCore")) ActionBuilder.run {
+            addEvent("mmopartychat", EventMMOPartyChat::class.java)
+            addEvent("mmoguildchat", EventMMOGuildChat::class.java)
+            addEvent("mmocombat", EventMMOCombat::class.java)
+            addEvent("mmolevelup", EventMMOLevelUp::class.java)
+            addEvent("mmoexpgain", EventMMOExpGain::class.java)
+            addEvent("mmochangeclass", EventMMOChangeClass::class.java)
+            addEvent("mmoattributeuse", EventMMOAttributeUse::class.java)
+            addEvent("mmoitemlock", EventMMOItemLock::class.java)
+            addEvent("mmoitemunlock", EventMMOItemUnlock::class.java)
+        }
+        if (pluginManager.isPluginEnabled("SuperiorSkyblock2")) ActionBuilder.run {
+            addEvent("islandopen", EventIslandOpen::class.java)
+            addEvent("islandclose", EventIslandClose::class.java)
+            addEvent("islandquit", EventIslandQuit::class.java)
+            addEvent("islandrate", EventIslandRate::class.java)
+            addEvent("islandenter", EventIslandEnter::class.java)
+            addEvent("islandcreate", EventIslandCreate::class.java)
+            addEvent("islandchat", EventIslandChat::class.java)
+            addEvent("islandjoin", EventIslandJoin::class.java)
+            addEvent("islandinvite", EventIslandInvite::class.java)
+        }
+        if (pluginManager.isPluginEnabled("Oraxen")) ActionBuilder.run {
+            addEvent("oraxenfurniturebreak", EventOraxenFurnitureBreak::class.java)
+            addEvent("oraxennotebreak", EventOraxenNoteBreak::class.java)
+            addEvent("oraxenstringbreak", EventOraxenStringBreak::class.java)
+
+            addEvent("oraxenfurnitureplace", EventOraxenFurniturePlace::class.java)
+            addEvent("oraxennoteplace", EventOraxenNotePlace::class.java)
+            addEvent("oraxenstringplace", EventOraxenStringPlace::class.java)
+
+            addEvent("oraxenfurnitureclick", EventOraxenFurnitureClick::class.java)
+            addEvent("oraxennoteclick", EventOraxenNoteClick::class.java)
+            addEvent("oraxenstringclick", EventOraxenStringClick::class.java)
+        }
+        if (pluginManager.isPluginEnabled("ItemsAdder")) ActionBuilder.run {
+            addEvent("customblockbreak", EventCustomBlockBreak::class.java)
+            addEvent("customblockclick", EventCustomBlockClick::class.java)
+            addEvent("customblockplace", EventCustomBlockPlace::class.java)
         }
     }
 }

@@ -31,7 +31,7 @@ object ItemManager: QuestAdderManager {
                 it.getItem(name)
             } else {
                 val n = matcher.group("name")
-                val a = matcher.group("argument")
+                val a = matcher.group("argument") ?: "{}"
                 return itemMap[n] ?: itemDatabaseList.firstNotNullOfOrNull {
                     when (it) {
                         is JsonItemDatabase -> it.getItem(n, a)
