@@ -2,16 +2,14 @@ package kor.toxicity.questadder
 
 import kor.toxicity.questadder.api.APIManager
 import kor.toxicity.questadder.api.item.ItemDatabase
-import kor.toxicity.questadder.manager.DialogManager
-import kor.toxicity.questadder.manager.ItemManager
-import kor.toxicity.questadder.manager.LocationManager
-import kor.toxicity.questadder.manager.NavigationManager
 import kor.toxicity.questadder.util.NamedLocation
 import kor.toxicity.questadder.api.mechanic.AbstractAction
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.api.mechanic.AbstractEvent
+import kor.toxicity.questadder.api.registry.IBlockRegistry
 import kor.toxicity.questadder.api.util.INamedLocation
+import kor.toxicity.questadder.manager.*
 import org.bukkit.entity.Player
 import java.util.UUID
 import java.util.function.BiFunction
@@ -191,4 +189,7 @@ object QuestAdderAPIBukkit: APIManager {
      * @since 1.0.7
      */
     override fun getQuestNPCKeys() = DialogManager.getQuestNPCKeys()
+    override fun getBlockRegistry(): IBlockRegistry {
+        return ResourcePackManager.blockRegistry
+    }
 }

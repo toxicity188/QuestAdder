@@ -2,6 +2,7 @@ package kor.toxicity.questadder.api;
 
 import kor.toxicity.questadder.api.item.ItemDatabase;
 import kor.toxicity.questadder.api.mechanic.*;
+import kor.toxicity.questadder.api.registry.IBlockRegistry;
 import kor.toxicity.questadder.api.util.INamedLocation;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +14,9 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+/**
+ * @author toxicity
+ */
 public interface APIManager {
     /**
      * Add the item database of QuestAdder.
@@ -162,4 +166,11 @@ public interface APIManager {
      * @since 1.0.7
      */
     @NotNull List<String> getQuestNPCKeys();
+
+    /**
+     * @since 1.0.10
+     * @return a block registry of QuestAdder
+     */
+    @NotNull
+    IBlockRegistry getBlockRegistry();
 }

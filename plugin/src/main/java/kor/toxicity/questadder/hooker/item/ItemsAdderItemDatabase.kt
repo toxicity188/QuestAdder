@@ -13,13 +13,13 @@ class ItemsAdderItemDatabase: ItemDatabase {
 
     override fun getKeys(): Collection<String> {
         return ItemsAdder.getAllItems()?.map {
-            it.id
+            it.namespacedID
         } ?: emptyList()
     }
 
     override fun getItems(): Collection<ItemPair> {
         return ItemsAdder.getAllItems()?.map {
-            ItemPair(it.id,it.itemStack)
+            ItemPair(it.namespacedID,it.itemStack)
         } ?: emptyList()
     }
 

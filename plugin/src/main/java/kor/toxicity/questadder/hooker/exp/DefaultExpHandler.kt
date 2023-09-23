@@ -5,7 +5,7 @@ import org.bukkit.entity.Player
 
 class DefaultExpHandler: ExpHandler {
     override fun accept(player: Player, exp: Double) {
-        player.exp += exp.toFloat()
+        player.totalExperience += exp.toInt()
     }
 
     override fun requiredPlugin(): String {

@@ -6,7 +6,7 @@ plugins {
 }
 
 def questAdderGroup = 'kor.toxicity'
-def questAdderVersion = '1.0.10-SNAPSHOT'
+def questAdderVersion = '1.1.0-SNAPSHOT'
 
 allprojects {
     apply plugin: 'java'
@@ -81,6 +81,7 @@ allprojects {
         compileOnly 'net.Indyuce:MMOCore-API:1.12-SNAPSHOT'
         compileOnly 'net.Indyuce:MMOItems-API:6.9.5-SNAPSHOT'
         compileOnly 'io.lumine:MythicLib-dist:1.6.2-SNAPSHOT'
+        compileOnly 'com.github.BeYkeRYkt.LightAPI:lightapi-bukkit-common:5.3.0-Bukkit'
     }
     tasks.named('test', Test) {
         useJUnitPlatform()
@@ -145,13 +146,6 @@ shadowJar {
     }
 }
 
-compileKotlin {
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-}
-compileTestKotlin {
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+kotlin {
+    jvmToolchain(17)
 }

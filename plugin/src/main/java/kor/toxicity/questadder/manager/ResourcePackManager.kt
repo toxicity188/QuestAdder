@@ -1,17 +1,39 @@
 package kor.toxicity.questadder.manager
 
-import com.google.gson.Gson
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
+import com.google.gson.*
 import com.google.gson.stream.JsonWriter
 import kor.toxicity.questadder.QuestAdderBukkit
-import kor.toxicity.questadder.extension.parseChar
+import kor.toxicity.questadder.api.event.QuestBlockBreakEvent
+import kor.toxicity.questadder.api.event.QuestBlockInteractEvent
+import kor.toxicity.questadder.api.event.QuestBlockPlaceEvent
+import kor.toxicity.questadder.block.NoteBlockData
+import kor.toxicity.questadder.block.StringBlockData
+import kor.toxicity.questadder.command.CommandAPI
+import kor.toxicity.questadder.command.SenderType
+import kor.toxicity.questadder.extension.*
+import kor.toxicity.questadder.manager.registry.BlockRegistry
 import kor.toxicity.questadder.util.ResourcePackData
+import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Bukkit
+import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.configuration.MemoryConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
+import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
+import org.bukkit.event.block.Action
+import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.block.BlockBurnEvent
+import org.bukkit.event.block.BlockPlaceEvent
+import org.bukkit.event.block.BlockRedstoneEvent
+import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.ItemStack
+import org.bukkit.persistence.PersistentDataType
+import org.bukkit.util.Vector
 import org.zeroturnaround.zip.ZipUtil
+import ru.beykerykt.minecraft.lightapi.common.LightAPI
 import java.io.*
 import java.util.*
 import javax.imageio.ImageIO
@@ -21,7 +43,7 @@ import kotlin.collections.LinkedHashMap
 import kotlin.math.max
 
 object ResourcePackManager: QuestAdderManager {
-    private val gson = Gson()
+    private val gson = GsonBuilder().disableHtmlEscaping().create()
     private val jsonFaces = arrayOf(
         "north",
         "east",
@@ -40,7 +62,111 @@ object ResourcePackManager: QuestAdderManager {
     private val emptyConfig = MemoryConfiguration()
     private val fontMap = HashMap<String,String>()
 
+    val blockRegistry = BlockRegistry()
+
     override fun start(adder: QuestAdderBukkit) {
+        adder.command.addCommandAPI("block", arrayOf("bl","블럭"), "block-related command.", true, CommandAPI("qa bl")
+            .addCommand("get") {
+                aliases = arrayOf("g")
+                description = "get the editor of block."
+                usage = "get <name>"
+                length = 1
+                allowedSender = arrayOf(SenderType.PLAYER)
+                executor = { c, a ->
+                    (c as Player).give(ItemStack(Material.NOTE_BLOCK).apply {
+                        itemMeta = itemMeta?.apply {
+                            displayName("Block editor - ${a[1]}".asClearComponent().color(NamedTextColor.YELLOW))
+                            lore(listOf(
+                                "Right click - place".asClearComponent().color(NamedTextColor.GRAY)
+                            ))
+                            persistentDataContainer.set(blockEditorKey, PersistentDataType.STRING, a[1])
+                        }
+                    })
+                    c.info("successfully given.")
+                }
+                tabComplete = { _, a ->
+                    if (a.size == 2) blockRegistry.allKeys.filter {
+                        it.startsWith(a[1])
+                    } else null
+                }
+            })
+        Bukkit.getPluginManager().registerEvents(object : Listener {
+            private val vector = arrayOf(
+                Vector(0,1,0),
+                Vector(0,-1,0),
+                Vector(1,0,0),
+                Vector(-1,0,0),
+                Vector(0,0,1),
+                Vector(0,0,-1)
+            )
+            @EventHandler
+            fun interact(e: PlayerInteractEvent) {
+                if (e.action == Action.RIGHT_CLICK_BLOCK) e.clickedBlock?.let {
+                    if (!e.player.isSneaking && blockRegistry.get(it.blockData) != null) e.isCancelled = true
+                }
+                e.clickedBlock?.let {
+                    update(it.location)
+                    blockRegistry.get(it.blockData)?.let { b ->
+                        QuestBlockInteractEvent(b,e).callEvent()
+                    }
+                }
+            }
+            @EventHandler
+            fun burn(e: BlockBurnEvent) {
+                blockRegistry.get(e.block.blockData)?.let {
+                    if (!it.bluePrint.canBurned) e.isCancelled = true
+                }
+            }
+            @EventHandler
+            fun blockBreak(e: BlockBreakEvent) {
+                update(e.block.location)
+                blockRegistry.get(e.block.blockData)?.let {
+                    QuestBlockBreakEvent(it,e).callEvent()
+                    e.isCancelled = true
+                    val b = e.block
+                    b.setBlockData(Material.AIR.createBlockData(),false)
+                    if (Bukkit.getPluginManager().isPluginEnabled("LightAPI")) {
+                        val loc = b.location
+                        if (it.bluePrint.light != 0) try {
+                            val get = LightAPI.get().getLightLevel(loc.world.name, loc.blockX, loc.blockY, loc.blockZ)
+                            LightAPI.get().setLightLevel(loc.world.name, loc.blockX, loc.blockY, loc.blockZ, get - it.bluePrint.light)
+                        } catch (ex: Throwable) {
+                            QuestAdderBukkit.warn("An error has occurred while using LightAPI.")
+                        }
+                    }
+                }
+            }
+            @EventHandler
+            fun place(e: BlockPlaceEvent) {
+                update(e.block.location)
+                e.itemInHand.itemMeta?.persistentDataContainer?.get(blockEditorKey, PersistentDataType.STRING)?.let {
+                    e.isCancelled = true
+                    QuestAdderBukkit.task {
+                        blockRegistry.get(it)?.place(e.block.location)
+                    }
+                }
+                blockRegistry.get(e.block.blockData)?.let {
+                    QuestBlockPlaceEvent(it,e).callEvent()
+                }
+            }
+
+            private fun update(location: Location) {
+                val taskArray = ArrayList<() -> Unit>()
+                vector.forEach {
+                    val newLoc = location.clone().add(it)
+                    blockRegistry.get(newLoc.block.blockData)?.let {
+                        taskArray.add {
+                            it.place(newLoc)
+                        }
+                    }
+                }
+                if (taskArray.isNotEmpty()) QuestAdderBukkit.task {
+                    taskArray.forEach {
+                        it()
+                    }
+                }
+            }
+        },adder)
     }
 
     private var dataList = ArrayList<ResourcePackData>()
@@ -48,6 +174,8 @@ object ResourcePackManager: QuestAdderManager {
         dataList.add(data)
     }
     fun getImageFont(name: String) = fontMap[name]
+
+    private val blockEditorKey = NamespacedKey.fromString("questadder.block.editor")!!
 
     override fun reload(adder: QuestAdderBukkit) {
         val resource = File(adder.dataFolder, "resources").apply {
@@ -58,6 +186,9 @@ object ResourcePackManager: QuestAdderManager {
             mkdir()
         }
         val fonts = File(resource,"fonts").apply {
+            mkdir()
+        }
+        val blocks = File(resource, "blocks").apply {
             mkdir()
         }
         val icons = File(resource, "icons").apply {
@@ -81,7 +212,13 @@ object ResourcePackManager: QuestAdderManager {
         val questFontTextures = File(questTextures,"font").apply {
             mkdir()
         }
+        val questBlockTextures = File(questTextures, "block").apply {
+            mkdir()
+        }
         val questModels = File(questAdder, "models").apply {
+            mkdir()
+        }
+        val questBlockModels = File(questModels, "block").apply {
             mkdir()
         }
         val questFont = File(questAdder, "font").apply {
@@ -92,7 +229,11 @@ object ResourcePackManager: QuestAdderManager {
         }, "item").apply {
             mkdir()
         }
+        val minecraftBlockStates = File(minecraft,"blockstates").apply {
+            mkdir()
+        }
 
+        //font
         val fontPngMap = LinkedHashMap<String,File>()
         val fontYmlMap = LinkedHashMap<String,File>()
         fonts.listFiles()?.forEach {
@@ -134,6 +275,67 @@ object ResourcePackManager: QuestAdderManager {
             },it)
         }
 
+        //block
+        blockRegistry.clear()
+        val noteBlockMap = HashMap<String,String>()
+        val stringBlockMap = HashMap<String,String>()
+        blocks.loadYamlFolder { _, c ->
+            c.getKeys(false).forEach {
+                c.getConfigurationSection(it)?.let { config ->
+                    config.getString("icon")?.let { icon ->
+                        val file = File(icons,icon)
+                        if (!file.exists()) {
+                            QuestAdderBukkit.warn("the icon named \"$icon\" doesn't exist.")
+                            return@forEach
+                        }
+                        blockRegistry.tryRegister(it, config)?.let { data ->
+                            when (file.extension) {
+                                "png" -> readImageBlockModel(file, questBlockModels, questBlockTextures)
+                                "bbmodel" -> readBlockBenchModel(file, questBlockModels, questBlockTextures, "block")
+                            }
+                            when (data) {
+                                is NoteBlockData -> noteBlockMap[data.toKey()] = file.nameWithoutExtension
+                                is StringBlockData -> stringBlockMap[data.toKey()] = file.nameWithoutExtension
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (noteBlockMap.isNotEmpty()) {
+            JsonWriter(File(minecraftBlockStates,"note_block.json").writer().buffered()).use {
+                gson.toJson(
+                    JsonObject().apply {
+                        add("variants",JsonObject().apply {
+                            noteBlockMap.forEach { e ->
+                                add(e.key, JsonObject().apply {
+                                    addProperty("model", "questadder:block/${e.value}")
+                                })
+                            }
+                        })
+                    },
+                    it
+                )
+            }
+        }
+        if (stringBlockMap.isNotEmpty()) {
+            JsonWriter(File(minecraftBlockStates,"tripwire.json").writer().buffered()).use {
+                gson.toJson(
+                    JsonObject().apply {
+                        add("variants",JsonObject().apply {
+                            stringBlockMap.forEach { e ->
+                                add(e.key, JsonObject().apply {
+                                    addProperty("model", "questadder:block/${e.value}")
+                                })
+                            }
+                        })
+                    },
+                    it
+                )
+            }
+        }
+
+        //item
         adder.addLazyTask {
             try {
                 assetsMap.values.forEach { s ->
@@ -143,7 +345,7 @@ object ResourcePackManager: QuestAdderManager {
                                 stream.copyTo(bos)
                             }
                         }
-                        if (it.exists()) readBlockBenchModel(it, questModels, questItemTextures)
+                        if (it.exists()) readBlockBenchModel(it, questModels, questItemTextures, "item")
                     }
                 }
                 adder.getResource("pack.zip")?.use {
@@ -178,7 +380,7 @@ object ResourcePackManager: QuestAdderManager {
                         it.action(modelData)
                         when (file.extension) {
                             "png" -> readImageModel(file,questModels,questItemTextures)
-                            "bbmodel" -> readBlockBenchModel(file,questModels,questItemTextures)
+                            "bbmodel" -> readBlockBenchModel(file,questModels,questItemTextures, "item")
                         }
                     }
                 }
@@ -227,7 +429,18 @@ object ResourcePackManager: QuestAdderManager {
             }, it)
         }
     }
-    private fun readBlockBenchModel(file: File, models: File, textures: File) {
+    private fun readImageBlockModel(file: File, models: File, textures: File) {
+        file.copyTo(File(textures,file.name))
+        JsonWriter(File(models,file.name).writer().buffered()).use {
+            gson.toJson(JsonObject().apply {
+                addProperty("parent","minecraft:block/cube_all")
+                add("textures",JsonObject().apply {
+                    addProperty("all","questadder:block/${file.nameWithoutExtension}")
+                })
+            }, it)
+        }
+    }
+    private fun readBlockBenchModel(file: File, models: File, textures: File, textureLink: String) {
         val n = file.nameWithoutExtension
         file.reader().buffered().use { fileReader ->
             val element = JsonParser.parseReader(fileReader).asJsonObject
@@ -260,7 +473,7 @@ object ResourcePackManager: QuestAdderManager {
                             }
                             textureObject.addProperty(
                                 index.toString(),
-                                "questadder:item/${n}_$index"
+                                "questadder:$textureLink/${n}_$index"
                             )
                         }
                         val resolution = element.getAsJsonObject("resolution")

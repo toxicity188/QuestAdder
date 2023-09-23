@@ -8,8 +8,6 @@ import net.Indyuce.mmoitems.api.event.item.UnsocketGemStoneEvent;
 import net.Indyuce.mmoitems.api.interaction.GemStone;
 
 public class EventMMOUnsocketGemStone extends AbstractEvent<UnsocketGemStoneEvent> {
-    @DataField(aliases = "r")
-    public GemStone.ResultType result;
     public EventMMOUnsocketGemStone(QuestAdder adder, AbstractAction action) {
         super(adder, action, UnsocketGemStoneEvent.class);
     }

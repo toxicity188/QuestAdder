@@ -1,6 +1,9 @@
 name: QuestAdder
 version: '${version}'
 main: kor.toxicity.questadder.QuestAdderBukkit
+author: toxicity
+description: Make a various quest in your server!
+load: POSTWORLD
 api-version: 1.17
 depend:
   - Citizens
@@ -18,6 +21,7 @@ softdepend:
   - MythicLib
   - MMOCore
   - MMOItems
+  - LightAPI
 commands:
   questadder:
     aliases:

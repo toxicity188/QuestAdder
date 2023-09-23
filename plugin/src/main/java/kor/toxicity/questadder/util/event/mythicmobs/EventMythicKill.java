@@ -27,7 +27,7 @@ public class EventMythicKill extends AbstractEvent<MythicMobDeathEvent> {
         if (event.getEntity() instanceof LivingEntity livingEntity) {
             var killer = livingEntity.getKiller();
             if (killer == null) return;
-            if (id != null && event.getMob().getMobType().equals(id)) return;
+            if (id != null && !event.getMob().getMobType().equals(id)) return;
             if (type != null && livingEntity.getType() != type) return;
             if (name != null) {
                 var n = livingEntity.customName();

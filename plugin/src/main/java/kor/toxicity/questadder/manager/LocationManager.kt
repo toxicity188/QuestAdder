@@ -94,7 +94,7 @@ object LocationManager: QuestAdderManager {
                             (sender as Player).teleport(it.location)
                             sender.info("successfully teleported to \"${args[1]}\".")
                         }
-                    } ?: sender.warn("the location named \"${args[2]}\" doesn't exist.")
+                    } ?: sender.warn("the location named \"${args[1]}\" doesn't exist.")
                 }
                 tabComplete = { _, args ->
                     if (args.size == 2) locationMap.keys.filter {

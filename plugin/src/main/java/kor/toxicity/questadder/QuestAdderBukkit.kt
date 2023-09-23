@@ -90,7 +90,7 @@ import java.util.concurrent.ThreadLocalRandom
 class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
     companion object: QuestAdder {
 
-        const val VERSION = "1.0.10"
+        const val VERSION = "1.1.0"
 
         private val listener = object : Listener {
         }
@@ -552,20 +552,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
     fun loadFolder(folderName: String, action: (File,ConfigurationSection) -> Unit) {
         File(dataFolder.apply {
             mkdir()
-        },folderName).run {
-            mkdir()
-            listFiles()?.forEach {
-                if (it.extension == "yml") try {
-                    YamlConfiguration().run {
-                        load(it)
-                        action(it,this)
-                    }
-                } catch (ex: Exception) {
-                    ex.printStackTrace()
-                    warn("unable to read this file: ${it.name}")
-                }
-            }
-        }
+        },folderName).loadYamlFolder(action)
     }
     fun loadFile(fileName: String) = try {
         YamlConfiguration().apply {
