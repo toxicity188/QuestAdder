@@ -5,7 +5,6 @@ import eu.endercentral.crazy_advancements.JSONMessage
 import eu.endercentral.crazy_advancements.advancement.AdvancementDisplay
 import eu.endercentral.crazy_advancements.advancement.ToastNotification
 import kor.toxicity.questadder.QuestAdderBukkit
-import kor.toxicity.questadder.api.block.BlockBluePrint
 import kor.toxicity.questadder.nms.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
@@ -16,16 +15,13 @@ import net.minecraft.network.protocol.game.PacketPlayOutPosition.EnumPlayerTelep
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.EnumItemSlot
 import net.minecraft.world.entity.decoration.EntityArmorStand
-import net.minecraft.world.level.block.state.BlockBase
 import org.bukkit.Bukkit
 import org.bukkit.Location
-import org.bukkit.block.data.BlockData
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.craftbukkit.v1_19_R2.CraftServer
 import org.bukkit.craftbukkit.v1_19_R2.CraftWorld
-import org.bukkit.craftbukkit.v1_19_R2.block.data.CraftBlockData
 import org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer
 import org.bukkit.craftbukkit.v1_19_R2.inventory.CraftItemStack
 import org.bukkit.craftbukkit.v1_19_R2.util.CraftChatMessage
