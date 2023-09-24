@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.event.NavigateStartEvent;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
+import org.jetbrains.annotations.NotNull;
 
 public class EventNavigateStart extends AbstractEvent<NavigateStartEvent> {
 
@@ -16,7 +17,7 @@ public class EventNavigateStart extends AbstractEvent<NavigateStartEvent> {
     }
 
     @Override
-    public void invoke(NavigateStartEvent event) {
+    public void invoke(@NotNull NavigateStartEvent event) {
         if (key != null && !key.equals(event.getNamedLocation().getKey())) return;
         apply(event.getPlayer(),event);
     }

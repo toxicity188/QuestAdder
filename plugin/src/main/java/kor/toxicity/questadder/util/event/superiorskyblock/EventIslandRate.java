@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
@@ -21,7 +22,7 @@ public class EventIslandRate extends AbstractEvent<IslandRateEvent> {
     }
 
     @Override
-    public void invoke(IslandRateEvent event) {
+    public void invoke(@NotNull IslandRateEvent event) {
         var ordinal = event.getRating().getValue();
         if (ordinal < min) return;
         if (ordinal > max) return;

@@ -7,6 +7,7 @@ import kor.toxicity.questadder.api.util.DataField;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventEntityClick extends AbstractEvent<PlayerInteractAtEntityEvent> {
 
@@ -20,7 +21,7 @@ public class EventEntityClick extends AbstractEvent<PlayerInteractAtEntityEvent>
     }
 
     @Override
-    public void invoke(PlayerInteractAtEntityEvent event) {
+    public void invoke(@NotNull PlayerInteractAtEntityEvent event) {
         var entity = event.getRightClicked();
         if (type != null && entity.getType() != type) return;
         if (name != null) {

@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import kor.toxicity.questadder.extension.ComponentsKt;
+import org.jetbrains.annotations.NotNull;
 
 public class EventChat extends AbstractEvent<AsyncChatEvent> {
     @DataField(aliases = "m")
@@ -16,7 +17,7 @@ public class EventChat extends AbstractEvent<AsyncChatEvent> {
     }
 
     @Override
-    public void invoke(AsyncChatEvent event) {
+    public void invoke(@NotNull AsyncChatEvent event) {
         if (message != null && !ComponentsKt.onlyText(event.originalMessage()).equals(message)) return;
         apply(event.getPlayer());
     }

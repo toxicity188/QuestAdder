@@ -34,7 +34,7 @@ public class ActDialog extends AbstractAction {
     }
 
     @Override
-    public void invoke(Player player, QuestAdderEvent event) {
+    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         if (d != null) {
             var n = DialogManager.INSTANCE.getNPC(npc);
             if (n != null) d.start(player, n);

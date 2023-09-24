@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 public class EventBuffEnd extends AbstractEvent<BuffEndEvent> {
     @DataField(aliases = "n")
@@ -16,7 +17,7 @@ public class EventBuffEnd extends AbstractEvent<BuffEndEvent> {
     }
 
     @Override
-    public void invoke(BuffEndEvent event) {
+    public void invoke(@NotNull BuffEndEvent event) {
         if (name != null && !event.getBuffSpell().getName().equals(name)) return;
         if (event.getCaster() instanceof Player player) apply(player);
     }

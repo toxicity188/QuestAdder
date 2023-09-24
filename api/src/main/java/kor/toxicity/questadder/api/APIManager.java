@@ -173,4 +173,11 @@ public interface APIManager {
      */
     @NotNull
     IBlockRegistry getBlockRegistry();
+
+    /**
+     * @since 1.1.0
+     * @param player target player
+     * @return whether player is on slate
+     */
+    boolean isSlated(@NotNull Player player);
 }

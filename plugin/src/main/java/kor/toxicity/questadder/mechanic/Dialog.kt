@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
 import kotlin.collections.HashMap
 
-class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: ConfigurationSection): IDialog {
+class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, section: ConfigurationSection): IDialog {
     private interface TypingExecutor {
         fun initialize(talker: Component?)
         fun run(talk: Component)
@@ -50,7 +50,7 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
         var run: DialogRun
     ) {
         var executor: TypingExecutor? = null
-        var typingSpeed = QuestAdderBukkit.Config.defaultTypingSpeed
+        val typingSpeedMap = HashMap<String,Long>()
         val typingSoundMap = HashMap<String,SoundData>()
         var inventory: Gui.GuiHolder? = null
         var display: VirtualArmorStand? = null
@@ -146,14 +146,23 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
         }
 
         private fun startTask() {
-            task = QuestAdderBukkit.taskTimer(current.typingSpeed,current.typingSpeed) {
+            var sound = QuestAdderBukkit.Config.defaultTypingSound
+            var speed = QuestAdderBukkit.Config.defaultTypingSpeed
+            talkerComponent?.let {
+                val onlyText = it.onlyText()
+                current.typingSoundMap[onlyText]?.let { d ->
+                    sound = d
+                }
+                current.typingSpeedMap[onlyText]?.let { l ->
+                    speed = l
+                }
+            }
+            task = QuestAdderBukkit.taskTimer(speed,speed) {
                 if (iterator.hasNext()) {
                     val next = iterator.nextLine()
                     if ((next as TextComponent).content() != "*") {
                         talkComponent = talkComponent.append(next)
-                        (talkerComponent?.let {
-                            current.typingSoundMap[it.onlyText()] ?: QuestAdderBukkit.Config.defaultTypingSound
-                        } ?: current.npc.questNPC.soundData).play(current.player)
+                        sound.play(current.player)
                         current.executor!!.run(talkComponent)
                     }
                 } else {
@@ -199,16 +208,8 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                             MouseButton.LEFT -> {
                                 current.run.start()
                             }
-                            MouseButton.SHIFT_LEFT -> {
-                                current.typingSpeed = (current.typingSpeed - 1).coerceAtLeast(1)
-                                current.run.restart()
-                            }
                             MouseButton.RIGHT -> {
                                 current.run.end()
-                            }
-                            MouseButton.SHIFT_RIGHT -> {
-                                current.typingSpeed = (current.typingSpeed + 1).coerceAtMost(4)
-                                current.run.restart()
                             }
                             else -> {}
                         }
@@ -335,6 +336,13 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                 config.getAsSoundData(it)?.let { sound ->
                     put(it,sound)
                 } ?: QuestAdderBukkit.warn("syntax error: unable to find sound data: $it ($dialogKey in ${file.name})")
+            }
+        }
+    }
+    private val typingSpeed = HashMap<String,Long>().apply {
+        section.findConfig("TypingSpeed","typing-speed")?.let { config ->
+            config.getKeys(false).forEach {
+                put(it,config.getLong(it).coerceAtLeast(1).coerceAtMost(4))
             }
         }
     }
@@ -799,6 +807,8 @@ class Dialog(adder: QuestAdder, file: File, val dialogKey: String, section: Conf
                 typingSoundMap[npc.questNPC.name] = it
                 typingSoundMap.putAll(typingSound)
             }
+            typingSpeedMap[npc.questNPC.name] = npc.questNPC.typingSpeed
+            typingSpeedMap.putAll(typingSpeed)
         }))
     }
     private fun start(run: DialogRun) {

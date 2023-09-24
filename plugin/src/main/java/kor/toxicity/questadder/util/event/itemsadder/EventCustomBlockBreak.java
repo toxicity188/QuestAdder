@@ -7,6 +7,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Predicate;
 
@@ -57,7 +58,7 @@ public class EventCustomBlockBreak extends AbstractEvent<CustomBlockBreakEvent> 
         world = null;
     }
     @Override
-    public void invoke(CustomBlockBreakEvent event) {
+    public void invoke(@NotNull CustomBlockBreakEvent event) {
         if (predicate.test(event)) apply(event.getPlayer());
     }
 }

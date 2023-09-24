@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import net.Indyuce.mmocore.api.event.unlocking.ItemUnlockedEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMMOItemUnlock extends AbstractEvent<ItemUnlockedEvent> {
     @DataField(aliases = "i")
@@ -15,7 +16,7 @@ public class EventMMOItemUnlock extends AbstractEvent<ItemUnlockedEvent> {
     }
 
     @Override
-    public void invoke(ItemUnlockedEvent event) {
+    public void invoke(@NotNull ItemUnlockedEvent event) {
         if (id != null && !event.getItemId().equals(id)) return;
         apply(event.getPlayer());
     }

@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventResourcePack extends AbstractEvent<PlayerResourcePackStatusEvent> {
 
@@ -16,7 +17,7 @@ public class EventResourcePack extends AbstractEvent<PlayerResourcePackStatusEve
     }
 
     @Override
-    public void invoke(PlayerResourcePackStatusEvent event) {
+    public void invoke(@NotNull PlayerResourcePackStatusEvent event) {
         if (status != null && status != event.getStatus()) return;
         apply(event.getPlayer());
     }

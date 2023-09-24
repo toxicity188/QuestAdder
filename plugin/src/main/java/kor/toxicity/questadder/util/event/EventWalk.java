@@ -10,6 +10,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 import java.util.UUID;
@@ -72,7 +73,7 @@ public class EventWalk extends AbstractEvent<PlayerMoveEvent> {
     }
 
     @Override
-    public void invoke(PlayerMoveEvent event) {
+    public void invoke(@NotNull PlayerMoveEvent event) {
         var player = event.getPlayer();
         if (predicate.test(player)) apply(player);
     }

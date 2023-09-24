@@ -30,7 +30,7 @@ public class ActPotion extends AbstractAction {
     }
 
     @Override
-    public void invoke(Player player, QuestAdderEvent event) {
+    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         player.addPotionEffect(new PotionEffect(type,duration,amplifier,ambient,particles,icon));
     }
 }

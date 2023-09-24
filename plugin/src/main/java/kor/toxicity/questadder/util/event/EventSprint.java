@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventSprint extends AbstractEvent<PlayerToggleSprintEvent> {
 
@@ -16,7 +17,7 @@ public class EventSprint extends AbstractEvent<PlayerToggleSprintEvent> {
     }
 
     @Override
-    public void invoke(PlayerToggleSprintEvent event) {
+    public void invoke(@NotNull PlayerToggleSprintEvent event) {
         var player = event.getPlayer();
         if (sprint != player.isSprinting()) return;
         apply(player);

@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.event.RegionExitEvent;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
+import org.jetbrains.annotations.NotNull;
 
 public class EventRegionExit extends AbstractEvent<RegionExitEvent> {
     @DataField(aliases = "n")
@@ -15,7 +16,7 @@ public class EventRegionExit extends AbstractEvent<RegionExitEvent> {
     }
 
     @Override
-    public void invoke(RegionExitEvent event) {
+    public void invoke(@NotNull RegionExitEvent event) {
         if (name != null && !event.getRegion().getId().equals(name)) return;
         apply(event.getPlayer(),event);
     }

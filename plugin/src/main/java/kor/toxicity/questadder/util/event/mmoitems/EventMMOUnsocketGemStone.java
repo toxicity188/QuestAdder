@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import net.Indyuce.mmoitems.api.event.item.UnsocketGemStoneEvent;
 import net.Indyuce.mmoitems.api.interaction.GemStone;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMMOUnsocketGemStone extends AbstractEvent<UnsocketGemStoneEvent> {
     public EventMMOUnsocketGemStone(QuestAdder adder, AbstractAction action) {
@@ -13,7 +14,7 @@ public class EventMMOUnsocketGemStone extends AbstractEvent<UnsocketGemStoneEven
     }
 
     @Override
-    public void invoke(UnsocketGemStoneEvent event) {
+    public void invoke(@NotNull UnsocketGemStoneEvent event) {
         apply(event.getPlayer());
     }
 }

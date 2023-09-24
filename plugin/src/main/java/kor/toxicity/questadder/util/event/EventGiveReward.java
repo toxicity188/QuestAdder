@@ -4,6 +4,7 @@ import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.event.GiveRewardEvent;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventGiveReward extends AbstractEvent<GiveRewardEvent> {
     public EventGiveReward(QuestAdder adder, AbstractAction action) {
@@ -11,7 +12,7 @@ public class EventGiveReward extends AbstractEvent<GiveRewardEvent> {
     }
 
     @Override
-    public void invoke(GiveRewardEvent event) {
+    public void invoke(@NotNull GiveRewardEvent event) {
         apply(event.getPlayer(),event);
     }
 }

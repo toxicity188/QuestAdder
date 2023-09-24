@@ -9,6 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BiPredicate;
 
@@ -64,7 +65,7 @@ public class EventBlockClick extends AbstractEvent<PlayerInteractEvent> {
         held = null;
     }
     @Override
-    public void invoke(PlayerInteractEvent event) {
+    public void invoke(@NotNull PlayerInteractEvent event) {
         var block = event.getClickedBlock();
         if (block != null && predicate.test(event,block)) apply(event.getPlayer());
     }

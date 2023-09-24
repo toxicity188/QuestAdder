@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import net.Indyuce.mmocore.api.event.social.GuildChatEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMMOGuildChat extends AbstractEvent<GuildChatEvent> {
     @DataField(aliases = "m")
@@ -14,7 +15,7 @@ public class EventMMOGuildChat extends AbstractEvent<GuildChatEvent> {
     }
 
     @Override
-    public void invoke(GuildChatEvent event) {
+    public void invoke(@NotNull GuildChatEvent event) {
         if (message != null && !message.equals(event.getMessage())) return;
         apply(event.getPlayer());
     }

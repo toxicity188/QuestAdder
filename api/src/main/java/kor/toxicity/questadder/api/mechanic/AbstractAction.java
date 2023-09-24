@@ -14,7 +14,7 @@ public abstract class AbstractAction implements DataObject, IAction {
         this.adder = adder;
     }
 
-    public boolean apply(@NotNull Player player, String... args) {
+    public boolean apply(@NotNull Player player, @NotNull String... args) {
         var event = new ActionInvokeEvent(this,player,args);
         event.callEvent();
         if (!event.isCancelled()) {

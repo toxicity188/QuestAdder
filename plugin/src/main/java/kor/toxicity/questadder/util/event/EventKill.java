@@ -7,6 +7,7 @@ import kor.toxicity.questadder.api.util.DataField;
 import kor.toxicity.questadder.extension.ComponentsKt;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventKill extends AbstractEvent<EntityDeathEvent> {
     @DataField(aliases = "t")
@@ -25,7 +26,7 @@ public class EventKill extends AbstractEvent<EntityDeathEvent> {
     }
 
     @Override
-    public void invoke(EntityDeathEvent event) {
+    public void invoke(@NotNull EntityDeathEvent event) {
         var entity = event.getEntity();
         var killer = entity.getKiller();
         if (killer != null) {

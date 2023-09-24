@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import net.Indyuce.mmocore.api.event.PlayerChangeClassEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMMOChangeClass extends AbstractEvent<PlayerChangeClassEvent> {
     @DataField(aliases = "i")
@@ -15,7 +16,7 @@ public class EventMMOChangeClass extends AbstractEvent<PlayerChangeClassEvent> {
     }
 
     @Override
-    public void invoke(PlayerChangeClassEvent event) {
+    public void invoke(@NotNull PlayerChangeClassEvent event) {
         if (id != null && !event.getNewClass().getId().equals(id)) return;
         apply(event.getPlayer());
     }

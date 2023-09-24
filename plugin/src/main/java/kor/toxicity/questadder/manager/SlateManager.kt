@@ -128,6 +128,8 @@ object SlateManager: QuestAdderManager {
         slateMap.remove(player.uniqueId)?.cancel(back)
     }
 
+    fun isSlated(player: Player) = slateMap.containsKey(player.uniqueId)
+
     private val air = ItemStack(Material.AIR)
     private class SlateData(val player: Player) {
         private val location = player.location

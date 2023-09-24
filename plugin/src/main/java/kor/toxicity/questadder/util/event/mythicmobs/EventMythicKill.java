@@ -8,6 +8,7 @@ import kor.toxicity.questadder.api.util.DataField;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMythicKill extends AbstractEvent<MythicMobDeathEvent> {
 
@@ -23,7 +24,7 @@ public class EventMythicKill extends AbstractEvent<MythicMobDeathEvent> {
     }
 
     @Override
-    public void invoke(MythicMobDeathEvent event) {
+    public void invoke(@NotNull MythicMobDeathEvent event) {
         if (event.getEntity() instanceof LivingEntity livingEntity) {
             var killer = livingEntity.getKiller();
             if (killer == null) return;

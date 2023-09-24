@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.event.QuestSurrenderEvent;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
+import org.jetbrains.annotations.NotNull;
 
 public class EventQuestSurrender extends AbstractEvent<QuestSurrenderEvent> {
     @DataField(aliases = "n")
@@ -15,7 +16,7 @@ public class EventQuestSurrender extends AbstractEvent<QuestSurrenderEvent> {
     }
 
     @Override
-    public void invoke(QuestSurrenderEvent event) {
+    public void invoke(@NotNull QuestSurrenderEvent event) {
         var quest = event.getQuest();
         var key = quest.getKey();
         if (name != null && !name.equals(key)) return;

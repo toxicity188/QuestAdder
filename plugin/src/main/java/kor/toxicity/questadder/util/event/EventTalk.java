@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.event.TalkStartEvent;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
+import org.jetbrains.annotations.NotNull;
 
 public class EventTalk extends AbstractEvent<TalkStartEvent> {
     @DataField(aliases = "k")
@@ -17,7 +18,7 @@ public class EventTalk extends AbstractEvent<TalkStartEvent> {
     }
 
     @Override
-    public void invoke(TalkStartEvent event) {
+    public void invoke(@NotNull TalkStartEvent event) {
         if (key != null && !key.equals(event.getNpc().toQuestNPC().getKey())) return;
         if (dialog != null && !dialog.equals(event.getDialog().getKey())) return;
         apply(event.getPlayer(),event);

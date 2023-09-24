@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.entity.Item;
 import org.bukkit.event.player.PlayerFishEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Predicate;
 
@@ -30,7 +31,7 @@ public class EventFish extends AbstractEvent<PlayerFishEvent> {
     }
 
     @Override
-    public void invoke(PlayerFishEvent event) {
+    public void invoke(@NotNull PlayerFishEvent event) {
         if (predicate.test(event)) apply(event.getPlayer());
     }
 }

@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerAnimationType;
+import org.jetbrains.annotations.NotNull;
 
 public class EventAnimation extends AbstractEvent<PlayerAnimationEvent> {
 
@@ -17,7 +18,7 @@ public class EventAnimation extends AbstractEvent<PlayerAnimationEvent> {
     }
 
     @Override
-    public void invoke(PlayerAnimationEvent event) {
+    public void invoke(@NotNull PlayerAnimationEvent event) {
         if (type != null && event.getAnimationType() != type) return;
         apply(event.getPlayer());
     }

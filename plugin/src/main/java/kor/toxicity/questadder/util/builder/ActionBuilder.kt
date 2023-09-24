@@ -14,6 +14,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction
 import kor.toxicity.questadder.api.mechanic.CancellableAction
 import kor.toxicity.questadder.api.mechanic.RegistrableAction
 import kor.toxicity.questadder.api.mechanic.AbstractEvent
+import kor.toxicity.questadder.extension.findBoolean
 import kor.toxicity.questadder.util.action.*
 import kor.toxicity.questadder.util.event.*
 import kor.toxicity.questadder.util.reflect.ActionReflector
@@ -131,6 +132,9 @@ object ActionBuilder {
                     QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
                     null
                 }
+            } ?: run {
+                QuestAdderBukkit.warn("no action found: ${p.first}")
+                null
             }
         }
     }
@@ -148,6 +152,9 @@ object ActionBuilder {
                     QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
                     null
                 }
+            } ?: run {
+                QuestAdderBukkit.warn("no event found: ${p.first}")
+                null
             }
         }
     }
@@ -226,7 +233,7 @@ object ActionBuilder {
         })
     }
     fun build(adder: QuestAdder, section: ConfigurationSection): RegistrableAction? {
-        val unsafe = section.getBoolean("Unsafe")
+        val unsafe = section.findBoolean("unsafe","Unsafe")
         return section.findStringList("Action","Actions","actions","action")?.let {
             create(adder,it,unsafe)
         }?.let { action ->

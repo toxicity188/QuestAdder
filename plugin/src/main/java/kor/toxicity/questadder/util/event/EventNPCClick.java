@@ -7,6 +7,7 @@ import kor.toxicity.questadder.api.util.DataField;
 import net.citizensnpcs.api.event.NPCRightClickEvent;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.EntityType;
+import org.jetbrains.annotations.NotNull;
 
 public class EventNPCClick extends AbstractEvent<NPCRightClickEvent> {
 
@@ -22,7 +23,7 @@ public class EventNPCClick extends AbstractEvent<NPCRightClickEvent> {
     }
 
     @Override
-    public void invoke(NPCRightClickEvent event) {
+    public void invoke(@NotNull NPCRightClickEvent event) {
         var entity = event.getNPC().getEntity();
         if (type != null && entity.getType() != type) return;
         if (name != null) {

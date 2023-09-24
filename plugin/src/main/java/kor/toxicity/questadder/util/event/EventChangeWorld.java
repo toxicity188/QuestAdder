@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.Bukkit;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Predicate;
 
@@ -40,7 +41,7 @@ public class EventChangeWorld extends AbstractEvent<PlayerChangedWorldEvent> {
     }
 
     @Override
-    public void invoke(PlayerChangedWorldEvent event) {
+    public void invoke(@NotNull PlayerChangedWorldEvent event) {
         if (predicate.test(event)) apply(event.getPlayer());
     }
 }

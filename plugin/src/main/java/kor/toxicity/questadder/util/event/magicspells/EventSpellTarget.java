@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 public class EventSpellTarget extends AbstractEvent<SpellTargetEvent> {
     @DataField(aliases = "n")
@@ -16,7 +17,7 @@ public class EventSpellTarget extends AbstractEvent<SpellTargetEvent> {
     }
 
     @Override
-    public void invoke(SpellTargetEvent event) {
+    public void invoke(@NotNull SpellTargetEvent event) {
         if (name != null && !event.getSpell().getName().equals(name)) return;
         if (event.getCaster() instanceof Player player) apply(player);
     }

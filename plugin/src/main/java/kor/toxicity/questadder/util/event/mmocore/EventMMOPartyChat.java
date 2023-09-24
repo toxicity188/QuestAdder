@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import net.Indyuce.mmocore.api.event.social.PartyChatEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMMOPartyChat extends AbstractEvent<PartyChatEvent> {
     @DataField(aliases = "m")
@@ -14,7 +15,7 @@ public class EventMMOPartyChat extends AbstractEvent<PartyChatEvent> {
     }
 
     @Override
-    public void invoke(PartyChatEvent event) {
+    public void invoke(@NotNull PartyChatEvent event) {
         if (message != null && !message.equals(event.getMessage())) return;
         apply(event.getPlayer());
     }

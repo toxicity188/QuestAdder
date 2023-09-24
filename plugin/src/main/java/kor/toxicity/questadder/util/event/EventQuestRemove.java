@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.event.QuestRemoveEvent;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
+import org.jetbrains.annotations.NotNull;
 
 public class EventQuestRemove extends AbstractEvent<QuestRemoveEvent> {
     @DataField(aliases = "n")
@@ -15,7 +16,7 @@ public class EventQuestRemove extends AbstractEvent<QuestRemoveEvent> {
     }
 
     @Override
-    public void invoke(QuestRemoveEvent event) {
+    public void invoke(@NotNull QuestRemoveEvent event) {
         var quest = event.getQuest();
         var key = quest.getKey();
         if (name != null && !name.equals(key)) return;

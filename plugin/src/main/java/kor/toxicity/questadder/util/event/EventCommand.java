@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventCommand extends AbstractEvent<PlayerCommandPreprocessEvent> {
 
@@ -16,7 +17,7 @@ public class EventCommand extends AbstractEvent<PlayerCommandPreprocessEvent> {
     }
 
     @Override
-    public void invoke(PlayerCommandPreprocessEvent event) {
+    public void invoke(@NotNull PlayerCommandPreprocessEvent event) {
         if (command != null && !event.getMessage().substring(1).startsWith(command)) return;
         apply(event.getPlayer());
     }

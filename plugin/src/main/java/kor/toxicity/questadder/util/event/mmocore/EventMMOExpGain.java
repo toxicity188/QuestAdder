@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import net.Indyuce.mmocore.api.event.PlayerExperienceGainEvent;
 import net.Indyuce.mmocore.experience.EXPSource;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMMOExpGain extends AbstractEvent<PlayerExperienceGainEvent> {
 
@@ -20,7 +21,7 @@ public class EventMMOExpGain extends AbstractEvent<PlayerExperienceGainEvent> {
     }
 
     @Override
-    public void invoke(PlayerExperienceGainEvent event) {
+    public void invoke(@NotNull PlayerExperienceGainEvent event) {
         if (source != null && event.getSource() != source) return;
         var amount = event.getExperience();
         if (amount > max || amount < min) return;

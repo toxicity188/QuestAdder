@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
+import org.jetbrains.annotations.NotNull;
 
 public class EventSpellLearn extends AbstractEvent<SpellLearnEvent> {
     @DataField(aliases = "n")
@@ -15,7 +16,7 @@ public class EventSpellLearn extends AbstractEvent<SpellLearnEvent> {
     }
 
     @Override
-    public void invoke(SpellLearnEvent event) {
+    public void invoke(@NotNull SpellLearnEvent event) {
         if (name != null && !event.getSpell().getName().equals(name)) return;
         apply(event.getLearner());
     }

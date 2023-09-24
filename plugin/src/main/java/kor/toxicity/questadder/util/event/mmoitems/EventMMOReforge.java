@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import net.Indyuce.mmoitems.api.event.MMOItemReforgeFinishEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMMOReforge extends AbstractEvent<MMOItemReforgeFinishEvent> {
     @DataField(aliases = "i")
@@ -14,7 +15,7 @@ public class EventMMOReforge extends AbstractEvent<MMOItemReforgeFinishEvent> {
     }
 
     @Override
-    public void invoke(MMOItemReforgeFinishEvent event) {
+    public void invoke(@NotNull MMOItemReforgeFinishEvent event) {
         if (id != null && !id.equals(event.getID())) return;
         var player = event.getPlayer();
         if (player != null) apply(player);

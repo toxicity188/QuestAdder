@@ -8,6 +8,7 @@ import kor.toxicity.questadder.extension.ComponentsKt;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventAttack extends AbstractEvent<EntityDamageByEntityEvent> {
 
@@ -27,7 +28,7 @@ public class EventAttack extends AbstractEvent<EntityDamageByEntityEvent> {
     }
 
     @Override
-    public void invoke(EntityDamageByEntityEvent event) {
+    public void invoke(@NotNull EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player player) {
             var victim = event.getEntity();
             if (type != null && victim.getType() != type) return;

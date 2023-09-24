@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import net.Indyuce.mmocore.api.event.PlayerCombatEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMMOCombat extends AbstractEvent<PlayerCombatEvent> {
 
@@ -16,7 +17,7 @@ public class EventMMOCombat extends AbstractEvent<PlayerCombatEvent> {
     }
 
     @Override
-    public void invoke(PlayerCombatEvent event) {
+    public void invoke(@NotNull PlayerCombatEvent event) {
         if (enter != event.entersCombat()) return;
         apply(event.getPlayer());
     }

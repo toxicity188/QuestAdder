@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import net.Indyuce.mmoitems.api.event.item.ApplyGemStoneEvent;
 import net.Indyuce.mmoitems.api.interaction.GemStone;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMMOApplyGemStone extends AbstractEvent<ApplyGemStoneEvent> {
     @DataField(aliases = "r")
@@ -15,7 +16,7 @@ public class EventMMOApplyGemStone extends AbstractEvent<ApplyGemStoneEvent> {
     }
 
     @Override
-    public void invoke(ApplyGemStoneEvent event) {
+    public void invoke(@NotNull ApplyGemStoneEvent event) {
         if (result != null && event.getResult() != result) return;
         apply(event.getPlayer());
     }

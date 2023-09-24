@@ -4,6 +4,7 @@ import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventQuit extends AbstractEvent<PlayerQuitEvent> {
     public EventQuit(QuestAdder adder, AbstractAction action) {
@@ -11,7 +12,7 @@ public class EventQuit extends AbstractEvent<PlayerQuitEvent> {
     }
 
     @Override
-    public void invoke(PlayerQuitEvent event) {
+    public void invoke(@NotNull PlayerQuitEvent event) {
         apply(event.getPlayer());
     }
 }

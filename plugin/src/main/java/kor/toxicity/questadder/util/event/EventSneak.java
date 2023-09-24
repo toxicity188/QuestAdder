@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventSneak extends AbstractEvent<PlayerToggleSneakEvent> {
 
@@ -16,7 +17,7 @@ public class EventSneak extends AbstractEvent<PlayerToggleSneakEvent> {
     }
 
     @Override
-    public void invoke(PlayerToggleSneakEvent event) {
+    public void invoke(@NotNull PlayerToggleSneakEvent event) {
         var player = event.getPlayer();
         if (sneak != player.isSneaking()) return;
         apply(player);

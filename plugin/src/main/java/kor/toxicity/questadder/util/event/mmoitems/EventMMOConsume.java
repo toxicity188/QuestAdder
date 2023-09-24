@@ -4,6 +4,7 @@ import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import net.Indyuce.mmoitems.api.event.item.ConsumableConsumedEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMMOConsume extends AbstractEvent<ConsumableConsumedEvent> {
     public EventMMOConsume(QuestAdder adder, AbstractAction action) {
@@ -11,7 +12,7 @@ public class EventMMOConsume extends AbstractEvent<ConsumableConsumedEvent> {
     }
 
     @Override
-    public void invoke(ConsumableConsumedEvent event) {
+    public void invoke(@NotNull ConsumableConsumedEvent event) {
         apply(event.getPlayer());
     }
 }

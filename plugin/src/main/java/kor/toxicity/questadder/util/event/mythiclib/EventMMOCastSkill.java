@@ -7,6 +7,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.EntityType;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMMOCastSkill extends AbstractEvent<PlayerCastSkillEvent> {
 
@@ -20,7 +21,7 @@ public class EventMMOCastSkill extends AbstractEvent<PlayerCastSkillEvent> {
     }
 
     @Override
-    public void invoke(PlayerCastSkillEvent event) {
+    public void invoke(@NotNull PlayerCastSkillEvent event) {
         var meta = event.getMetadata();
         if (meta.hasTargetEntity()) {
             var target = meta.getTargetEntity();

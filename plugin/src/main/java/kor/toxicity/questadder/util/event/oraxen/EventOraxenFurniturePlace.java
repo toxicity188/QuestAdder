@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.Bukkit;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Predicate;
 
@@ -56,7 +57,7 @@ public class EventOraxenFurniturePlace extends AbstractEvent<OraxenFurniturePlac
     }
 
     @Override
-    public void invoke(OraxenFurniturePlaceEvent event) {
+    public void invoke(@NotNull OraxenFurniturePlaceEvent event) {
         if (predicate.test(event)) apply(event.getPlayer());
     }
 }

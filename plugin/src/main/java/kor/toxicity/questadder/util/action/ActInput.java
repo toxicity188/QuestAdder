@@ -46,7 +46,7 @@ public class ActInput extends AbstractAction {
     }
 
     @Override
-    public void invoke(Player player, QuestAdderEvent event) {
+    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         if (cal != null && fa != null) {
             var message = componentReader.createComponent(event);
             if (message != null) CallbackManager.INSTANCE.openSign(player, List.of(

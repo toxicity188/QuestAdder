@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
@@ -19,7 +20,7 @@ public class EventIslandEnter extends AbstractEvent<IslandEnterEvent> {
     }
 
     @Override
-    public void invoke(IslandEnterEvent event) {
+    public void invoke(@NotNull IslandEnterEvent event) {
         if (cause != null && event.getCause() != cause) return;
         Optional.ofNullable(event.getPlayer()).map(SuperiorPlayer::asPlayer).ifPresent(this::apply);
     }

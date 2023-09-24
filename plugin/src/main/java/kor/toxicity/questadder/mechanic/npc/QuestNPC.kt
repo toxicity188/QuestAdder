@@ -63,6 +63,8 @@ class QuestNPC(adder: QuestAdderBukkit, file: File, val npcKey: String, section:
     val thread = section.findLong(20,"Thread","thread").coerceAtLeast(1)
     val renderDistance = section.findDouble(16.0,"render-distance","RenderDistance").coerceAtLeast(3.0)
 
+    val typingSpeed = section.findLong(QuestAdderBukkit.Config.defaultTypingSpeed,"typing-speed","TypingSpeed")
+
     override fun getIndex(player: Player) = QuestAdderBukkit.getPlayerData(player)?.npcIndexes?.get(npcKey)
     override fun setIndex(player: Player, index: Int) = QuestAdderBukkit.getPlayerData(player)?.npcIndexes?.let {
         it[npcKey] = index

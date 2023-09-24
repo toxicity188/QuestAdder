@@ -5,6 +5,8 @@ import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
+import org.jetbrains.annotations.NotNull;
+
 public class EventMMOBlock extends AbstractEvent<PlayerBlockEvent> {
 
     @DataField
@@ -17,7 +19,7 @@ public class EventMMOBlock extends AbstractEvent<PlayerBlockEvent> {
     }
 
     @Override
-    public void invoke(PlayerBlockEvent event) {
+    public void invoke(@NotNull PlayerBlockEvent event) {
         var damage = event.getDamageBlocked();
         if (damage < min || damage > max) return;
         apply(event.getPlayer());

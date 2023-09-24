@@ -4,6 +4,7 @@ import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import net.Indyuce.mmoitems.api.event.item.BreakSoulboundEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMMOBreakSoulbound extends AbstractEvent<BreakSoulboundEvent> {
     public EventMMOBreakSoulbound(QuestAdder adder, AbstractAction action) {
@@ -11,7 +12,7 @@ public class EventMMOBreakSoulbound extends AbstractEvent<BreakSoulboundEvent> {
     }
 
     @Override
-    public void invoke(BreakSoulboundEvent event) {
+    public void invoke(@NotNull BreakSoulboundEvent event) {
         apply(event.getPlayer());
     }
 }

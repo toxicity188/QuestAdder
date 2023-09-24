@@ -7,6 +7,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMythicDamage extends AbstractEvent<MythicDamageEvent> {
 
@@ -18,7 +19,7 @@ public class EventMythicDamage extends AbstractEvent<MythicDamageEvent> {
     }
 
     @Override
-    public void invoke(MythicDamageEvent event) {
+    public void invoke(@NotNull MythicDamageEvent event) {
         if (type != null && event.getDamageMetadata().getDamager().getEntity().getBukkitEntity().getType() != type) return;
         if (event.getCaster().getEntity().getBukkitEntity() instanceof Player player) apply(player);
     }

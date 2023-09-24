@@ -5,6 +5,7 @@ import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
@@ -14,7 +15,7 @@ public class EventIslandOpen extends AbstractEvent<IslandOpenEvent> {
     }
 
     @Override
-    public void invoke(IslandOpenEvent event) {
+    public void invoke(@NotNull IslandOpenEvent event) {
         Optional.ofNullable(event.getPlayer()).map(SuperiorPlayer::asPlayer).ifPresent(this::apply);
     }
 }

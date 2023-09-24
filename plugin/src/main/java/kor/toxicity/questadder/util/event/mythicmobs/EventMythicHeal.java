@@ -7,6 +7,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 public class EventMythicHeal extends AbstractEvent<MythicHealMechanicEvent> {
 
@@ -18,7 +19,7 @@ public class EventMythicHeal extends AbstractEvent<MythicHealMechanicEvent> {
     }
 
     @Override
-    public void invoke(MythicHealMechanicEvent event) {
+    public void invoke(@NotNull MythicHealMechanicEvent event) {
         if (type != null && event.getTarget().getType() != type) return;
         if (event.getEntity() instanceof Player player) apply(player);
     }

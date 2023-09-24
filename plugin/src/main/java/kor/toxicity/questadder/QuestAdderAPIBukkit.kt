@@ -192,4 +192,8 @@ object QuestAdderAPIBukkit: APIManager {
     override fun getBlockRegistry(): IBlockRegistry {
         return ResourcePackManager.blockRegistry
     }
+
+    override fun isSlated(player: Player): Boolean {
+        return SlateManager.isSlated(player)
+    }
 }
