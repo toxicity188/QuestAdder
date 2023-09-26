@@ -3,6 +3,7 @@ package kor.toxicity.questadder.util.action;
 import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.manager.DialogManager;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.util.builder.FunctionBuilder;
@@ -44,17 +45,22 @@ public class ActAction extends AbstractAction {
         if (action == null) QuestAdderBukkit.Companion.warn("not found error: the action named \"" + n + "\" doesn't exist.");
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         if (cond != null) {
             var obj = cond.apply(event);
             if (obj instanceof Boolean bool) {
                 if (!bool) {
                     if (ins != null) ins.invoke(player, event);
-                    return;
+                    return ActionResult.SUCCESS;
                 }
-            } else QuestAdderBukkit.Companion.warn("runtime error: the condition \"" + cond + "\" is not a boolean.");
+            } else {
+                QuestAdderBukkit.Companion.warn("runtime error: the condition \"" + cond + "\" is not a boolean.");
+                return ActionResult.FAIL;
+            }
         }
         if (action != null) action.invoke(player,event);
+        return ActionResult.SUCCESS;
     }
 }

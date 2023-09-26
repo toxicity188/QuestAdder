@@ -4,8 +4,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface IDialog {
-    @NotNull String getKey();
-    @Nullable
-    IDialogState start(@NotNull Player player, @NotNull DialogSender sender);
+public interface IItemDialogSender extends DialogSender {
+    void give(@NotNull Player player);
+    @Nullable IDialogState start(@NotNull Player player);
 }

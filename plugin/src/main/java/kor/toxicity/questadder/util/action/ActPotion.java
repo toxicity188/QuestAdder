@@ -3,6 +3,7 @@ package kor.toxicity.questadder.util.action;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
@@ -37,8 +38,10 @@ public class ActPotion extends AbstractAction {
         if (t == null) throw new RuntimeException("the type named \"" + type + "\" doesn't exist.");
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         player.addPotionEffect(new PotionEffect(t,duration,amplifier,ambient,particles,icon));
+        return ActionResult.SUCCESS;
     }
 }

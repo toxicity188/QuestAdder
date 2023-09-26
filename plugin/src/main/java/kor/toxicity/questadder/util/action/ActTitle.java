@@ -3,6 +3,7 @@ package kor.toxicity.questadder.util.action;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.util.ComponentReader;
 import kor.toxicity.questadder.api.util.DataField;
 import net.kyori.adventure.text.Component;
@@ -59,8 +60,10 @@ public class ActTitle extends AbstractAction {
         };
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         consumer.accept(player,event);
+        return ActionResult.SUCCESS;
     }
 }

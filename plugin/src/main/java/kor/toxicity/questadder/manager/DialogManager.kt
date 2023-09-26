@@ -4,17 +4,20 @@ import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.*
 import kor.toxicity.questadder.api.gui.GuiData
 import kor.toxicity.questadder.api.gui.MouseButton
+import kor.toxicity.questadder.api.mechanic.DialogSender
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.extension.*
-import kor.toxicity.questadder.mechanic.Dialog
-import kor.toxicity.questadder.mechanic.QnA
+import kor.toxicity.questadder.mechanic.dialog.Dialog
+import kor.toxicity.questadder.mechanic.qna.QnA
 import kor.toxicity.questadder.mechanic.npc.ActualNPC
 import kor.toxicity.questadder.mechanic.npc.QuestNPC
 import kor.toxicity.questadder.mechanic.quest.Quest
 import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.api.mechanic.RegistrableAction
+import kor.toxicity.questadder.mechanic.sender.DialogSenderType
+import kor.toxicity.questadder.mechanic.sender.ItemDialogSender
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.util.gui.Gui
@@ -33,25 +36,30 @@ import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.block.Action
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerCommandPreprocessEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractAtEntityEvent
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
+import org.bukkit.persistence.PersistentDataType
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
 object DialogManager: QuestAdderManager {
 
-    private val dialogMap = HashMap<String,Dialog>()
+    private val dialogMap = HashMap<String, Dialog>()
     private val actionMap = HashMap<String, RegistrableAction>()
     private val questMap = HashMap<String, Quest>()
-    private val qnaMap = HashMap<String,QnA>()
+    private val qnaMap = HashMap<String, QnA>()
+    private val senderMap = HashMap<String, DialogSender>()
 
     private val questNpcMap = HashMap<String, QuestNPC>()
     private val actualNPCMap = HashMap<UUID, ActualNPC>()
@@ -126,13 +134,87 @@ object DialogManager: QuestAdderManager {
             }
             @EventHandler
             fun deSpawn(e: NPCDespawnEvent) {
-                actualNPCMap.remove(e.npc.entity.uniqueId)?.cancel()
+                actualNPCMap.remove(e.npc.entity.uniqueId)?.let {
+                    senderMap.remove(it.questNPC.npcKey)
+                    it.cancel()
+                }
             }
             @EventHandler
             fun reload(e: CitizensReloadEvent) {
                 dialogReload(adder)
             }
+            @EventHandler
+            fun itemClick(e: PlayerInteractEvent) {
+                e.item?.let {
+                    when (e.action) {
+                        Action.RIGHT_CLICK_AIR, Action.RIGHT_CLICK_BLOCK -> {
+                            it.itemMeta?.persistentDataContainer?.get(QUEST_ADDER_SENDER_KEY, PersistentDataType.STRING)?.let { key ->
+                                senderMap[key]?.let { sender ->
+                                    if (sender is ItemDialogSender) {
+                                        sender.start(e.player)?.let { state ->
+                                            if (sender.consume) state.addEndTask {
+                                                it.amount -= 1
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else -> {}
+                    }
+                }
+            }
         },adder)
+        adder.command.addCommandAPI("sender", arrayOf("s"), "sender-related command.", true, CommandAPI("qa s")
+            .addCommand("give") {
+                aliases = arrayOf("g")
+                description = "give item sender to player."
+                length = 2
+                usage = "give <player> <sender>"
+                executor = { sender, args ->
+                    Bukkit.getPlayer(args[1])?.let {
+                        senderMap[args[2]]?.let { s ->
+                            if (s is ItemDialogSender) {
+                                s.give(it)
+                            } else sender.warn("this sender is not item sender.")
+                        } ?: sender.warn("sender not found.")
+                    } ?: sender.warn("the player \"${args[1]}\" is not online.")
+                }
+                tabComplete = { _, args ->
+                    if (args.size == 3) senderMap.entries.filter {
+                        it.value is ItemDialogSender && it.key.startsWith(args[2])
+                    }.map {
+                        it.key
+                    } else null
+                }
+            }
+            .addCommand("run") {
+                aliases = arrayOf("r")
+                description = "run dialog to represented sender."
+                length = 3
+                usage = "run <player> <dialog> <sender>"
+                executor = { sender, args ->
+                    Bukkit.getPlayer(args[1])?.let {
+                        dialogMap[args[2]]?.let { d ->
+                            senderMap[args[3]]?.let { s ->
+                                d.start(it,s)
+                            } ?: sender.warn("the sender \"${args[3]}\" not found.")
+                        } ?: sender.warn("the dialog \"${args[2]}\" not found.")
+                    } ?: sender.warn("the player \"${args[1]}\" is not online.")
+                }
+                tabComplete = { _, args ->
+                    when (args.size) {
+                        3 -> dialogMap.keys.filter {
+                            it.startsWith(args[2])
+                        }
+                        4 -> senderMap.keys.filter {
+                            it.startsWith(args[3])
+                        }
+                        else -> null
+                    }
+                }
+            }
+        )
         adder.command.addCommand("parse") {
             aliases = arrayOf("p")
             description = "parse result from given arguments."
@@ -378,7 +460,9 @@ object DialogManager: QuestAdderManager {
         questNpcMap.values.firstOrNull {
             npc.id == it.id
         }?.let {
-            actualNPCMap[npc.entity.uniqueId] = ActualNPC(npc,it)
+            val actual = ActualNPC(npc,it)
+            actualNPCMap[npc.entity.uniqueId] = actual
+            senderMap[actual.questNPC.npcKey] = actual
         }
     }
 
@@ -392,6 +476,7 @@ object DialogManager: QuestAdderManager {
     fun getQuest(name: String) = questMap[name]
     fun getQnA(name: String) = qnaMap[name]
     fun getNPC(uuid: UUID) = actualNPCMap[uuid]
+    fun getDialogSender(name: String) = senderMap[name]
 
     fun getDialogKeys() = dialogMap.keys.toList()
     fun getActionKeys() = actionMap.keys.toList()
@@ -411,12 +496,17 @@ object DialogManager: QuestAdderManager {
     private fun dialogReload(adder: QuestAdderBukkit) {
         val actionReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
             ActionBuilder.build(QuestAdderBukkit.Companion,c)?.let { build ->
-                actionMap[key] = build
+                actionMap.put(key,build)?.let {
+                    QuestAdderBukkit.warn("action name collision found: $key")
+                }
+                Unit
             } ?: QuestAdderBukkit.warn("unable to load action. ($key in ${file.name})")
         }
         val dialogReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
             try {
-                dialogMap[key] = Dialog(QuestAdderBukkit.Companion,file,key,c)
+                dialogMap.put(key,Dialog(QuestAdderBukkit,file,key,c))?.let {
+                    QuestAdderBukkit.warn("dialog name collision found: $key in ${file.name} and ${it.file.name}")
+                }
             } catch (ex: Exception) {
                 QuestAdderBukkit.warn("unable to load dialog. (${file.name})")
                 QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
@@ -427,7 +517,9 @@ object DialogManager: QuestAdderManager {
         }
         val questReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
             try {
-                questMap[key] = Quest(QuestAdderBukkit.Companion, file, key, c)
+                questMap.put(key,Quest(QuestAdderBukkit.Companion, file, key, c))?.let {
+                    QuestAdderBukkit.warn("quest name collision found: $key in ${file.name} and ${it.file.name}")
+                }
             } catch (ex: Exception) {
                 QuestAdderBukkit.warn("unable to load quest. (${file.name})")
                 QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
@@ -435,9 +527,22 @@ object DialogManager: QuestAdderManager {
         }
         val npcReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
             try {
-                questNpcMap[key] = QuestNPC(adder, file, key, c)
+                if (senderMap.containsKey(key)) throw RuntimeException("name collision found: $key")
+                questNpcMap.put(key,QuestNPC(adder, file, key, c))?.let {
+                    QuestAdderBukkit.warn("npc name collision found: $key in ${file.name} and ${it.file.name}")
+                }
             } catch (ex: Exception) {
                 QuestAdderBukkit.warn("unable to load NPC. ($key in ${file.name})")
+                QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
+            }
+        }
+        val senderReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
+            try {
+                if (questNpcMap.containsKey(key)) throw RuntimeException("name collision found: $key")
+                val str = c.findString("Type","type") ?: throw RuntimeException("type value not found")
+                senderMap[key] = DialogSenderType.valueOf(str.uppercase()).create(adder, key, c)
+            } catch (ex: Exception) {
+                QuestAdderBukkit.warn("unable to load sender. ($key in ${file.name})")
                 QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
             }
         }
@@ -475,6 +580,7 @@ object DialogManager: QuestAdderManager {
         dialogMap.clear()
         questNpcMap.clear()
         actualNPCMap.clear()
+        senderMap.clear()
 
         fun loadConfig(name: String, reader: (File,String,ConfigurationSection) -> Unit) {
             adder.loadFolder(name) { file, config ->
@@ -487,6 +593,7 @@ object DialogManager: QuestAdderManager {
                                 "action" -> actionReader(file,it,c)
                                 "npc" -> npcReader(file,it,c)
                                 "qna" -> qnaReader(file,it,c)
+                                "sender" -> senderReader(file,it,c)
                                 else -> reader(file,it,c)
                             }
                         } ?: reader(file,it,c)
@@ -500,6 +607,7 @@ object DialogManager: QuestAdderManager {
         loadConfig("qnas", qnaReader)
         loadConfig("quests", questReader)
         loadConfig("npcs", npcReader)
+        loadConfig("senders", senderReader)
 
         CitizensAPI.getNPCRegistry().forEach {
             if (it.isSpawned) registerNPC(it)
@@ -509,7 +617,8 @@ object DialogManager: QuestAdderManager {
             send("${dialogMap.size} of dialogs has successfully loaded.")
             send("${questMap.size} of quests has successfully loaded.")
             send("${qnaMap.size} of QnAs has successfully loaded.")
-            send("${questNpcMap.size} of NPCs successfully loaded.")
+            send("${questNpcMap.size} of NPCs has successfully loaded.")
+            send("${senderMap.size} of senders has successfully loaded.")
         }
         QuestAdderBukkit.nms.updateCommand()
         val iterator = selectedQuestMap.iterator()

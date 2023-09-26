@@ -3,6 +3,7 @@ package kor.toxicity.questadder.util.action;
 import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.manager.DialogManager;
 import kor.toxicity.questadder.mechanic.npc.QuestNPC;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
@@ -39,12 +40,15 @@ public class ActIndex extends AbstractAction {
         });
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         if (npc != null) {
             var obj = function.apply(event);
             if (obj instanceof Number number) operation.apply(player,npc,number.intValue());
+            return ActionResult.SUCCESS;
         }
+        return ActionResult.FAIL;
     }
 
 

@@ -4,6 +4,7 @@ import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.util.ComponentReader;
 import kor.toxicity.questadder.util.builder.ActionBuilder;
 import kor.toxicity.questadder.api.util.DataField;
@@ -27,19 +28,21 @@ public class ActEvaluate extends AbstractAction {
         componentReader = new ComponentReader<>(parameter);
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         var comp = componentReader.createComponent(event);
         if (comp == null) {
             throwRuntimeError();
-            return;
+            return ActionResult.FAIL;
         }
         var build = ActionBuilder.INSTANCE.createAction(adder, LegacyComponentSerializer.legacySection().serialize(comp));
         if (build == null) {
             throwRuntimeError();
-            return;
+            return ActionResult.FAIL;
         }
         build.invoke(player, event);
+        return ActionResult.SUCCESS;
     }
     private void throwRuntimeError() {
         QuestAdderBukkit.Companion.warn("runtime error: unable to read this parameter: " + parameter);

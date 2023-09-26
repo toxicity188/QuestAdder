@@ -24,10 +24,10 @@ public abstract class AbstractEvent<T extends Event> implements DataObject {
     }
     public abstract void invoke(@NotNull T event);
 
-    protected final void apply(@NotNull Player player, @NotNull String... args) {
-        action.apply(player, args);
+    protected final @NotNull ActionResult apply(@NotNull Player player, @NotNull String... args) {
+        return action.apply(player, args);
     }
-    protected final void apply(@NotNull Player player, @NotNull QuestAdderEvent event) {
-        action.invoke(player, event);
+    protected final @NotNull ActionResult apply(@NotNull Player player, @NotNull QuestAdderEvent event) {
+        return action.invoke(player, event);
     }
 }

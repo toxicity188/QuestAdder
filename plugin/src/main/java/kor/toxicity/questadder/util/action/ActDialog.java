@@ -4,8 +4,9 @@ import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.manager.DialogManager;
-import kor.toxicity.questadder.mechanic.Dialog;
+import kor.toxicity.questadder.mechanic.dialog.Dialog;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -33,11 +34,16 @@ public class ActDialog extends AbstractAction {
         });
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         if (d != null) {
             var n = DialogManager.INSTANCE.getNPC(npc);
-            if (n != null) d.start(player, n);
+            if (n != null) {
+                d.start(player, n);
+                return ActionResult.SUCCESS;
+            }
         }
+        return ActionResult.FAIL;
     }
 }

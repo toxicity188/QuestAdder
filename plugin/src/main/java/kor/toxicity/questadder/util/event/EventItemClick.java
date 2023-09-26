@@ -41,7 +41,10 @@ public class EventItemClick extends AbstractEvent<PlayerInteractEvent> {
         var get = event.getItem();
         if (get == null) return;
         if (!get.isSimilar(i)) return;
-        if (consume) get.setAmount(get.getAmount() - amount);
-        apply(event.getPlayer());
+        var result = apply(event.getPlayer());
+        if (consume && switch (result) {
+            case SUCCESS, INSTEAD_OTHER_ACTION -> true;
+            default -> false;
+        }) get.setAmount(get.getAmount() - amount);
     }
 }

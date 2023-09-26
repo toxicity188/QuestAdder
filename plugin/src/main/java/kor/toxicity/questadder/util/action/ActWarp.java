@@ -3,6 +3,7 @@ package kor.toxicity.questadder.util.action;
 import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.manager.LocationManager;
 import kor.toxicity.questadder.util.NamedLocation;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
@@ -27,9 +28,11 @@ public class ActWarp extends AbstractAction {
         if (loc == null) throw new RuntimeException("the location named \"" + location + "\" doesn't exist.");
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         if (packet) QuestAdderBukkit.Companion.getNms().changePosition(player,loc.getLocation());
         else player.teleport(loc.getLocation());
+        return ActionResult.SUCCESS;
     }
 }

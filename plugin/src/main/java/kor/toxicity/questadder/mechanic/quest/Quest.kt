@@ -10,6 +10,7 @@ import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.ItemWriter
 import kor.toxicity.questadder.util.RewardSet
 import kor.toxicity.questadder.api.mechanic.AbstractAction
+import kor.toxicity.questadder.api.mechanic.ActionResult
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.util.function.WrappedFunction
@@ -26,7 +27,7 @@ import java.time.temporal.ChronoUnit
 import java.util.SortedSet
 import java.util.TreeSet
 
-class Quest(adder: QuestAdder, file: File, val questKey: String, section: ConfigurationSection): IQuest, Comparable<Quest> {
+class Quest(adder: QuestAdder, val file: File, val questKey: String, section: ConfigurationSection): IQuest, Comparable<Quest> {
     companion object {
         private val success = "Success!".asComponent(YELLOW).clear().decorate(TextDecoration.BOLD)
     }
@@ -146,7 +147,7 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
                     } ?: emptyList()
                     val max = config.findInt(0,"Max","max").toLong()
                     val obj: AbstractAction = object : AbstractAction(adder) {
-                        override fun invoke(player: Player, event: QuestAdderEvent) {
+                        override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
                             val questEvent = QuestInvokeEvent(
                                 this@Quest,
                                 player
@@ -157,7 +158,7 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
                                     val t = wf.apply(questEvent)
                                     t is Boolean && t
                                 }) {
-                                val data  = QuestAdderBukkit.getPlayerData(player) ?: return
+                                val data  = QuestAdderBukkit.getPlayerData(player) ?: return ActionResult.FAIL
                                 val newValue = (data.getQuestVariable(questKey,name) ?: 0)
                                 if (newValue + 1 == max) {
                                     lore?.createComponent(questEvent)?.let { component ->
@@ -167,6 +168,7 @@ class Quest(adder: QuestAdder, file: File, val questKey: String, section: Config
                                 }
                                 data.setQuestVariable(questKey,name,(newValue + 1).coerceAtMost(max))
                             }
+                            return ActionResult.SUCCESS
                         }
                     }
                     for (s in event) {

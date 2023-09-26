@@ -7,6 +7,8 @@ import kor.toxicity.questadder.extension.totalAmount
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.manager.ItemManager
 import kor.toxicity.questadder.mechanic.npc.QuestNPC
+import kor.toxicity.questadder.mechanic.quest.Quest
+import kor.toxicity.questadder.mechanic.sender.ItemDialogSender
 import kor.toxicity.questadder.util.HashedClass
 import kor.toxicity.questadder.util.Null
 import kor.toxicity.questadder.util.function.ArgumentFunction
@@ -192,6 +194,24 @@ object FunctionBuilder {
         addFunction("itemOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
             QuestAdderBukkit.getPlayerData(args[0] as Player)?.get(args[1] as String) as? ItemStack
         }
+
+        addFunction("questOf", listOf(String::class.java)) { _: Null, args ->
+            DialogManager.getQuest(args[0] as String)
+        }
+        addFunction("has", listOf(Player::class.java, Quest::class.java)) { _: Null, args ->
+            (args[1] as Quest).has(args[0] as Player)
+        }
+        addFunction("complete", listOf(Player::class.java, Quest::class.java)) { _: Null, args ->
+            (args[1] as Quest).isCompleted(args[0] as Player)
+        }
+        addFunction("clear", listOf(Player::class.java, Quest::class.java)) { _: Null, args ->
+            (args[1] as Quest).isCleared(args[0] as Player)
+        }
+        addFunction("ready", listOf(Player::class.java, Quest::class.java)) { _: Null, args ->
+            (args[1] as Quest).isReady(args[0] as Player)
+        }
+
+
         addFunction("random", listOf(Number::class.java, Number::class.java)) { _: Null, args ->
             ThreadLocalRandom.current().nextDouble((args[0] as Number).toDouble(), (args[1] as Number).toDouble())
         }
@@ -218,6 +238,9 @@ object FunctionBuilder {
         }
         addFunction("itemOf", listOf(String::class.java)) { _: Null, args ->
             ItemManager.getItem(args[0] as String)
+        }
+        addFunction("itemSenderOf", listOf(String::class.java)) { _: Null, args ->
+            (DialogManager.getDialogSender(args[0] as String) as? ItemDialogSender)?.item
         }
         addFunction("args", listOf(Number::class.java)) { e: ActionInvokeEvent, args ->
             val index = (args[0] as Number).toInt()

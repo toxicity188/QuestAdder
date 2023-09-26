@@ -1,4 +1,4 @@
-package kor.toxicity.questadder.mechanic
+package kor.toxicity.questadder.mechanic.dialog
 
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.QuestAdder
@@ -15,7 +15,7 @@ import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.manager.GestureManager
 import kor.toxicity.questadder.manager.SlateManager
-import kor.toxicity.questadder.mechanic.npc.ActualNPC
+import kor.toxicity.questadder.mechanic.qna.QnA
 import kor.toxicity.questadder.nms.VirtualArmorStand
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.Null
@@ -34,7 +34,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
 
-class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, section: ConfigurationSection): IDialog {
+class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, section: ConfigurationSection): IDialog {
     private interface TypingExecutor {
         fun initialize(talker: Component?)
         fun run(talk: Component)
@@ -51,8 +51,9 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
         var run: DialogRun
     ) {
         var executor: TypingExecutor? = null
+        val state = DialogState()
 
-        val typingSpeedMap = HashMap<String,Long>()
+        val typingSpeedMap = HashMap<String, Long>()
         val typingSoundMap = HashMap<String, SoundData>()
         var inventory: GuiHolder? = null
         var display: VirtualArmorStand? = null
@@ -61,7 +62,6 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
     private inner class DialogRun {
 
         val current: DialogCurrent
-
         constructor(player: Player, questNPC: DialogSender) {
             this.current = DialogCurrent(player, questNPC, DialogStartEvent(
                 player,
@@ -124,17 +124,23 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
             }
             current.safeEnd = true
             current.executor?.end()
+            val endData = DialogEndData(
+                current.player,
+                current.event,
+                current.inventory?.data?.gui?.guiName ?: Component.empty(),
+                talkerComponent ?: current.sender.talkerName.asComponent().deepClear(),
+                if (talk.isNotEmpty()) talk.last().createComponent(current.event) ?: Component.empty() else null
+            )
             qna?.let {
                 if (it.isNotEmpty()) {
-                    it.random().open(
-                        current.player,
-                        current.event,
-                        current.inventory?.data?.gui?.guiName ?: Component.empty(),
-                        talkerComponent ?: current.sender.talkerName.asComponent().deepClear(),
-                        if (talk.isNotEmpty()) talk.last().createComponent(current.event) ?: Component.empty() else null
-                    )
+                    it.random().open(endData) { d ->
+                        d.start(current)
+                    }
                     return
                 }
+            }
+            current.state.tasks.forEach {
+                it()
             }
             QuestAdderBukkit.task {
                 current.player.closeInventory()
@@ -176,7 +182,7 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
 
     companion object {
         private val talkPattern = Pattern.compile("^((?<talker>(\\w|\\W)+)::)?(\\s+)?(?<talk>(\\w|\\W)+)$")
-        private val playerTask = ConcurrentHashMap<UUID,DialogRun>()
+        private val playerTask = ConcurrentHashMap<UUID, DialogRun>()
         private val defaultExecutor = object : TypingManager {
             override fun create(current: DialogCurrent): TypingExecutor {
                 val selectedInv = current.sender.gui ?: createInventory("talking with ${current.sender.talkerName}".asComponent(),5)
@@ -259,7 +265,7 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
         fun stop(player: Player) = playerTask.remove(player.uniqueId)?.stop()
         fun isRunning(player: Player) = playerTask.containsKey(player.uniqueId)
 
-        private val typingManagerMap = HashMap<String,TypingManager>().apply {
+        private val typingManagerMap = HashMap<String, TypingManager>().apply {
             put("default", defaultExecutor)
             put("title", object : TypingManager {
                 override fun create(current: DialogCurrent): TypingExecutor {
@@ -323,7 +329,7 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
     private var dialog: MutableList<Dialog>? = null
     private var qna: MutableList<QnA>? = null
     private var subDialog: MutableList<Dialog>? = null
-    private var executorMap = HashMap<Int,TypingManager>()
+    private var executorMap = HashMap<Int, TypingManager>()
     private var predicate: (DialogCurrent) -> Boolean = {
         true
     }
@@ -795,13 +801,13 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
         }
     }
 
-    fun start(player: Player, npc: DialogSender) {
-        val run = DialogRun(player,npc)
-        if (run.current.event.isCancelled) return
-        start(run)
+    override fun start(player: Player, sender: DialogSender): DialogState? {
+        val run = DialogRun(player,sender)
+        if (run.current.event.isCancelled) return null
+        return start(run)
     }
-    private fun start(current: DialogCurrent) {
-        start(DialogRun(current.apply {
+    private fun start(current: DialogCurrent): DialogState? {
+        return start(DialogRun(current.apply {
             safeEnd = false
             sender.soundData.let {
                 typingSoundMap[sender.talkerName] = it
@@ -811,18 +817,19 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
             typingSpeedMap.putAll(typingSpeed)
         }))
     }
-    private fun start(run: DialogRun) {
+    private fun start(run: DialogRun): DialogState?  {
         val uuid = run.current.player.uniqueId
         if (!predicate(run.current)) {
             subDialog?.let { l ->
                 if (l.isNotEmpty() && !playerTask.containsKey(uuid)) l.random().start(run.current)
             }
-            return
+            return null
         }
-        if (playerTask.containsKey(uuid)) return
+        if (playerTask.containsKey(uuid)) return null
         playerTask[uuid] = run.apply {
             start()
         }
+        return run.current.state
     }
 
     override fun getKey(): String {

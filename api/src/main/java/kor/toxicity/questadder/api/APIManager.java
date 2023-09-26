@@ -91,7 +91,7 @@ public interface APIManager {
     @Nullable
     IActualNPC getNPC(@NotNull UUID uuid);
     /**
-     * Get NPC object from given uuid.
+     * Get NPC object from given name.
      *
      * @param name A yaml key of the NPC
      * @return An object of NPC of null
@@ -180,4 +180,13 @@ public interface APIManager {
      * @return whether player is on slate
      */
     boolean isSlated(@NotNull Player player);
+
+    /**
+     * Get Sender object from given uuid.
+     *
+     * @param name A yaml key of the NPC
+     * @return An object of Sender of null
+     * @since 1.1.1
+     */
+    @Nullable DialogSender getDialogSender(@NotNull String name);
 }

@@ -1,6 +1,6 @@
-package kor.toxicity.questadder.util.event;
+package kor.toxicity.questadder.util.event.magicspells;
 
-import com.nisovin.magicspells.events.BuffEndEvent;
+import com.nisovin.magicspells.events.BuffStartEvent;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
@@ -8,16 +8,16 @@ import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-public class EventBuffEnd extends AbstractEvent<BuffEndEvent> {
+public class EventBuffStart extends AbstractEvent<BuffStartEvent> {
     @DataField(aliases = "n")
     public String name;
 
-    public EventBuffEnd(QuestAdder adder, AbstractAction action) {
-        super(adder, action, BuffEndEvent.class);
+    public EventBuffStart(QuestAdder adder, AbstractAction action) {
+        super(adder, action, BuffStartEvent.class);
     }
 
     @Override
-    public void invoke(@NotNull BuffEndEvent event) {
+    public void invoke(@NotNull BuffStartEvent event) {
         if (name != null && !event.getBuffSpell().getName().equals(name)) return;
         if (event.getCaster() instanceof Player player) apply(player);
     }

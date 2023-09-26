@@ -5,16 +5,14 @@ import com.google.gson.JsonParser
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.QuestAdder
 import kor.toxicity.questadder.api.event.QuestAdderEvent
-import kor.toxicity.questadder.extension.ANNOTATION_PATTERN
-import kor.toxicity.questadder.extension.findStringList
-import kor.toxicity.questadder.extension.info
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.nms.RuntimeCommand
 import kor.toxicity.questadder.api.mechanic.AbstractAction
 import kor.toxicity.questadder.api.mechanic.CancellableAction
 import kor.toxicity.questadder.api.mechanic.RegistrableAction
 import kor.toxicity.questadder.api.mechanic.AbstractEvent
-import kor.toxicity.questadder.extension.findBoolean
+import kor.toxicity.questadder.api.mechanic.ActionResult
+import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.util.action.*
 import kor.toxicity.questadder.util.event.*
 import kor.toxicity.questadder.util.reflect.ActionReflector
@@ -174,8 +172,9 @@ object ActionBuilder {
     fun create(adder: QuestAdder, parameters: Collection<String>, unsafe: Boolean = false): CancellableAction? {
         val playerTask = HashMap<UUID,BukkitTask>()
         val empty: CancellableAction = object : CancellableAction(adder) {
-            override fun invoke(player: Player, event: QuestAdderEvent) {
+            override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
                 playerTask.remove(player.uniqueId)
+                return ActionResult.SUCCESS
             }
 
             override fun cancel(player: Player) {
@@ -183,16 +182,17 @@ object ActionBuilder {
             }
         }
         var action = empty
-        for (parameter in parameters.reversed()) {
+        for ((index,parameter) in parameters.reversed().withIndex()) {
             val t = action
             val matcher = delayPattern.matcher(parameter)
             if (matcher.find()) {
                 val d = matcher.group("delay").toLong()
                 action = object : CancellableAction(adder) {
-                    override fun invoke(player: Player, event: QuestAdderEvent) {
+                    override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
                         playerTask[player.uniqueId] = QuestAdderBukkit.taskLater(d) {
                             t.invoke(player,event)
                         }
+                        return ActionResult.SUCCESS
                     }
 
                     override fun cancel(player: Player) {
@@ -202,9 +202,12 @@ object ActionBuilder {
             } else {
                 createAction(adder,parameter)?.let {
                     action = object : CancellableAction(adder) {
-                        override fun invoke(player: Player, event: QuestAdderEvent) {
-                            it.invoke(player,event)
-                            t.invoke(player,event)
+                        override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
+                            if (it.invoke(player,event) == ActionResult.FAIL) {
+                                player.kick("An error has occurred while playing action line ${parameter.length - index}".asClearComponent())
+                                return ActionResult.FAIL
+                            }
+                            return t.invoke(player,event)
                         }
 
                         override fun cancel(player: Player) {
@@ -220,14 +223,15 @@ object ActionBuilder {
                 playerTask.remove(player.uniqueId)?.cancel()
             }
 
-            override fun invoke(player: Player, event: QuestAdderEvent) {
-                action.invoke(player, event)
+            override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
+                return action.invoke(player, event)
             }
         } else object : CancellableAction(adder) {
-            override fun invoke(player: Player, event: QuestAdderEvent) {
+            override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
                 if (!playerTask.contains(player.uniqueId)) {
-                    action.invoke(player, event)
+                    return action.invoke(player, event)
                 }
+                return ActionResult.ALREADY_EXECUTED
             }
 
             override fun cancel(player: Player) {
@@ -240,8 +244,8 @@ object ActionBuilder {
         return section.findStringList("Action","Actions","actions","action")?.let {
             create(adder,it,unsafe)
         }?.let { action ->
-            var predicate: (Player, QuestAdderEvent) -> Boolean = { _, _ ->
-                true
+            var predicate: (Player, QuestAdderEvent) -> ActionResult = { _, _ ->
+                ActionResult.SUCCESS
             }
             section.findStringList("Condition","Conditions","conditions","condition")?.forEach { s ->
                 val matcher = ANNOTATION_PATTERN.matcher(s)
@@ -264,10 +268,11 @@ object ActionBuilder {
                                 if (castActions.isNotEmpty()) {
                                     predicate = { player, event ->
                                         val get = function.apply(event)
-                                        original(player,event) && if (get as Boolean) {
+                                        val originalResult = original(player,event)
+                                        if (get as Boolean) {
                                             castActions.random().invoke(player, event)
-                                            true
-                                        } else false
+                                            ActionResult.SUCCESS
+                                        } else originalResult
                                     }
                                 } else QuestAdderBukkit.warn("unable to load the dialog: $s")
                             }
@@ -281,10 +286,11 @@ object ActionBuilder {
                                 if (castActions.isNotEmpty()) {
                                     predicate = { player, event ->
                                         val get = function.apply(event)
-                                        original(player,event) && if (get as Boolean) {
-                                            castActions.random().invoke(player, event)
-                                            false
-                                        } else true
+                                        val originalResult = original(player,event)
+                                        if (originalResult == ActionResult.SUCCESS && !(get as Boolean)) {
+                                            val otherResult = castActions.random().invoke(player, event)
+                                            if (otherResult == ActionResult.SUCCESS) ActionResult.INSTEAD_OTHER_ACTION else otherResult
+                                        } else originalResult
                                     }
                                 } else QuestAdderBukkit.warn("unable to load the dialog: $s")
                             }
@@ -293,22 +299,30 @@ object ActionBuilder {
                             val original = predicate
                             predicate = { player, event ->
                                 val get = function.apply(event)
-                                original(player,event) && get as Boolean
+                                if (original(player,event) == ActionResult.SUCCESS && get as Boolean) ActionResult.SUCCESS else ActionResult.UNMET_CONDITION
                             }
                         }
                     }
                 } else {
                     val original = predicate
                     val function = FunctionBuilder.evaluate(s)
+                    val retType = function.getReturnType()
+                    if (retType != PrimitiveType.BOOLEAN.primitive && retType != PrimitiveType.BOOLEAN.reference) {
+                        QuestAdderBukkit.warn("compile error: this argument is not a boolean: $s")
+                        return@forEach
+                    }
                     predicate = { player, event ->
                         val get = function.apply(event)
-                        original(player,event) && get as Boolean
+                        if (original(player,event) == ActionResult.SUCCESS && get as Boolean) ActionResult.SUCCESS else ActionResult.UNMET_CONDITION
                     }
                 }
             }
             val obj = object : CancellableAction(adder) {
-                override fun invoke(player: Player, event: QuestAdderEvent) {
-                    if (predicate(player,event)) action.invoke(player,event)
+                override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
+                    return when (val result = predicate(player,event)) {
+                        ActionResult.SUCCESS -> action.invoke(player,event)
+                        else -> result
+                    }
                 }
 
                 override fun cancel(player: Player) {
@@ -330,8 +344,8 @@ object ActionBuilder {
                 }
             }
             object : RegistrableAction(adder) {
-                override fun invoke(player: Player, event: QuestAdderEvent) {
-                    obj.invoke(player,event)
+                override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
+                    return obj.invoke(player,event)
                 }
                 override fun cancel(player: Player) {
                     obj.cancel(player)

@@ -4,6 +4,7 @@ import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.manager.CallbackManager;
 import kor.toxicity.questadder.manager.DialogManager;
 import kor.toxicity.questadder.util.ComponentReader;
@@ -45,8 +46,9 @@ public class ActInput extends AbstractAction {
         });
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         if (cal != null && fa != null) {
             var message = componentReader.createComponent(event);
             if (message != null) CallbackManager.INSTANCE.openSign(player, List.of(
@@ -64,6 +66,8 @@ public class ActInput extends AbstractAction {
                 }
                 return Unit.INSTANCE;
             });
+            return ActionResult.SUCCESS;
         }
+        return ActionResult.FAIL;
     }
 }

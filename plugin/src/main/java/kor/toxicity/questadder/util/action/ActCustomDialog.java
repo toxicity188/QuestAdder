@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.api.gui.IGui;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.api.mechanic.DialogSender;
 import kor.toxicity.questadder.api.util.DataField;
 import kor.toxicity.questadder.api.util.SoundData;
@@ -82,8 +83,13 @@ public class ActCustomDialog extends AbstractAction {
         });
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
-        if (consumer != null) consumer.accept(player);
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+        if (consumer != null) {
+            consumer.accept(player);
+            return ActionResult.SUCCESS;
+        }
+        return ActionResult.FAIL;
     }
 }

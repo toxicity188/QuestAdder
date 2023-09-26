@@ -1,4 +1,4 @@
-package kor.toxicity.questadder.mechanic
+package kor.toxicity.questadder.mechanic.qna
 
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.DialogStartEvent
@@ -8,6 +8,8 @@ import kor.toxicity.questadder.api.gui.GuiExecutor
 import kor.toxicity.questadder.api.gui.MouseButton
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.DialogManager
+import kor.toxicity.questadder.mechanic.dialog.Dialog
+import kor.toxicity.questadder.mechanic.dialog.DialogEndData
 import kor.toxicity.questadder.util.ItemWriter
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
@@ -20,7 +22,7 @@ class QnA(adder: QuestAdderBukkit, file: File, key: String, section: Configurati
     private val name = section.findString("name","Name")?.colored()
     private val size = section.findInt(3,"size","Size")
     private val center = size / 2 * 9 + 4
-    private val qnaItemMap = HashMap<Int,QnAItem>().apply {
+    private val qnaItemMap = HashMap<Int, QnAItem>().apply {
         adder.addLazyTask {
             section.findConfig("items")?.run {
                 getKeys(false).forEach {
@@ -41,19 +43,19 @@ class QnA(adder: QuestAdderBukkit, file: File, key: String, section: Configurati
         }
     }
 
-    fun open(player: Player, event: DialogStartEvent, guiName: Component, talker: Component, talk: Component?) {
+    fun open(data: DialogEndData, startFunction: (Dialog) -> Unit) {
 
-        createInventory(name ?: guiName,size,HashMap<Int, ItemStack>().apply {
-            if (talk != null) put(center, ItemStack(Material.ENCHANTED_BOOK).apply {
+        createInventory(name ?: data.guiName,size,HashMap<Int, ItemStack>().apply {
+            if (data.talk != null) put(center, ItemStack(Material.ENCHANTED_BOOK).apply {
                 itemMeta = itemMeta?.apply {
-                    displayName(talker.append(":".asClearComponent()))
-                    lore(listOf(talk))
+                    displayName(data.talker.append(":".asClearComponent()))
+                    lore(listOf(data.talk))
                 }
             })
             qnaItemMap.forEach {
-                put(it.key,it.value.item.write(event))
+                put(it.key,it.value.item.write(data.event))
             }
-        }).open(player, object : GuiExecutor {
+        }).open(data.player, object : GuiExecutor {
             override fun end(data: GuiData) {
 
             }
@@ -69,7 +71,7 @@ class QnA(adder: QuestAdderBukkit, file: File, key: String, section: Configurati
                 button: MouseButton
             ) {
                 if (isPlayerInventory) return
-                qnaItemMap[clickedSlot]?.dialogs?.random()?.start(player,event.sender)
+                qnaItemMap[clickedSlot]?.dialogs?.random()?.let(startFunction)
             }
         })
     }

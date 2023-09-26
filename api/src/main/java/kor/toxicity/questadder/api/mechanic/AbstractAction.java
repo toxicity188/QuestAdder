@@ -14,14 +14,14 @@ public abstract class AbstractAction implements DataObject, IAction {
         this.adder = adder;
     }
 
-    public boolean apply(@NotNull Player player, @NotNull String... args) {
+    @NotNull
+    public ActionResult apply(@NotNull Player player, @NotNull String... args) {
         var event = new ActionInvokeEvent(this,player,args);
         event.callEvent();
         if (!event.isCancelled()) {
-            invoke(player,event);
-            return true;
+            return invoke(player,event);
         } else {
-            return false;
+            return ActionResult.CANCELLED;
         }
     }
     @Override

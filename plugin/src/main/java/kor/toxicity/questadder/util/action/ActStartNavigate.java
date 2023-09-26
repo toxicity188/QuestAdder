@@ -3,6 +3,7 @@ package kor.toxicity.questadder.util.action;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.manager.LocationManager;
 import kor.toxicity.questadder.manager.NavigationManager;
 import kor.toxicity.questadder.util.NamedLocation;
@@ -26,8 +27,10 @@ public class ActStartNavigate extends AbstractAction {
         if (namedLocation == null) throw new RuntimeException("the location named \"" + location + "\" doesn't exist.");
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         NavigationManager.INSTANCE.startNavigate(player, namedLocation);
+        return ActionResult.SUCCESS;
     }
 }

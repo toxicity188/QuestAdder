@@ -4,6 +4,7 @@ import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -16,9 +17,14 @@ public class ActRemove extends AbstractAction {
         super(adder);
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         var data = QuestAdderBukkit.Companion.getPlayerData(player);
-        if (data != null) data.remove(name);
+        if (data != null) {
+            data.remove(name);
+            return ActionResult.SUCCESS;
+        }
+        return ActionResult.FAIL;
     }
 }

@@ -2,6 +2,7 @@ package kor.toxicity.questadder.util.action;
 
 import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.api.mechanic.CancellableAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.manager.LocationManager;
@@ -97,10 +98,12 @@ public class ActCinematic extends CancellableAction {
         else consumer = (i,p) -> p.teleport(loc.get(i));
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         var task = TASK_MAP.put(player.getUniqueId(),new CinematicTask(player));
         if (task != null) task.cancel();
+        return ActionResult.SUCCESS;
     }
 
 

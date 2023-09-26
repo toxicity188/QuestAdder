@@ -14,6 +14,7 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.persistence.PersistentDataType
 import java.util.*
 import java.util.regex.Pattern
@@ -62,10 +63,12 @@ fun ConfigurationSection.findSoundData(vararg string: String) = string.firstNotN
 
 fun ConfigurationSection.getAsStringList(key: String): List<String>? = if (isList(key)) getStringList(key) else if (isString(key)) listOf(getString(key)!!) else null
 
-fun ConfigurationSection.findItemStack(vararg string: String) = string.firstNotNullOfOrNull {
-    getAsItemStack(it)
+fun ConfigurationSection.findItemStack(vararg string: String, apply: (ItemMeta) -> Unit = {}) = string.firstNotNullOfOrNull {
+    getAsItemStack(it, apply)
 }
-fun ConfigurationSection.getAsItemStack(key: String): ItemStack? = if (isItemStack(key)) getItemStack(key) else if (isConfigurationSection(key)) getConfigurationSection(key)!!.run {
+fun ConfigurationSection.getAsItemStack(key: String, apply: (ItemMeta) -> Unit = {}): ItemStack? = if (isItemStack(key)) getItemStack(key)!!.apply {
+    itemMeta = itemMeta?.apply(apply)
+} else if (isConfigurationSection(key)) getConfigurationSection(key)!!.run {
     (try {
         Material.valueOf(findString("Type","type")?.uppercase() ?: "APPLE")
     } catch (ex: Exception) {
@@ -124,7 +127,7 @@ fun ConfigurationSection.getAsItemStack(key: String): ItemStack? = if (isItemSta
                         }
                     }
                 }
-                persistentDataContainer.set(QUEST_ADDER_ITEM_KEY, PersistentDataType.STRING, key)
+                apply(this)
             }
         }
     }

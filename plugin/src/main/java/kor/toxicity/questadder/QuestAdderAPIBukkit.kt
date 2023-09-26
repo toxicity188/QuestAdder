@@ -7,6 +7,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.api.mechanic.AbstractEvent
+import kor.toxicity.questadder.api.mechanic.DialogSender
 import kor.toxicity.questadder.api.registry.IBlockRegistry
 import kor.toxicity.questadder.api.util.INamedLocation
 import kor.toxicity.questadder.manager.*
@@ -195,5 +196,9 @@ object QuestAdderAPIBukkit: APIManager {
 
     override fun isSlated(player: Player): Boolean {
         return SlateManager.isSlated(player)
+    }
+
+    override fun getDialogSender(name: String): DialogSender? {
+        return DialogManager.getDialogSender(name)
     }
 }

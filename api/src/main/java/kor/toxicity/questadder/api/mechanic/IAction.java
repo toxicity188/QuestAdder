@@ -5,6 +5,6 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 public interface IAction {
-    boolean apply(@NotNull Player player, @NotNull String... args);
-    void invoke(@NotNull Player player, @NotNull QuestAdderEvent event);
+    @NotNull ActionResult apply(@NotNull Player player, @NotNull String... args);
+    @NotNull ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event);
 }

@@ -3,6 +3,7 @@ package kor.toxicity.questadder.util.action;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.util.ComponentReader;
 import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.entity.Player;
@@ -24,10 +25,14 @@ public class ActMessage extends AbstractAction {
         reader = new ComponentReader<>(message);
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         var component = reader.createComponent(event);
-        if (component != null) player.sendMessage(component);
-        else player.sendMessage("error!");
+        if (component != null) {
+            player.sendMessage(component);
+            return ActionResult.SUCCESS;
+        }
+        return ActionResult.FAIL;
     }
 }

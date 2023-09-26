@@ -3,6 +3,7 @@ package kor.toxicity.questadder.util.action;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
+import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.extension.PlayersKt;
 import kor.toxicity.questadder.util.builder.FunctionBuilder;
 import kor.toxicity.questadder.util.function.WrappedFunction;
@@ -30,10 +31,15 @@ public class ActMoney extends AbstractAction {
         if (!Number.class.isAssignableFrom(function.getReturnType())) throw new RuntimeException("this format is not a number: " + amount);
     }
 
+    @NotNull
     @Override
-    public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
+    public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         var find = function.apply(event);
-        if (find instanceof Number number) action.executeMoney(player, number.doubleValue());
+        if (find instanceof Number number) {
+            action.executeMoney(player, number.doubleValue());
+            return ActionResult.SUCCESS;
+        }
+        return ActionResult.FAIL;
     }
 
     public enum Action {

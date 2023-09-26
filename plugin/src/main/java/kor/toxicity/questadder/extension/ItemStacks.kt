@@ -10,6 +10,7 @@ import java.util.*
 
 
 val QUEST_ADDER_ITEM_KEY = NamespacedKey.fromString("questadder.item.key")!!
+val QUEST_ADDER_SENDER_KEY = NamespacedKey.fromString("questadder.sender.key")!!
 
 fun ItemStack.serializeToString(): String {
     return Base64.getEncoder().encodeToString(serializeAsBytes())

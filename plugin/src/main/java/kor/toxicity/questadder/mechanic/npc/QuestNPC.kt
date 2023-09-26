@@ -4,7 +4,7 @@ import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.mechanic.IQuestNPC
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.DialogManager
-import kor.toxicity.questadder.mechanic.Dialog
+import kor.toxicity.questadder.mechanic.dialog.Dialog
 import kor.toxicity.questadder.mechanic.quest.Quest
 import kor.toxicity.questadder.util.gui.Gui
 import org.bukkit.OfflinePlayer
@@ -13,7 +13,7 @@ import org.bukkit.entity.Player
 import java.io.File
 import java.util.function.Consumer
 
-class QuestNPC(adder: QuestAdderBukkit, file: File, val npcKey: String, section: ConfigurationSection): IQuestNPC {
+class QuestNPC(adder: QuestAdderBukkit, val file: File, val npcKey: String, section: ConfigurationSection): IQuestNPC {
     val id = section.findInt(0,"id","Id")
     val name = section.getString("name") ?: npcKey
     val soundData = section.findSoundData("typing-sound","TypingSound") ?: QuestAdderBukkit.Config.defaultTypingSound

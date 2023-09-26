@@ -9,6 +9,7 @@ import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.hooker.item.ItemsAdderItemDatabase
 import kor.toxicity.questadder.hooker.item.MMOItemsItemDatabase
 import kor.toxicity.questadder.hooker.item.OraxenItemDatabase
+import kor.toxicity.questadder.mechanic.sender.ItemDialogSender
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -102,7 +103,9 @@ object ItemManager: QuestAdderManager {
         }
         adder.loadFolder("items") { file, config ->
             config.getKeys(false).forEach {
-                config.getAsItemStack(it)?.let { i ->
+                config.getAsItemStack(it) { meta ->
+                    meta.persistentDataContainer.set(QUEST_ADDER_ITEM_KEY, PersistentDataType.STRING, it)
+                }?.let { i ->
                     itemMap.putIfAbsent(it,i)
                     Unit
                 } ?: run {
@@ -110,8 +113,10 @@ object ItemManager: QuestAdderManager {
                 }
             }
         }
-        Bukkit.getOnlinePlayers().forEach {
-            reloadPlayerInventory(it)
+        adder.addLazyTask {
+            Bukkit.getOnlinePlayers().forEach {
+                reloadPlayerInventory(it)
+            }
         }
     }
 
@@ -122,10 +127,17 @@ object ItemManager: QuestAdderManager {
         val inv = player.inventory
         for ((i, itemStack) in inv.contents.withIndex()) {
             itemStack?.let {
-                it.itemMeta?.persistentDataContainer?.get(QUEST_ADDER_ITEM_KEY, PersistentDataType.STRING)?.let { key ->
-                    inv.setItem(i, itemMap[key]?.apply {
-                        amount = it.amount
-                    })
+                it.itemMeta?.persistentDataContainer?.let { data ->
+                    data.get(QUEST_ADDER_ITEM_KEY, PersistentDataType.STRING)?.let { key ->
+                        inv.setItem(i, itemMap[key]?.apply {
+                            amount = it.amount
+                        })
+                    }
+                    data.get(QUEST_ADDER_SENDER_KEY, PersistentDataType.STRING)?.let { key ->
+                        inv.setItem(i, (DialogManager.getDialogSender(key) as? ItemDialogSender)?.item?.apply {
+                            amount = it.amount
+                        })
+                    }
                 }
             }
         }
