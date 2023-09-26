@@ -1,5 +1,9 @@
 package kor.toxicity.questadder.util.gui
 
+import kor.toxicity.questadder.api.gui.GuiData
+import kor.toxicity.questadder.api.gui.GuiExecutor
+import kor.toxicity.questadder.api.gui.GuiHolder
+import kor.toxicity.questadder.api.gui.MouseButton
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.ItemWriter
@@ -35,9 +39,9 @@ class ButtonGui<T: Any>(
 
         private val buttonMap = HashMap<Int,GuiItem>()
         var initializer: ((Inventory) -> Unit)? = null
-        var exceptAction: ((GuiData,ItemStack,Int,MouseButton) -> Unit)? = null
+        var exceptAction: ((GuiData, ItemStack, Int, MouseButton) -> Unit)? = null
 
-        fun addButton(int: Int, writer: (T) -> ItemStack, action: (GuiData,MouseButton) -> Unit) {
+        fun addButton(int: Int, writer: (T) -> ItemStack, action: (GuiData, MouseButton) -> Unit) {
             buttonMap[int] = GuiItem(writer,action)
         }
         fun addButton(int: Int, writer: ItemWriter<T>, action: (GuiData, MouseButton) -> Unit) {
@@ -46,7 +50,7 @@ class ButtonGui<T: Any>(
             },action)
         }
 
-        fun open(player: Player, t: T): Gui.GuiHolder {
+        fun open(player: Player, t: T): GuiHolder {
             return createInventory(name.createComponent(t) ?: "error!".asComponent(),size,HashMap<Int, ItemStack>().apply {
                 items.forEach {
                     if (it.key/9 < this@ButtonGui.size) put(it.key, it.value.write(t))
@@ -83,5 +87,5 @@ class ButtonGui<T: Any>(
         }
     }
 
-    private inner class GuiItem(val writer: (T) -> ItemStack, val action: (GuiData,MouseButton) -> Unit)
+    private inner class GuiItem(val writer: (T) -> ItemStack, val action: (GuiData, MouseButton) -> Unit)
 }

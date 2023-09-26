@@ -3,11 +3,11 @@ package kor.toxicity.questadder.manager.registry
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.block.IQuestBlock
 import kor.toxicity.questadder.api.registry.IBlockRegistry
-import kor.toxicity.questadder.block.NoteBlockData
-import kor.toxicity.questadder.block.QuestBlock
-import kor.toxicity.questadder.block.QuestBlockData
-import kor.toxicity.questadder.block.StringBlockData
+import kor.toxicity.questadder.block.*
+import org.bukkit.Material
 import org.bukkit.block.data.BlockData
+import org.bukkit.block.data.MultipleFacing
+import org.bukkit.block.data.type.Fire
 import org.bukkit.block.data.type.NoteBlock
 import org.bukkit.block.data.type.Tripwire
 import org.bukkit.configuration.ConfigurationSection
@@ -24,6 +24,14 @@ class BlockRegistry: IBlockRegistry {
         return when (data) {
             is NoteBlock -> dataMap[NoteBlockData.fromBlock(data)]
             is Tripwire -> dataMap[StringBlockData.fromBlock(data)]
+            is Fire -> dataMap[FireBlockData.fromBlock(data)]
+            is MultipleFacing -> when (data.material) {
+                Material.MUSHROOM_STEM -> dataMap[MushroomStemBlockData.fromBlock(data)]
+                Material.RED_MUSHROOM_BLOCK -> dataMap[RedMushroomBlockData.fromBlock(data)]
+                Material.BROWN_MUSHROOM_BLOCK -> dataMap[BrownMushroomBlockData.fromBlock(data)]
+                Material.CHORUS_PLANT -> dataMap[ChorusPlantBlockData.fromBlock(data)]
+                else -> null
+            }
             else -> null
         }
     }

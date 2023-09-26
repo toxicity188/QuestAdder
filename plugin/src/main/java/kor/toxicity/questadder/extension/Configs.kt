@@ -1,10 +1,10 @@
 package kor.toxicity.questadder.extension
 
 import kor.toxicity.questadder.QuestAdderBukkit
+import kor.toxicity.questadder.api.util.SoundData
 import kor.toxicity.questadder.manager.ItemManager
 import kor.toxicity.questadder.manager.ResourcePackManager
 import kor.toxicity.questadder.util.ResourcePackData
-import kor.toxicity.questadder.util.SoundData
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.attribute.Attribute
@@ -14,6 +14,7 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
+import org.bukkit.persistence.PersistentDataType
 import java.util.*
 import java.util.regex.Pattern
 
@@ -48,7 +49,16 @@ fun ConfigurationSection.findDouble(defaultValue: Double = 0.0, vararg string: S
     if (i == 0.0) null else i
 } ?: defaultValue
 
-fun ConfigurationSection.getAsSoundData(key: String) = if (isString(key)) SoundData.fromString(getString(key)!!) else if (isConfigurationSection(key)) SoundData.fromConfig(getConfigurationSection(key)!!) else null
+fun ConfigurationSection.getAsSoundData(key: String) = if (isString(key)) SoundData.fromString(getString(key)!!) else if (isConfigurationSection(key)) run {
+    val sec = getConfigurationSection(key)!!
+    sec.findString("Name","name")?.let {
+        SoundData(it, sec.findDouble(1.0,"Volume","volume").toFloat(), sec.findDouble(1.0,"Pitch","pitch").toFloat())
+    }
+} else null
+
+fun ConfigurationSection.findSoundData(vararg string: String) = string.firstNotNullOfOrNull {
+    getAsSoundData(it)
+}
 
 fun ConfigurationSection.getAsStringList(key: String): List<String>? = if (isList(key)) getStringList(key) else if (isString(key)) listOf(getString(key)!!) else null
 
@@ -71,7 +81,7 @@ fun ConfigurationSection.getAsItemStack(key: String): ItemStack? = if (isItemSta
                     lore(colored())
                 }
                 isUnbreakable = findBoolean("Unbreakable","unbreakable")
-                ItemFlag.values().forEach {
+                ItemFlag.entries.forEach {
                     addItemFlags(it)
                 }
                 findStringList("Attributes","attributes","Attribute","attribute")?.forEach {
@@ -88,7 +98,7 @@ fun ConfigurationSection.getAsItemStack(key: String): ItemStack? = if (isItemSta
                                 )
                             )
                         } catch (ex: Exception) {
-                            QuestAdderBukkit.warn("다음 Attribute를 읽을 수 없습니다: $it")
+                            QuestAdderBukkit.warn("unable to read that attribute: $it")
                         }
                     }
                 }
@@ -114,8 +124,9 @@ fun ConfigurationSection.getAsItemStack(key: String): ItemStack? = if (isItemSta
                         }
                     }
                 }
+                persistentDataContainer.set(QUEST_ADDER_ITEM_KEY, PersistentDataType.STRING, key)
             }
-    }
+        }
     }
 } else if (isString(key)) getString(key)!!.let {
     val matcher = ITEM_PATTERN.matcher(it)

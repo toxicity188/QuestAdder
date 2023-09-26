@@ -3,7 +3,14 @@ package kor.toxicity.questadder.mechanic
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.QuestAdder
 import kor.toxicity.questadder.api.event.DialogStartEvent
+import kor.toxicity.questadder.api.gui.GuiData
+import kor.toxicity.questadder.api.gui.GuiExecutor
+import kor.toxicity.questadder.api.gui.GuiHolder
+import kor.toxicity.questadder.api.gui.MouseButton
+import kor.toxicity.questadder.api.mechanic.DialogSender
+import kor.toxicity.questadder.api.mechanic.IActualNPC
 import kor.toxicity.questadder.api.mechanic.IDialog
+import kor.toxicity.questadder.api.util.SoundData
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.manager.GestureManager
@@ -12,13 +19,8 @@ import kor.toxicity.questadder.mechanic.npc.ActualNPC
 import kor.toxicity.questadder.nms.VirtualArmorStand
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.Null
-import kor.toxicity.questadder.util.SoundData
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
-import kor.toxicity.questadder.util.gui.Gui
-import kor.toxicity.questadder.util.gui.GuiData
-import kor.toxicity.questadder.util.gui.GuiExecutor
-import kor.toxicity.questadder.util.gui.MouseButton
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.title.Title
@@ -31,7 +33,6 @@ import java.time.Duration
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
-import kotlin.collections.HashMap
 
 class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, section: ConfigurationSection): IDialog {
     private interface TypingExecutor {
@@ -45,14 +46,15 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
 
     private class DialogCurrent(
         val player: Player,
-        val npc: ActualNPC,
+        val sender: DialogSender,
         val event: DialogStartEvent,
         var run: DialogRun
     ) {
         var executor: TypingExecutor? = null
+
         val typingSpeedMap = HashMap<String,Long>()
-        val typingSoundMap = HashMap<String,SoundData>()
-        var inventory: Gui.GuiHolder? = null
+        val typingSoundMap = HashMap<String, SoundData>()
+        var inventory: GuiHolder? = null
         var display: VirtualArmorStand? = null
         var safeEnd = false
     }
@@ -60,7 +62,7 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
 
         val current: DialogCurrent
 
-        constructor(player: Player, questNPC: ActualNPC) {
+        constructor(player: Player, questNPC: DialogSender) {
             this.current = DialogCurrent(player, questNPC, DialogStartEvent(
                 player,
                 questNPC,
@@ -127,8 +129,8 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
                     it.random().open(
                         current.player,
                         current.event,
-                        current.inventory?.data?.gui?.name ?: Component.empty(),
-                        talkerComponent ?: current.npc.questNPC.name.asComponent().deepClear(),
+                        current.inventory?.data?.gui?.guiName ?: Component.empty(),
+                        talkerComponent ?: current.sender.talkerName.asComponent().deepClear(),
                         if (talk.isNotEmpty()) talk.last().createComponent(current.event) ?: Component.empty() else null
                     )
                     return
@@ -146,16 +148,12 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
         }
 
         private fun startTask() {
-            var sound = QuestAdderBukkit.Config.defaultTypingSound
-            var speed = QuestAdderBukkit.Config.defaultTypingSpeed
+            var sound = current.sender.soundData
+            var speed = current.sender.typingSpeed
             talkerComponent?.let {
                 val onlyText = it.onlyText()
-                current.typingSoundMap[onlyText]?.let { d ->
-                    sound = d
-                }
-                current.typingSpeedMap[onlyText]?.let { l ->
-                    speed = l
-                }
+                sound = current.typingSoundMap[onlyText] ?: QuestAdderBukkit.Config.defaultTypingSound
+                speed = current.typingSpeedMap[onlyText] ?: QuestAdderBukkit.Config.defaultTypingSpeed
             }
             task = QuestAdderBukkit.taskTimer(speed,speed) {
                 if (iterator.hasNext()) {
@@ -181,7 +179,7 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
         private val playerTask = ConcurrentHashMap<UUID,DialogRun>()
         private val defaultExecutor = object : TypingManager {
             override fun create(current: DialogCurrent): TypingExecutor {
-                val selectedInv = current.npc.questNPC.inventory ?: createInventory("talking with ${current.npc.questNPC.npcKey}".asComponent(),5)
+                val selectedInv = current.sender.gui ?: createInventory("talking with ${current.sender.talkerName}".asComponent(),5)
                 val inv = current.inventory?.apply {
                     current.player.openInventory(inventory)
                 } ?: selectedInv.open(current.player, object :
@@ -224,12 +222,12 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
                 return object : TypingExecutor {
                     override fun initialize(talker: Component?) {
                         item.itemMeta = meta.apply {
-                            displayName((talker ?: current.npc.questNPC.name.asComponent().deepClear()).append(":".asComponent().deepClear()))
+                            displayName((talker ?: current.sender.talkerName.asComponent().deepClear()).append(":".asComponent().deepClear()))
                         }
                         for (i in 0..44) {
                             inv.inventory.setItem(i,null)
                         }
-                        selectedInv.items.forEach {
+                        selectedInv.innerItems.forEach {
                             inv.inventory.setItem(it.key,it.value)
                         }
 
@@ -280,7 +278,7 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
                             ))
                         }
                         override fun initialize(talker: Component?) {
-                            this.talker = talker ?: current.npc.questNPC.name.asComponent().deepClear()
+                            this.talker = talker ?: current.sender.talkerName.asComponent().deepClear()
                         }
                         override fun end() {
                         }
@@ -291,7 +289,8 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
                 override fun create(current: DialogCurrent): TypingExecutor {
                     return object : TypingExecutor {
 
-                        private var referencedEntity = current.npc.npc.entity
+                        private var referencedEntity = current.sender.entity ?: current.player
+
                         private val display = current.display ?: QuestAdderBukkit.nms.createArmorStand(current.player,referencedEntity.location).apply {
                             setText(Component.empty())
                             current.display = this
@@ -305,7 +304,7 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
                             referencedEntity = if (talker != null && talker.onlyText() == "player") {
                                 current.player
                             }
-                            else current.npc.npc.entity
+                            else current.sender.entity ?: current.player
                         }
 
                         override fun run(talk: Component) {
@@ -354,11 +353,11 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
      * @param block the function be called.
      * @since 1.0
      */
-    fun addTalkAction(index: Int, block: (Player,ActualNPC) -> Unit) {
+    fun addTalkAction(index: Int, block: (Player,DialogSender) -> Unit) {
         val act = talkTask[index] ?: {}
         talkTask[index] = {
             act(it)
-            block(it.player,it.npc)
+            block(it.player,it.sender)
         }
     }
     /**
@@ -367,11 +366,11 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
      * @param block the function be called.
      * @since 1.0
      */
-    fun addLastAction(block: (Player,ActualNPC) -> Unit) {
+    fun addLastAction(block: (Player,DialogSender) -> Unit) {
         val act = lastAction
         lastAction = {
             act(it)
-            block(it.player,it.npc)
+            block(it.player,it.sender)
         }
     }
 
@@ -460,7 +459,8 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
                 g.getString(it)?.let { s ->
                     try {
                         addTalkTask(it.toInt()) { current ->
-                            GestureManager.play(current.player, s, current.npc.npc)
+                            val sender = current.sender
+                            if (sender is IActualNPC) GestureManager.play(current.player, s, sender.toCitizensNPC())
                         }
                     } catch (ex: Exception) {
                         error("syntax error: the parameter \"$it\" is not an int.")
@@ -795,7 +795,7 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
         }
     }
 
-    fun start(player: Player, npc: ActualNPC) {
+    fun start(player: Player, npc: DialogSender) {
         val run = DialogRun(player,npc)
         if (run.current.event.isCancelled) return
         start(run)
@@ -803,11 +803,11 @@ class Dialog(adder: QuestAdder, file: File, private val dialogKey: String, secti
     private fun start(current: DialogCurrent) {
         start(DialogRun(current.apply {
             safeEnd = false
-            npc.questNPC.soundData.let {
-                typingSoundMap[npc.questNPC.name] = it
+            sender.soundData.let {
+                typingSoundMap[sender.talkerName] = it
                 typingSoundMap.putAll(typingSound)
             }
-            typingSpeedMap[npc.questNPC.name] = npc.questNPC.typingSpeed
+            typingSpeedMap[sender.talkerName] = sender.typingSpeed
             typingSpeedMap.putAll(typingSpeed)
         }))
     }

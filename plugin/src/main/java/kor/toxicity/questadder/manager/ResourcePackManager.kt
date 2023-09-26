@@ -6,8 +6,7 @@ import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.QuestBlockBreakEvent
 import kor.toxicity.questadder.api.event.QuestBlockInteractEvent
 import kor.toxicity.questadder.api.event.QuestBlockPlaceEvent
-import kor.toxicity.questadder.block.NoteBlockData
-import kor.toxicity.questadder.block.StringBlockData
+import kor.toxicity.questadder.block.*
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.extension.*
@@ -23,11 +22,11 @@ import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockBurnEvent
+import org.bukkit.event.block.BlockIgniteEvent
 import org.bukkit.event.block.BlockPlaceEvent
-import org.bukkit.event.block.BlockRedstoneEvent
+import org.bukkit.event.block.NotePlayEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
@@ -101,15 +100,16 @@ object ResourcePackManager: QuestAdderManager {
             )
             @EventHandler
             fun interact(e: PlayerInteractEvent) {
-                if (e.action == Action.RIGHT_CLICK_BLOCK) e.clickedBlock?.let {
-                    if (!e.player.isSneaking && blockRegistry.get(it.blockData) != null) e.isCancelled = true
-                }
                 e.clickedBlock?.let {
                     update(it.location)
                     blockRegistry.get(it.blockData)?.let { b ->
                         QuestBlockInteractEvent(b,e).callEvent()
                     }
                 }
+            }
+            @EventHandler
+            fun note(e: NotePlayEvent) {
+                if (blockRegistry.get(e.block.blockData) != null) e.isCancelled = true
             }
             @EventHandler
             fun burn(e: BlockBurnEvent) {
@@ -149,6 +149,13 @@ object ResourcePackManager: QuestAdderManager {
                     QuestBlockPlaceEvent(it,e).callEvent()
                 }
             }
+            @EventHandler
+            fun ignite(e: BlockIgniteEvent) {
+                e.ignitingBlock?.let {
+                    if (blockRegistry.get(it.blockData) != null) e.isCancelled = true
+                }
+            }
+
 
             private fun update(location: Location) {
                 val taskArray = ArrayList<() -> Unit>()
@@ -279,6 +286,11 @@ object ResourcePackManager: QuestAdderManager {
         blockRegistry.clear()
         val noteBlockMap = HashMap<String,String>()
         val stringBlockMap = HashMap<String,String>()
+        val fireBlockMap = HashMap<String,String>()
+        val stemBlockMap = HashMap<String,String>()
+        val brownMushroomMap = HashMap<String,String>()
+        val redMushroomMap = HashMap<String,String>()
+        val chorusPlantMap = HashMap<String,String>()
         blocks.loadYamlFolder { _, c ->
             c.getKeys(false).forEach {
                 c.getConfigurationSection(it)?.let { config ->
@@ -296,44 +308,43 @@ object ResourcePackManager: QuestAdderManager {
                             when (data) {
                                 is NoteBlockData -> noteBlockMap[data.toKey()] = file.nameWithoutExtension
                                 is StringBlockData -> stringBlockMap[data.toKey()] = file.nameWithoutExtension
+                                is FireBlockData -> fireBlockMap[data.toKey()] = file.nameWithoutExtension
+                                is MushroomStemBlockData -> stemBlockMap[data.toKey()] = file.nameWithoutExtension
+                                is BrownMushroomBlockData -> brownMushroomMap[data.toKey()] = file.nameWithoutExtension
+                                is RedMushroomBlockData -> redMushroomMap[data.toKey()] = file.nameWithoutExtension
+                                is ChorusPlantBlockData -> chorusPlantMap[data.toKey()] = file.nameWithoutExtension
                             }
                         }
                     }
                 }
             }
         }
-        if (noteBlockMap.isNotEmpty()) {
-            JsonWriter(File(minecraftBlockStates,"note_block.json").writer().buffered()).use {
-                gson.toJson(
-                    JsonObject().apply {
-                        add("variants",JsonObject().apply {
-                            noteBlockMap.forEach { e ->
-                                add(e.key, JsonObject().apply {
-                                    addProperty("model", "questadder:block/${e.value}")
-                                })
-                            }
-                        })
-                    },
-                    it
-                )
+        fun saveHashMap(map: HashMap<String,String>, blockName: String) {
+            if (map.isNotEmpty()) {
+                JsonWriter(File(minecraftBlockStates,"$blockName.json").writer().buffered()).use {
+                    gson.toJson(
+                        JsonObject().apply {
+                            add("variants",JsonObject().apply {
+                                map.forEach { e ->
+                                    add(e.key, JsonObject().apply {
+                                        addProperty("model", "questadder:block/${e.value}")
+                                    })
+                                }
+                            })
+                        },
+                        it
+                    )
+                }
             }
         }
-        if (stringBlockMap.isNotEmpty()) {
-            JsonWriter(File(minecraftBlockStates,"tripwire.json").writer().buffered()).use {
-                gson.toJson(
-                    JsonObject().apply {
-                        add("variants",JsonObject().apply {
-                            stringBlockMap.forEach { e ->
-                                add(e.key, JsonObject().apply {
-                                    addProperty("model", "questadder:block/${e.value}")
-                                })
-                            }
-                        })
-                    },
-                    it
-                )
-            }
-        }
+        saveHashMap(noteBlockMap,"note_block")
+        saveHashMap(stringBlockMap,"tripwire")
+        saveHashMap(fireBlockMap,"fire")
+        saveHashMap(stemBlockMap,"mushroom_stem")
+        saveHashMap(brownMushroomMap,"brown_mushroom_block")
+        saveHashMap(redMushroomMap,"red_mushroom_map")
+        saveHashMap(chorusPlantMap,"chorus_plant")
+
 
         //item
         adder.addLazyTask {

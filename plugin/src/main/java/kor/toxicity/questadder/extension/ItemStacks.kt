@@ -4,9 +4,12 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import org.bukkit.NamespacedKey
 import org.bukkit.inventory.ItemStack
 import java.util.*
 
+
+val QUEST_ADDER_ITEM_KEY = NamespacedKey.fromString("questadder.item.key")!!
 
 fun ItemStack.serializeToString(): String {
     return Base64.getEncoder().encodeToString(serializeAsBytes())

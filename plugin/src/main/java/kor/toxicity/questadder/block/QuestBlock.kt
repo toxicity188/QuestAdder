@@ -36,6 +36,11 @@ class QuestBlock(private val blockKey: String, section: ConfigurationSection): I
     val data = when (type) {
         BlockType.NOTE_BLOCK -> NoteBlockData.fromHash(hash)
         BlockType.STRING -> StringBlockData.fromHash(hash)
+        BlockType.CHORUS_PLANT -> ChorusPlantBlockData.fromHash(hash)
+        BlockType.RED_MUSHROOM_BLOCK -> RedMushroomBlockData.fromHash(hash)
+        BlockType.BROWN_MUSHROOM_BLOCK -> BrownMushroomBlockData.fromHash(hash)
+        BlockType.MUSHROOM_STEM -> MushroomStemBlockData.fromHash(hash)
+        BlockType.FIRE -> FireBlockData.fromHash(hash)
     }
     private val blockData = data.createBlockData()
     override fun place(location: Location) {

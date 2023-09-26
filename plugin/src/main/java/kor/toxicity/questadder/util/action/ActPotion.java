@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class ActPotion extends AbstractAction {
     @DataField(aliases = "t", throwIfNull = true)
-    public PotionEffectType type;
+    public String type;
 
     @DataField(aliases = "d")
     public int duration = 20;
@@ -29,8 +29,16 @@ public class ActPotion extends AbstractAction {
         super(adder);
     }
 
+    private PotionEffectType t;
+    @Override
+    public void initialize() {
+        super.initialize();
+        t = PotionEffectType.getByName(type);
+        if (t == null) throw new RuntimeException("the type named \"" + type + "\" doesn't exist.");
+    }
+
     @Override
     public void invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
-        player.addPotionEffect(new PotionEffect(type,duration,amplifier,ambient,particles,icon));
+        player.addPotionEffect(new PotionEffect(t,duration,amplifier,ambient,particles,icon));
     }
 }

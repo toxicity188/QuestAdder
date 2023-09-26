@@ -1,8 +1,9 @@
 package kor.toxicity.questadder.manager
 
 import kor.toxicity.questadder.QuestAdderBukkit
+import kor.toxicity.questadder.api.gui.GuiHolder
+import kor.toxicity.questadder.api.gui.MouseButton
 import kor.toxicity.questadder.util.gui.Gui
-import kor.toxicity.questadder.util.gui.MouseButton
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -16,7 +17,7 @@ object GuiManager: QuestAdderManager {
             @EventHandler
             fun click(e: InventoryClickEvent) {
                 val clicked = e.view.topInventory
-                val holder = clicked.holder as? Gui.GuiHolder ?: return
+                val holder = clicked.holder as? GuiHolder ?: return
                 e.isCancelled = true
                 holder.executor.click(
                     holder.data,
@@ -35,7 +36,7 @@ object GuiManager: QuestAdderManager {
             @EventHandler
             fun end(e: InventoryCloseEvent) {
                 val inv = e.inventory
-                val holder = inv.holder as? Gui.GuiHolder ?: return
+                val holder = inv.holder as? GuiHolder ?: return
                 holder.executor.end(holder.data)
             }
         },adder)
@@ -52,7 +53,7 @@ object GuiManager: QuestAdderManager {
     }
     private fun closeAll() {
         Bukkit.getOnlinePlayers().forEach {
-            if (it.openInventory.topInventory.holder is Gui.GuiHolder) it.closeInventory()
+            if (it.openInventory.topInventory.holder is GuiHolder) it.closeInventory()
         }
     }
 }

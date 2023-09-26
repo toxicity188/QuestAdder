@@ -2,6 +2,8 @@ package kor.toxicity.questadder.manager
 
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.*
+import kor.toxicity.questadder.api.gui.GuiData
+import kor.toxicity.questadder.api.gui.MouseButton
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.extension.*
@@ -15,10 +17,7 @@ import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.api.mechanic.RegistrableAction
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
-import kor.toxicity.questadder.api.mechanic.AbstractEvent
 import kor.toxicity.questadder.util.gui.Gui
-import kor.toxicity.questadder.util.gui.GuiData
-import kor.toxicity.questadder.util.gui.MouseButton
 import kor.toxicity.questadder.util.gui.SubExecutor
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButtonType
 import kor.toxicity.questadder.util.gui.player.PlayerGuiData
@@ -298,7 +297,7 @@ object DialogManager: QuestAdderManager {
                         }
                         PlayerGuiButtonType.entries.forEach {
                             val t = QuestAdderBukkit.Config.getPlayerGuiButton(it) ?: return@forEach
-                            val action: (GuiData,MouseButton) -> Unit = when (it) {
+                            val action: (GuiData, MouseButton) -> Unit = when (it) {
                                 PlayerGuiButtonType.PAGE_BEFORE -> {
                                     { i, button ->
                                         when (button) {

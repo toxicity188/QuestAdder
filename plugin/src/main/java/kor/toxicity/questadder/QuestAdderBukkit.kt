@@ -15,13 +15,13 @@ import kor.toxicity.questadder.manager.*
 import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.nms.NMS
 import kor.toxicity.questadder.util.ComponentReader
-import kor.toxicity.questadder.util.SoundData
 import kor.toxicity.questadder.util.TimeFormat
 import kor.toxicity.questadder.util.action.ActCast
 import kor.toxicity.questadder.util.action.ActSkill
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.database.StandardDatabaseSupplier
 import kor.toxicity.questadder.api.mechanic.AbstractEvent
+import kor.toxicity.questadder.api.util.SoundData
 import kor.toxicity.questadder.util.event.*
 import kor.toxicity.questadder.util.event.itemsadder.EventCustomBlockBreak
 import kor.toxicity.questadder.util.event.itemsadder.EventCustomBlockClick
@@ -90,7 +90,7 @@ import java.util.concurrent.ThreadLocalRandom
 class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
     companion object: QuestAdder {
 
-        const val VERSION = "1.1.0"
+        const val VERSION = "1.1.1"
 
         private val listener = object : Listener {
         }
@@ -513,11 +513,11 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         loadFile("suffix")?.let { suffix ->
             Suffix.reload(suffix)
         }
-        managerList.forEach {
-            it.reload(this)
-        }
         loadFile("config")?.let { config ->
             Config.reload(config)
+        }
+        managerList.forEach {
+            it.reload(this)
         }
         var task: (() -> Unit)?
         do {

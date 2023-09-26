@@ -66,6 +66,7 @@ object ActionBuilder {
 
         put("input", ActInput::class.java)
         put("dialog", ActDialog::class.java)
+        put("customdialog", ActCustomDialog::class.java)
 
         put("stopsound", ActStopSound::class.java)
 
@@ -95,6 +96,8 @@ object ActionBuilder {
         put("respawn", EventRespawn::class.java)
         put("sneak", EventSneak::class.java)
         put("sprint", EventSprint::class.java)
+
+        put("itemclick", EventItemClick::class.java)
 
         put("resourecpack", EventResourcePack::class.java)
 

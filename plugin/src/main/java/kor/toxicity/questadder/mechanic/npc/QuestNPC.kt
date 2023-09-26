@@ -6,7 +6,6 @@ import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.mechanic.Dialog
 import kor.toxicity.questadder.mechanic.quest.Quest
-import kor.toxicity.questadder.util.SoundData
 import kor.toxicity.questadder.util.gui.Gui
 import org.bukkit.OfflinePlayer
 import org.bukkit.configuration.ConfigurationSection
@@ -17,9 +16,7 @@ import java.util.function.Consumer
 class QuestNPC(adder: QuestAdderBukkit, file: File, val npcKey: String, section: ConfigurationSection): IQuestNPC {
     val id = section.findInt(0,"id","Id")
     val name = section.getString("name") ?: npcKey
-    val soundData = section.findConfig("typing-sound","TypingSound")?.let { t ->
-        SoundData.fromConfig(t)
-    } ?: QuestAdderBukkit.Config.defaultTypingSound
+    val soundData = section.findSoundData("typing-sound","TypingSound") ?: QuestAdderBukkit.Config.defaultTypingSound
     val dialogs: List<Dialog> = ArrayList<Dialog>().apply {
         adder.addLazyTask {
             section.findStringList("dialogs","Dialog","dialog","Dialogs")?.mapNotNull {

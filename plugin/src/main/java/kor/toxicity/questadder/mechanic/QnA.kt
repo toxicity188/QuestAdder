@@ -3,13 +3,12 @@ package kor.toxicity.questadder.mechanic
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.DialogStartEvent
 import kor.toxicity.questadder.api.event.QuestAdderPlayerEvent
+import kor.toxicity.questadder.api.gui.GuiData
+import kor.toxicity.questadder.api.gui.GuiExecutor
+import kor.toxicity.questadder.api.gui.MouseButton
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.DialogManager
-import kor.toxicity.questadder.mechanic.npc.ActualNPC
 import kor.toxicity.questadder.util.ItemWriter
-import kor.toxicity.questadder.util.gui.GuiData
-import kor.toxicity.questadder.util.gui.GuiExecutor
-import kor.toxicity.questadder.util.gui.MouseButton
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.configuration.ConfigurationSection
@@ -70,7 +69,7 @@ class QnA(adder: QuestAdderBukkit, file: File, key: String, section: Configurati
                 button: MouseButton
             ) {
                 if (isPlayerInventory) return
-                qnaItemMap[clickedSlot]?.dialogs?.random()?.start(player,event.npc as ActualNPC)
+                qnaItemMap[clickedSlot]?.dialogs?.random()?.start(player,event.sender)
             }
         })
     }

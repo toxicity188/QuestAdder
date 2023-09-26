@@ -1,14 +1,18 @@
 package kor.toxicity.questadder.mechanic.npc
 
 import kor.toxicity.questadder.QuestAdderBukkit
+import kor.toxicity.questadder.api.gui.IGui
 import kor.toxicity.questadder.api.mechanic.IActualNPC
 import kor.toxicity.questadder.api.mechanic.IQuestNPC
+import kor.toxicity.questadder.api.util.SoundData
 import kor.toxicity.questadder.data.PlayerData
 import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.nms.VirtualEntity
 import net.citizensnpcs.api.npc.NPC
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.jetbrains.annotations.ApiStatus.Internal
@@ -69,6 +73,26 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
 
     override fun hashCode(): Int {
         return npc.hashCode()
+    }
+
+    override fun getEntity(): Entity? {
+        return npc.entity
+    }
+
+    override fun getSoundData(): SoundData {
+        return questNPC.soundData
+    }
+
+    override fun getTalkerName(): String {
+        return questNPC.name
+    }
+
+    override fun getTypingSpeed(): Long {
+        return questNPC.typingSpeed
+    }
+
+    override fun getGui(): IGui? {
+        return questNPC.inventory
     }
 
     private inner class PlayerDisplay(val player: Player, val data: PlayerData) {

@@ -5,16 +5,17 @@ import kor.toxicity.questadder.api.item.ItemDatabase
 import kor.toxicity.questadder.api.item.JsonItemDatabase
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
-import kor.toxicity.questadder.extension.getAsItemStack
-import kor.toxicity.questadder.extension.give
-import kor.toxicity.questadder.extension.info
-import kor.toxicity.questadder.extension.warn
+import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.hooker.item.ItemsAdderItemDatabase
 import kor.toxicity.questadder.hooker.item.MMOItemsItemDatabase
 import kor.toxicity.questadder.hooker.item.OraxenItemDatabase
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.persistence.PersistentDataType
 import java.util.regex.Pattern
 
 object ItemManager: QuestAdderManager {
@@ -51,6 +52,12 @@ object ItemManager: QuestAdderManager {
             if (isPluginEnabled("ItemsAdder")) itemDatabaseList.add(ItemsAdderItemDatabase())
             if (isPluginEnabled("Oraxen")) itemDatabaseList.add(OraxenItemDatabase())
             if (isPluginEnabled("MMOItems")) itemDatabaseList.add(MMOItemsItemDatabase())
+            registerEvents(object : Listener {
+                @EventHandler
+                fun join(e: PlayerJoinEvent) {
+                    reloadPlayerInventory(e.player)
+                }
+            },adder)
         }
         adder.command.addCommandAPI("item", arrayOf("i","아이템"),"item-related command.", true, CommandAPI("qa i")
             .addCommand("get") {
@@ -103,9 +110,24 @@ object ItemManager: QuestAdderManager {
                 }
             }
         }
+        Bukkit.getOnlinePlayers().forEach {
+            reloadPlayerInventory(it)
+        }
     }
 
     override fun end(adder: QuestAdderBukkit) {
     }
 
+    private fun reloadPlayerInventory(player: Player) {
+        val inv = player.inventory
+        for ((i, itemStack) in inv.contents.withIndex()) {
+            itemStack?.let {
+                it.itemMeta?.persistentDataContainer?.get(QUEST_ADDER_ITEM_KEY, PersistentDataType.STRING)?.let { key ->
+                    inv.setItem(i, itemMap[key]?.apply {
+                        amount = it.amount
+                    })
+                }
+            }
+        }
+    }
 }
