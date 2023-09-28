@@ -27,4 +27,12 @@ public abstract class AbstractAction implements DataObject, IAction {
     @Override
     public void initialize() {
     }
+
+    public long getRunningTime() {
+        return 0;
+    }
+
+    public boolean isUnsafe() {
+        return true;
+    }
 }

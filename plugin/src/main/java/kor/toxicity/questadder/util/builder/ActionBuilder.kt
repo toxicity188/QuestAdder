@@ -182,6 +182,7 @@ object ActionBuilder {
             }
         }
         var action = empty
+        var delay = 0L
         for ((index,parameter) in parameters.reversed().withIndex()) {
             val t = action
             val matcher = delayPattern.matcher(parameter)
@@ -199,6 +200,7 @@ object ActionBuilder {
                         t.cancel(player)
                     }
                 }
+                delay += d
             } else {
                 createAction(adder,parameter)?.let {
                     action = object : CancellableAction(adder) {
@@ -223,6 +225,14 @@ object ActionBuilder {
                 playerTask.remove(player.uniqueId)?.cancel()
             }
 
+            override fun getRunningTime(): Long {
+                return delay
+            }
+
+            override fun isUnsafe(): Boolean {
+                return true
+            }
+
             override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
                 return action.invoke(player, event)
             }
@@ -232,6 +242,14 @@ object ActionBuilder {
                     return action.invoke(player, event)
                 }
                 return ActionResult.ALREADY_EXECUTED
+            }
+
+            override fun getRunningTime(): Long {
+                return delay
+            }
+
+            override fun isUnsafe(): Boolean {
+                return false
             }
 
             override fun cancel(player: Player) {
@@ -325,6 +343,14 @@ object ActionBuilder {
                     }
                 }
 
+                override fun getRunningTime(): Long {
+                    return action.runningTime
+                }
+
+                override fun isUnsafe(): Boolean {
+                    return action.isUnsafe
+                }
+
                 override fun cancel(player: Player) {
                     action.cancel(player)
                 }
@@ -349,6 +375,13 @@ object ActionBuilder {
                 }
                 override fun cancel(player: Player) {
                     obj.cancel(player)
+                }
+                override fun getRunningTime(): Long {
+                    return obj.runningTime
+                }
+
+                override fun isUnsafe(): Boolean {
+                    return obj.isUnsafe
                 }
 
                 override fun unregister() {
