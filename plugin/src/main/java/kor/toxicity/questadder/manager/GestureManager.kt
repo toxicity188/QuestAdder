@@ -2,6 +2,7 @@ package kor.toxicity.questadder.manager
 
 import com.comphenix.protocol.ProtocolLibrary
 import com.ticxo.playeranimator.api.model.player.PlayerModel
+import kor.toxicity.questadder.QuestAdderAPIBukkit
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.extension.send
 import net.citizensnpcs.api.npc.NPC
@@ -17,17 +18,19 @@ object GestureManager: QuestAdderManager {
     }
 
     override fun reload(adder: QuestAdderBukkit) {
-        File(adder.dataFolder.apply {
-            mkdir()
-        },"gestures").run {
-            mkdir()
-            listFiles()?.forEach {
-                if (it.extension == "bbmodel") {
-                    QuestAdderBukkit.animator.animationManager.importAnimations("questadder",it)
+        QuestAdderBukkit.animator?.let { animator ->
+            File(adder.dataFolder.apply {
+                mkdir()
+            },"gestures").run {
+                mkdir()
+                listFiles()?.forEach {
+                    if (it.extension == "bbmodel") {
+                        animator.animationManager.importAnimations("questadder",it)
+                    }
                 }
             }
+            Bukkit.getConsoleSender().send("${animator.animationManager.registry.size} of gestures has successfully loaded.")
         }
-        Bukkit.getConsoleSender().send("${QuestAdderBukkit.animator.animationManager.registry.size} of gestures has successfully loaded.")
     }
 
     override fun end(adder: QuestAdderBukkit) {

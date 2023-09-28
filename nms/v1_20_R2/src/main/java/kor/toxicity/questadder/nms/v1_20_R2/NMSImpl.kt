@@ -1,5 +1,6 @@
 package kor.toxicity.questadder.nms.v1_20_R2
 
+import com.mojang.authlib.GameProfile
 import com.mojang.datafixers.util.Pair
 import com.mojang.math.Transformation
 import eu.endercentral.crazy_advancements.JSONMessage
@@ -12,6 +13,9 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import net.minecraft.network.chat.IChatBaseComponent
 import net.minecraft.network.protocol.game.*
+import net.minecraft.network.syncher.DataWatcherObject
+import net.minecraft.network.syncher.DataWatcherRegistry
+import net.minecraft.server.level.EntityPlayer
 import net.minecraft.server.network.PlayerConnection
 import net.minecraft.world.entity.*
 import net.minecraft.world.entity.decoration.EntityArmorStand
@@ -30,6 +34,7 @@ import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.inventory.ItemStack
 import org.joml.Vector3f
+import java.util.*
 
 class NMSImpl: NMS {
 
@@ -167,5 +172,29 @@ class NMSImpl: NMS {
             RelativeMovement.entries.toSet(),
             player.entityId
         ))
+    }
+
+    override fun createFakePlayer(player: Player, location: Location, skin: GameProfile): VirtualPlayer {
+        return VirtualPlayerImpl(player, location, skin)
+    }
+    private class VirtualPlayerImpl(player: Player, location: Location, skin: GameProfile): VirtualEntityImpl<EntityPlayer>(player, EntityPlayer((Bukkit.getServer() as CraftServer).server,(location.world as CraftWorld).handle,skin,null).apply {
+        a(location.x,location.y,location.z,location.yaw,location.pitch)
+    }), VirtualPlayer {
+        init {
+            connection.a(ClientboundPlayerInfoUpdatePacket(EnumSet.noneOf(ClientboundPlayerInfoUpdatePacket.a::class.java).apply {
+                add(ClientboundPlayerInfoUpdatePacket.a.entries[0])
+            },listOf(entity)))
+            val watcher = entity.al()
+            watcher.a(DataWatcherObject(17, DataWatcherRegistry.a), 127, true)
+            connection.a(PacketPlayOutEntityMetadata(entity.ah(),watcher.c()))
+        }
+
+        override fun remove() {
+            connection.a(ClientboundPlayerInfoRemovePacket(listOf(entity.cv())))
+            super.remove()
+        }
+    }
+    override fun getGameProfile(player: Player): GameProfile {
+        return (player as CraftPlayer).handle.fQ()
     }
 }

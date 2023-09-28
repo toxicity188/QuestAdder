@@ -1,10 +1,14 @@
 package kor.toxicity.questadder.nms.v1_17_R1
 
+import com.mojang.authlib.GameProfile
 import com.mojang.datafixers.util.Pair
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.nms.*
 import net.kyori.adventure.text.Component
 import net.minecraft.network.protocol.game.*
+import net.minecraft.network.syncher.DataWatcherObject
+import net.minecraft.network.syncher.DataWatcherRegistry
+import net.minecraft.server.level.EntityPlayer
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.EnumItemSlot
 import net.minecraft.world.entity.decoration.EntityArmorStand
@@ -124,5 +128,33 @@ class NMSImpl: NMS {
             player.entityId,
             true
         ))
+    }
+
+    override fun createFakePlayer(player: Player, location: Location, skin: GameProfile): VirtualPlayer {
+        return VirtualPlayerImpl(player, location, skin)
+    }
+    private class VirtualPlayerImpl(player: Player, location: Location, skin: GameProfile): VirtualPlayer {
+        private val entity = EntityPlayer((Bukkit.getServer() as CraftServer).server,(location.world as CraftWorld).handle,skin).apply {
+            setLocation(location.x,location.y,location.z,location.yaw,location.pitch)
+        }
+        private val connection = (player as CraftPlayer).handle.b.apply {
+            sendPacket(PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.a, entity))
+            sendPacket(PacketPlayOutNamedEntitySpawn(entity))
+            val watcher = entity.dataWatcher
+            watcher.set(DataWatcherObject(17, DataWatcherRegistry.a), 127)
+            sendPacket(PacketPlayOutEntityMetadata(entity.id, watcher, true))
+        }
+
+        override fun teleport(location: Location) {
+            entity.setLocation(location.x,location.y,location.z,location.yaw,location.pitch)
+        }
+        override fun remove() {
+            connection.sendPacket(PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.e,entity))
+            connection.sendPacket(PacketPlayOutEntityDestroy(entity.id))
+        }
+    }
+
+    override fun getGameProfile(player: Player): GameProfile {
+        return (player as CraftPlayer).handle.profile
     }
 }

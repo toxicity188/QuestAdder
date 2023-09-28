@@ -1,5 +1,6 @@
 package kor.toxicity.questadder.nms.v1_18_R2
 
+import com.mojang.authlib.GameProfile
 import com.mojang.datafixers.util.Pair
 import eu.endercentral.crazy_advancements.JSONMessage
 import eu.endercentral.crazy_advancements.advancement.AdvancementDisplay
@@ -11,6 +12,11 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import net.minecraft.network.chat.IChatBaseComponent
 import net.minecraft.network.protocol.game.*
+import net.minecraft.network.syncher.DataWatcherObject
+import net.minecraft.network.syncher.DataWatcherRegistry
+import net.minecraft.server.level.EntityPlayer
+import net.minecraft.server.network.PlayerConnection
+import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.EnumItemSlot
 import net.minecraft.world.entity.decoration.EntityArmorStand
@@ -81,33 +87,22 @@ class NMSImpl: NMS {
     override fun createArmorStand(player: Player, location: Location): VirtualArmorStand {
         return VirtualArmorStandImpl(player, location)
     }
-    private class VirtualArmorStandImpl(player: Player, location: Location): VirtualArmorStand {
-        private val display = EntityArmorStand(EntityTypes.c,(location.world as CraftWorld).handle).apply {
-            a(location.x,location.y,location.z,location.yaw,location.pitch)
-            j(true)
-            n(true)
+    private class VirtualArmorStandImpl(player: Player, location: Location): VirtualEntityImpl<EntityArmorStand>(player,EntityArmorStand(EntityTypes.c,(location.world as CraftWorld).handle).apply {
+        a(location.x,location.y,location.z,location.yaw,location.pitch)
+        j(true)
+        n(true)
+    }), VirtualArmorStand {
+        init {
+            connection.a(PacketPlayOutEntityMetadata(entity.ae(),entity.ai(),true))
         }
-        private val connection = (player as CraftPlayer).handle.b.apply {
-            a(PacketPlayOutSpawnEntity(display))
-            a(PacketPlayOutEntityMetadata(display.ae(),display.ai(),true))
-        }
-
-        override fun teleport(location: Location) {
-            display.a(location.x,location.y,location.z,location.yaw,location.pitch)
-            connection.a(PacketPlayOutEntityTeleport(display))
-        }
-        override fun remove() {
-            connection.a(PacketPlayOutEntityDestroy(display.ae()))
-        }
-
         override fun setText(text: Component) {
-            (display.bukkitEntity as ArmorStand).customName(text)
-            connection.a(PacketPlayOutEntityMetadata(display.ae(),display.ai(),true))
+            (entity.bukkitEntity as ArmorStand).customName(text)
+            connection.a(PacketPlayOutEntityMetadata(entity.ae(),entity.ai(),true))
         }
         override fun setItem(itemStack: ItemStack) {
             val item = CraftItemStack.asNMSCopy(itemStack)
-            display.setItemSlot(EnumItemSlot.f, item,true)
-            connection.a(PacketPlayOutEntityEquipment(display.ae(), listOf(Pair(EnumItemSlot.f,item))))
+            entity.setItemSlot(EnumItemSlot.f, item,true)
+            connection.a(PacketPlayOutEntityEquipment(entity.ae(), listOf(Pair(EnumItemSlot.f,item))))
         }
     }
     override fun createItemDisplay(player: Player, location: Location): VirtualItemDisplay {
@@ -137,5 +132,42 @@ class NMSImpl: NMS {
             player.entityId,
             true
         ))
+    }
+
+    override fun createFakePlayer(player: Player, location: Location, skin: GameProfile): VirtualPlayer {
+        return VirtualPlayerImpl(player, location, skin)
+    }
+
+    private abstract class VirtualEntityImpl<T: Entity>(player: Player, protected val entity: T): VirtualEntity {
+        protected val connection: PlayerConnection = (player as CraftPlayer).handle.b.apply {
+            a(PacketPlayOutSpawnEntity(entity))
+        }
+        override fun teleport(location: Location) {
+            entity.a(location.x,location.y,location.z,location.yaw,location.pitch)
+            connection.a(PacketPlayOutEntityTeleport(entity))
+        }
+
+        override fun remove() {
+            connection.a(PacketPlayOutEntityDestroy(entity.ae()))
+        }
+    }
+    private class VirtualPlayerImpl(player: Player, location: Location, skin: GameProfile): VirtualEntityImpl<EntityPlayer>(player,
+        EntityPlayer((Bukkit.getServer() as CraftServer).server,(location.world as CraftWorld).handle,skin).apply {
+            a(location.x,location.y,location.z,location.yaw,location.pitch)
+        }), VirtualPlayer {
+        init {
+            connection.a(PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.a, entity))
+            connection.a(PacketPlayOutNamedEntitySpawn(entity))
+            val watcher = entity.ai()
+            watcher.b(DataWatcherObject(17, DataWatcherRegistry.a), 127)
+            connection.a(PacketPlayOutEntityMetadata(entity.ae(),watcher, true))
+        }
+        override fun remove() {
+            connection.a(PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.e, entity))
+            super.remove()
+        }
+    }
+    override fun getGameProfile(player: Player): GameProfile {
+        return (player as CraftPlayer).handle.fq()
     }
 }

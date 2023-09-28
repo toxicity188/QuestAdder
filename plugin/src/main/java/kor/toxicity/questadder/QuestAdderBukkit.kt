@@ -89,14 +89,14 @@ import java.util.concurrent.ThreadLocalRandom
 class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
     companion object: QuestAdder {
 
-        const val VERSION = "1.1.1"
+        const val VERSION = "1.1.2"
 
         private val listener = object : Listener {
         }
 
         lateinit var nms: NMS
             private set
-        lateinit var animator: PlayerAnimator
+        var animator: PlayerAnimator? = null
             private set
         private lateinit var plugin: QuestAdderBukkit
 
@@ -166,6 +166,8 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             LocationManager,
             GuiManager,
             ItemManager,
+            SkinManager,
+            EntityManager,
             GestureManager,
             DialogManager
         )
@@ -403,13 +405,17 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         plugin = this
         QuestAdderAPI.setInstance(Companion)
         try {
-            animator = PlayerAnimatorImpl.initialize(this)
             nms = Class.forName("kor.toxicity.questadder.nms.${Bukkit.getServer()::class.java.`package`.name.split(".")[3]}.NMSImpl").getConstructor().newInstance() as NMS
         } catch (ex: Exception) {
             warn("unsupported version found.")
             warn("plugin disabled.")
             Bukkit.getPluginManager().disablePlugin(this)
             return
+        }
+        try {
+            animator = PlayerAnimatorImpl.initialize(this)
+        } catch (ex: Exception) {
+            warn("this version does not support gesture.")
         }
         getCommand("questadder")?.setExecutor(command.createTabExecutor())
         val pluginManager = Bukkit.getPluginManager()
