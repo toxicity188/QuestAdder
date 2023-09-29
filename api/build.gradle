@@ -1,9 +1,0 @@
-afterEvaluate {
-    publishing {
-        publications {
-            shadow(MavenPublication) { publication ->
-                project.shadow.component(publication)
-            }
-        }
-    }
-}

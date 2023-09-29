@@ -3,7 +3,7 @@ subprojects {
         mavenLocal()
     }
     dependencies {
-        compileOnly project(":plugin")
-        compileOnly project(":api")
+        compileOnly(project(":plugin"))
+        compileOnly(project(":api"))
     }
 }
