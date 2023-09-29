@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.nms
 
 import com.mojang.authlib.GameProfile
+import com.mojang.authlib.properties.PropertyMap
 import net.kyori.adventure.text.Component
 import org.bukkit.Location
 import org.bukkit.command.CommandExecutor
@@ -20,4 +21,6 @@ interface NMS {
     fun changeFakeItemInHand(player: Player, itemStack: ItemStack, targetPlayer: Collection<Player>)
     fun changePosition(player: Player, location: Location)
     fun getGameProfile(player: Player): GameProfile
+    fun getProperties(gameProfile: GameProfile): PropertyMap
+
 }

@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.nms.v1_18_R2
 
 import com.mojang.authlib.GameProfile
+import com.mojang.authlib.properties.PropertyMap
 import com.mojang.datafixers.util.Pair
 import eu.endercentral.crazy_advancements.JSONMessage
 import eu.endercentral.crazy_advancements.advancement.AdvancementDisplay
@@ -169,5 +170,8 @@ class NMSImpl: NMS {
     }
     override fun getGameProfile(player: Player): GameProfile {
         return (player as CraftPlayer).handle.fq()
+    }
+    override fun getProperties(gameProfile: GameProfile): PropertyMap {
+        return gameProfile.properties
     }
 }

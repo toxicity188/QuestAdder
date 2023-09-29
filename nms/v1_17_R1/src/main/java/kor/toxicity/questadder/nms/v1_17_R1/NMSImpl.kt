@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.nms.v1_17_R1
 
 import com.mojang.authlib.GameProfile
+import com.mojang.authlib.properties.PropertyMap
 import com.mojang.datafixers.util.Pair
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.nms.*
@@ -156,5 +157,8 @@ class NMSImpl: NMS {
 
     override fun getGameProfile(player: Player): GameProfile {
         return (player as CraftPlayer).handle.profile
+    }
+    override fun getProperties(gameProfile: GameProfile): PropertyMap {
+        return gameProfile.properties
     }
 }

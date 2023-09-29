@@ -56,7 +56,7 @@ public class ActClone extends AbstractAction {
             prof = profile;
         } else {
             prof = new GameProfile(UUID.randomUUID(),"");
-            prof.getProperties().putAll("textures", nms.getGameProfile(player).getProperties().get("textures"));
+            nms.getProperties(prof).putAll("textures", nms.getProperties(nms.getGameProfile(player)).get("textures"));
         }
         EntityManager.INSTANCE.register(player,key, nms.createFakePlayer(player, loc != null ? loc.getLocation() : player.getLocation(), prof));
         return ActionResult.SUCCESS;

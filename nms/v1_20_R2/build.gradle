@@ -1,6 +1,5 @@
 dependencies {
     compileOnly("org.spigotmc:spigot:1.20.2-R0.1-SNAPSHOT")
-    compileOnly("com.mojang:datafixerupper:6.0.6")
     implementation fileTree("shade")
 }
 
