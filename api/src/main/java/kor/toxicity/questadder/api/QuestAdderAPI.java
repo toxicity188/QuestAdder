@@ -1,5 +1,6 @@
 package kor.toxicity.questadder.api;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -13,11 +14,17 @@ public final class QuestAdderAPI {
         throw new RuntimeException();
     }
 
-    public static QuestAdder getInstance() {
+    /**
+     * @return an API instance of QuestAdder
+     */
+    public static @NotNull QuestAdder getInstance() {
         return instance;
     }
 
+    //Do not call this method
+    @ApiStatus.Internal
     public static void setInstance(@NotNull QuestAdder instance) {
+        if (QuestAdderAPI.instance != null) throw new RuntimeException();
         QuestAdderAPI.instance = Objects.requireNonNull(instance);
     }
 

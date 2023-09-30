@@ -17,12 +17,7 @@ public abstract class AbstractAction implements DataObject, IAction {
     @NotNull
     public ActionResult apply(@NotNull Player player, @NotNull String... args) {
         var event = new ActionInvokeEvent(this,player,args);
-        event.callEvent();
-        if (!event.isCancelled()) {
-            return invoke(player,event);
-        } else {
-            return ActionResult.CANCELLED;
-        }
+        return event.callEvent() ? invoke(player,event) : ActionResult.CANCELLED;
     }
     @Override
     public void initialize() {

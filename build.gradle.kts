@@ -71,15 +71,6 @@ allprojects {
         compileOnly("io.lumine:MythicLib-dist:1.6.2-SNAPSHOT")
         compileOnly("com.github.BeYkeRYkt.LightAPI:lightapi-bukkit-common:5.3.0-Bukkit")
 
-        tasks.named<Test>("test") {
-            useJUnitPlatform()
-
-            maxHeapSize = "1G"
-
-            testLogging {
-                events("passed")
-            }
-        }
     }
 }
 
@@ -98,11 +89,6 @@ dependencies {
 val targetJavaVersion = 17
 
 tasks {
-    java {
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-        }
-    }
     jar {
         finalizedBy(shadowJar)
     }
@@ -134,14 +120,22 @@ tasks {
             expand(props)
         }
     }
-}
+    test {
+        useJUnitPlatform()
 
-tasks.withType<JavaCompile>().configureEach {
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible) {
-        options.release = targetJavaVersion
+        maxHeapSize = "1G"
+
+        testLogging {
+            events("passed")
+        }
     }
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+}
 
 kotlin {
     jvmToolchain(targetJavaVersion)
