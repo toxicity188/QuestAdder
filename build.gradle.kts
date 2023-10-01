@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version("1.9.10")
     id("com.github.johnrengelman.shadow") version("8.1.1")
     id("maven-publish")
+    id("org.jetbrains.dokka") version("1.9.0")
 }
 
 val questAdderGroup = "kor.toxicity"
@@ -70,8 +71,10 @@ allprojects {
         compileOnly("net.Indyuce:MMOItems-API:6.9.5-SNAPSHOT")
         compileOnly("io.lumine:MythicLib-dist:1.6.2-SNAPSHOT")
         compileOnly("com.github.BeYkeRYkt.LightAPI:lightapi-bukkit-common:5.3.0-Bukkit")
-
     }
+}
+subprojects {
+    apply(plugin = "org.jetbrains.dokka")
 }
 
 dependencies {
@@ -89,20 +92,6 @@ dependencies {
 val targetJavaVersion = 17
 
 tasks {
-    jar {
-        finalizedBy(shadowJar)
-    }
-    shadowJar {
-        relocate("kotlin","kor.toxicity.questadder.shaded.kotlin")
-        relocate("com.ticxo.playeranimator","kor.toxicity.questadder.shaded.com.ticxo.playeranimator")
-        relocate("org.apache.commons.io","kor.toxicity.questadder.shaded.org.apache.commons.io")
-        relocate("net.objecthunter","kor.toxicity.questadder.shaded.net.objecthunter")
-        relocate("org.zeroturnaround","kor.toxicity.questadder.shaded.org.zeroturnaround")
-        relocate("org.bstats","kor.toxicity.questadder.shaded.org.bstats")
-        dependencies {
-            exclude(dependency("org.jetbrains:annotations:13.0"))
-        }
-    }
     compileJava {
         options.encoding = Charsets.UTF_8.name()
         options.release.set(targetJavaVersion)
@@ -129,7 +118,28 @@ tasks {
             events("passed")
         }
     }
+    jar {
+        finalizedBy(shadowJar)
+        archiveFileName.set("QuestAdder.jar")
+    }
+    shadowJar {
+        finalizedBy(dokkaHtmlMultiModule)
+        archiveFileName.set("QuestAdder.jar")
+        relocate("kotlin","kor.toxicity.questadder.shaded.kotlin")
+        relocate("com.ticxo.playeranimator","kor.toxicity.questadder.shaded.com.ticxo.playeranimator")
+        relocate("org.apache.commons.io","kor.toxicity.questadder.shaded.org.apache.commons.io")
+        relocate("net.objecthunter","kor.toxicity.questadder.shaded.net.objecthunter")
+        relocate("org.zeroturnaround","kor.toxicity.questadder.shaded.org.zeroturnaround")
+        relocate("org.bstats","kor.toxicity.questadder.shaded.org.bstats")
+        dependencies {
+            exclude(dependency("org.jetbrains:annotations:13.0"))
+        }
+    }
+    dokkaHtmlMultiModule {
+        outputDirectory.set(file("${layout.buildDirectory.get()}/dokka"))
+    }
 }
+
 
 java {
     toolchain {

@@ -1,3 +1,5 @@
+import org.jetbrains.dokka.gradle.DokkaTaskPartial
+
 dependencies {
     compileOnly("com.github.PlaceholderAPI:PlaceholderAPI:master-SNAPSHOT")
     compileOnly(project(":plugin"))
