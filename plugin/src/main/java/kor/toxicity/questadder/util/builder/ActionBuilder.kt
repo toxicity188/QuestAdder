@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.QuestAdder
+import kor.toxicity.questadder.api.event.ActionCancelEvent
 import kor.toxicity.questadder.api.event.QuestAdderEvent
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.nms.RuntimeCommand
@@ -13,6 +14,7 @@ import kor.toxicity.questadder.api.mechanic.RegistrableAction
 import kor.toxicity.questadder.api.mechanic.AbstractEvent
 import kor.toxicity.questadder.api.mechanic.ActionResult
 import kor.toxicity.questadder.extension.*
+import kor.toxicity.questadder.manager.UUIDManager
 import kor.toxicity.questadder.util.action.*
 import kor.toxicity.questadder.util.event.*
 import kor.toxicity.questadder.util.reflect.ActionReflector
@@ -22,12 +24,16 @@ import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
+import kotlin.collections.HashMap
 
 object ActionBuilder {
 
     private val actionPattern = Pattern.compile("^(?<name>([a-zA-Z]+))(?<argument>\\{[\\w|\\W]*})?$")
     private val delayPattern = Pattern.compile("delay (?<delay>[0-9]+)")
+
+    private val playerTaskMap = ConcurrentHashMap<UUID,MutableMap<UUID,CancellableAction>>()
 
     private val actionMap = HashMap<String,Class<out AbstractAction>>().apply {
         put("message", ActMessage::class.java)
@@ -116,6 +122,15 @@ object ActionBuilder {
         put("questselect", EventQuestSelect::class.java)
     }
 
+    fun cancelAll(player: Player, reason: ActionCancelEvent.CancelReason) {
+        var cancelled = false
+        playerTaskMap.remove(player.uniqueId)?.forEach {
+            it.value.cancel(player)
+            cancelled = true
+        }
+        if (cancelled) ActionCancelEvent(player, reason).callEvent()
+    }
+
     fun addAction(name: String, clazz: Class<out AbstractAction>) {
         actionMap.putIfAbsent(name.lowercase(),clazz)
     }
@@ -174,9 +189,15 @@ object ActionBuilder {
 
     fun create(adder: QuestAdder, parameters: Collection<String>, unsafe: Boolean = false): CancellableAction? {
         val playerTask = HashMap<UUID,BukkitTask>()
+        val uuid = UUIDManager.createRandomUUID()
         val empty: CancellableAction = object : CancellableAction(adder) {
             override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
-                playerTask.remove(player.uniqueId)
+                val playerUUID = player.uniqueId
+                playerTask.remove(playerUUID)
+                playerTaskMap[playerUUID]?.let {
+                    it.remove(uuid)
+                    if (it.isEmpty()) playerTaskMap.remove(playerUUID)
+                }
                 return ActionResult.SUCCESS
             }
 
@@ -225,7 +246,12 @@ object ActionBuilder {
         }
         return if (action === empty) null else (if (unsafe) object : CancellableAction(adder) {
             override fun cancel(player: Player) {
-                playerTask.remove(player.uniqueId)?.cancel()
+                val playerUUID = player.uniqueId
+                playerTask.remove(playerUUID)?.cancel()
+                playerTaskMap[playerUUID]?.let {
+                    it.remove(uuid)
+                    if (it.isEmpty()) playerTaskMap.remove(playerUUID)
+                }
             }
 
             override fun getRunningTime(): Long {
@@ -242,6 +268,9 @@ object ActionBuilder {
         } else object : CancellableAction(adder) {
             override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
                 if (!playerTask.contains(player.uniqueId)) {
+                    playerTaskMap.getOrPut(player.uniqueId) {
+                        HashMap()
+                    }[uuid] = this
                     return action.invoke(player, event)
                 }
                 return ActionResult.ALREADY_EXECUTED
@@ -308,7 +337,7 @@ object ActionBuilder {
                                     predicate = { player, event ->
                                         val get = function.apply(event)
                                         val originalResult = original(player,event)
-                                        if (originalResult == ActionResult.SUCCESS && !(get as Boolean)) {
+                                        if (originalResult == ActionResult.SUCCESS && get as Boolean) {
                                             val otherResult = castActions.random().invoke(player, event)
                                             if (otherResult == ActionResult.SUCCESS) ActionResult.INSTEAD_OTHER_ACTION else otherResult
                                         } else originalResult

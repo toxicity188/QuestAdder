@@ -159,6 +159,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
 
         private val managerList = mutableListOf(
             ResourcePackManager,
+            UUIDManager,
             HookerManager,
             CallbackManager,
             NavigationManager,

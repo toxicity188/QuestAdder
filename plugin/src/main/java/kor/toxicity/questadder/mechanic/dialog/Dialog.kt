@@ -84,6 +84,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
 
         private var started = false
 
+
         fun start() {
             cancel()
             if (talkIndex < talk.size) {
@@ -812,6 +813,9 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
             sender.soundData.let {
                 typingSoundMap[sender.talkerName] = it
                 typingSoundMap.putAll(typingSound)
+            }
+            inventory?.let {
+                player.openInventory(it.inventory)
             }
             typingSpeedMap[sender.talkerName] = sender.typingSpeed
             typingSpeedMap.putAll(typingSpeed)

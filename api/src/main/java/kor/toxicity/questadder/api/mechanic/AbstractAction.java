@@ -5,6 +5,9 @@ import kor.toxicity.questadder.api.event.ActionInvokeEvent;
 import kor.toxicity.questadder.api.util.DataObject;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
 
 public abstract class AbstractAction implements DataObject, IAction {
 

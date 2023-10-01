@@ -80,14 +80,14 @@ object DialogManager: QuestAdderManager {
             fun quit(e: PlayerQuitEvent) {
                 val player = e.player
                 Dialog.stop(player)
-                actionMap.values.forEach {
-                    it.cancel(player)
-                }
+                ActionBuilder.cancelAll(player, ActionCancelEvent.CancelReason.QUIT)
                 selectedQuestMap.remove(player.uniqueId)
             }
             @EventHandler
             fun death(e: PlayerDeathEvent) {
-                Dialog.stop(e.player)
+                val player = e.player
+                Dialog.stop(player)
+                ActionBuilder.cancelAll(player, ActionCancelEvent.CancelReason.DEATH)
             }
             @EventHandler
             fun click(e: InventoryClickEvent) {

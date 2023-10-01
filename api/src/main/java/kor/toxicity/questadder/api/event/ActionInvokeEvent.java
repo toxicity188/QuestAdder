@@ -1,5 +1,6 @@
 package kor.toxicity.questadder.api.event;
 
+import io.th0rgal.oraxen.shaded.jetbrains.annotations.NotNull;
 import kor.toxicity.questadder.api.mechanic.IAction;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -20,6 +21,7 @@ public class ActionInvokeEvent extends QuestAdderPlayerEvent implements Cancella
     }
 
     @Override
+    @NotNull
     public IAction getAction() {
         return action;
     }
