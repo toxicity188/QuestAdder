@@ -6,8 +6,8 @@ plugins {
     id("org.jetbrains.dokka") version("1.9.0")
 }
 
-val questAdderGroup = "kor.toxicity"
-val questAdderVersion = "1.1.2-SNAPSHOT"
+val questAdderGroup = "kor.toxicity.questadder"
+val questAdderVersion = "1.1.3"
 
 allprojects {
     apply(plugin = "java")
