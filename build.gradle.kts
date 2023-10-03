@@ -78,6 +78,7 @@ subprojects {
 }
 
 dependencies {
+    runtimeOnly(project(":expansion"))
     implementation(project(path = ":nms:v1_17_R1", configuration = "shadow"))
     implementation(project(path = ":nms:v1_18_R1", configuration = "shadow"))
     implementation(project(path = ":nms:v1_18_R2", configuration = "shadow"))

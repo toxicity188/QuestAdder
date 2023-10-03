@@ -12,6 +12,5 @@ tasks {
     jar {
         archiveBaseName.set("Expansion-questadder")
         archiveExtension.set("patch")
-        destinationDirectory.set(file("$rootDir/plugin/src/main/resources"))
     }
 }
