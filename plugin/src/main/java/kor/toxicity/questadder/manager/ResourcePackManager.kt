@@ -35,6 +35,9 @@ import org.zeroturnaround.zip.ZipUtil
 import ru.beykerykt.minecraft.lightapi.common.LightAPI
 import java.io.*
 import java.util.*
+import java.util.zip.Deflater
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import javax.imageio.ImageIO
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -421,6 +424,44 @@ object ResourcePackManager: QuestAdderManager {
                 saveCustomModelData(QuestAdderBukkit.Config.defaultResourcePackItem, assetsMap.entries)
                 materialMap.forEach {
                     saveCustomModelData(it.key,it.value.entries)
+                }
+                val buildPath = build.path
+                if (QuestAdderBukkit.Config.zipResourcePack) ZipOutputStream(FileOutputStream(File(resource,"build.zip").apply {
+                    if (!exists()) delete()
+                }).buffered()).use {
+                    fun zip(file: File) {
+                        if (file.isFile) {
+                            val byte = file.readBytes()
+                            val entry = ZipEntry(file.path.substring(buildPath.length + 1).replace('\\','/'))
+                            it.putNextEntry(entry)
+                            it.write(byte)
+                            it.closeEntry()
+                        } else {
+                            file.listFiles()?.forEach { f ->
+                                zip(f)
+                            }
+                        }
+                    }
+                    it.setLevel(Deflater.BEST_COMPRESSION)
+                    it.setComment("This is an example zip file.")
+                    build.listFiles()?.forEach { f ->
+                        zip(f)
+                    }
+                    adder.getResource("pack.png")?.buffered()?.let { png ->
+                        val entry = ZipEntry("pack.png")
+                        it.putNextEntry(entry)
+                        it.write(png.readBytes())
+                        it.closeEntry()
+                    }
+                    val entry = ZipEntry("pack.mcmeta")
+                    it.putNextEntry(entry)
+                    it.write(gson.toJson(JsonObject().apply {
+                        add("pack",JsonObject().apply {
+                            addProperty("pack_format", QuestAdderBukkit.nms.getVersion().mcmetaVersion)
+                            addProperty("description","QuestAdder's example resource pack.")
+                        })
+                    }).toByteArray())
+                    it.closeEntry()
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()

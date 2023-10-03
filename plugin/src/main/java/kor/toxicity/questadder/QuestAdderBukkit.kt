@@ -98,6 +98,10 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             private set
         var animator: PlayerAnimator? = null
             private set
+
+        var reloaded = false
+            private set
+
         private lateinit var plugin: QuestAdderBukkit
 
         private val playerThreadMap = ConcurrentHashMap<UUID,PlayerThread>()
@@ -167,6 +171,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             LocationManager,
             GuiManager,
             ItemManager,
+            ShopManager,
             SkinManager,
             EntityManager,
             GestureManager,
@@ -199,6 +204,8 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         var timeFormat = TimeFormat(MemoryConfiguration())
             private set
         var questSuffix = listOf<Component>()
+            private set
+        var zipResourcePack = true
             private set
         fun getPlayerGuiButton(type: PlayerGuiButtonType) = playerGuiButton[type]
         internal fun reload(section: ConfigurationSection) {
@@ -261,6 +268,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
                     s.colored()
                 }
             }
+            zipResourcePack = section.getBoolean("zip-resource-pack", true)
         }
     }
     object Prefix {
@@ -533,8 +541,14 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         } while (task != null)
     }
     private fun reloadSync() {
+        if (reloaded) {
+            warn("plugin is still on reload.")
+            return
+        }
+        reloaded = true
         loadDatabase()
         load()
+        reloaded = false
     }
     private fun loadDatabase() {
         loadFile("database")?.let { database ->
@@ -545,8 +559,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         ReloadStartEvent().callEvent()
         asyncTask {
             var time = System.currentTimeMillis()
-            loadDatabase()
-            load()
+            reloadSync()
             time = System.currentTimeMillis() - time
             task {
                 callback(time)
