@@ -216,7 +216,7 @@ object FunctionBuilder {
             ThreadLocalRandom.current().nextDouble((args[0] as Number).toDouble(), (args[1] as Number).toDouble())
         }
         addFunction("index", listOf(Player::class.java, QuestNPC::class.java)) { _: Null, args ->
-            (args[1] as QuestNPC).getIndex(args[0] as Player)
+            (args[1] as QuestNPC).getIndex(args[0] as Player) ?: 0
         }
         addFunction("npcOf", listOf(String::class.java)) { _: Null, args ->
             DialogManager.getQuestNPC(args[0] as String)
@@ -330,7 +330,7 @@ object FunctionBuilder {
                 return returnType
             }
 
-            override fun operate(a: Any?, b: Any?): Any {
+            override fun operate(a: Any, b: Any): Any {
                 return operation(clazz.cast(a),clazz.cast(b))
             }
 
@@ -580,7 +580,9 @@ object FunctionBuilder {
                                                     }
 
                                                     override fun apply(t: Any): Any {
-                                                        return operator.operate(before.apply(t),after.apply(t))
+                                                        val b = before.apply(t)
+                                                        val a = after.apply(t)
+                                                        return if (b != null && a != null) operator.operate(b,a) else Null
                                                     }
                                                 }
                                             }
@@ -655,7 +657,9 @@ object FunctionBuilder {
                                     }
 
                                     override fun apply(t: Any): Any {
-                                        return operator.operate(func1.apply(t),func2.apply(t))
+                                        val f1 = func1.apply(t)
+                                        val f2 = func2.apply(t)
+                                        return if (f1 != null && f2 != null) operator.operate(f1,f2) else Null
                                     }
                                 }
                             }

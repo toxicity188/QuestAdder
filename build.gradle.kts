@@ -7,7 +7,7 @@ plugins {
 }
 
 val questAdderGroup = "kor.toxicity.questadder"
-val questAdderVersion = "1.1.3"
+val questAdderVersion = "1.1.4"
 
 allprojects {
     apply(plugin = "java")

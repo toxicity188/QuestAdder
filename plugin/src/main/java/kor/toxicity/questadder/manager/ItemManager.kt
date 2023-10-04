@@ -36,7 +36,7 @@ object ItemManager: QuestAdderManager {
                 val a = matcher.group("argument") ?: "{}"
                 return itemMap[n] ?: itemDatabaseList.firstNotNullOfOrNull {
                     when (it) {
-                        is JsonItemDatabase -> it.getItem(n, a)
+                        is JsonItemDatabase -> it.getItemStack(n, a)
                         else -> it.getItem(n)
                     }
                 }

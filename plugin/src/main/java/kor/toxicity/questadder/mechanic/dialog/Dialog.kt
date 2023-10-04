@@ -323,6 +323,24 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                     }
                 }
             })
+            put("tooltip", object : TypingManager {
+                override fun create(current: DialogCurrent): TypingExecutor {
+                    return object : TypingExecutor {
+                        private var talker: Component = Component.empty()
+
+                        override fun initialize(talker: Component?) {
+                            this.talker = talker ?: current.sender.talkerName.asComponent().deepClear()
+                        }
+
+                        override fun run(talk: Component) {
+                        }
+
+                        override fun end() {
+                        }
+
+                    }
+                }
+            })
         }
     }
     private val talk = ArrayList<ComponentReader<DialogStartEvent>>()
