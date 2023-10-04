@@ -1,0 +1,49 @@
+lore-buy-price:
+  - "Buy price: $price"
+lore-sell-price:
+  - "Sell price: $price"
+lore-remain-stock:
+  - "Remain stock: $stock"
+
+lore-buy:
+  - ""
+  - "<color:gray>(buy - left click)"
+lore-sell:
+  - ""
+  - "<color:gray>(sell - right click)"
+lore-buy-and-spell:
+  - ""
+  - "<color:gray>(buy - left click)"
+  - "<color:gray>(sell - right click)"
+
+
+message-buy-cannot-buying: "<color:red>Sorry, this item cannot buying."
+message-buy-not-have-money: "<color:red>Sorry, you don't have enough money to buy."
+message-buy-not-have-storage: "<color:red>Sorry, you don't have enough storage to buy."
+message-buy-not-have-item: "<color:red>Sorry, you don't have enough ingredient to buy."
+message-buy-not-have-stock: "<color:red>Sorry, this item is sold out."
+
+message-sell-cannot-selling: "<color:red>Sorry, this item cannot selling."
+message-sell-not-have-item: "<color:red>Sorry, you don't have item to sell."
+message-sell-not-have-storage: "<color:red>Sorry, you don't have enough storage to sell."
+
+button-page-before:
+  type: STONE_BUTTON
+  display: "Go to before page"
+  lore:
+    - "<color:gray>Go to before page."
+    - "<color:gray>Current page: $page / $max-page"
+
+
+button-page-after:
+  type: STONE_BUTTON
+  display: "Go to after page"
+  lore:
+    - "<color:gray>Go to after page."
+    - "<color:gray>Current page: $page / $max-page"
+
+button-player-status:
+  type: PLAYER_HEAD
+  display: "Player status"
+  lore:
+    - "<color:gray>current money: $money"

@@ -1,5 +1,6 @@
 package kor.toxicity.questadder.manager
 
+import com.google.gson.JsonObject
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.*
 import kor.toxicity.questadder.api.gui.GuiData
@@ -18,6 +19,8 @@ import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.api.mechanic.RegistrableAction
 import kor.toxicity.questadder.mechanic.sender.DialogSenderType
 import kor.toxicity.questadder.mechanic.sender.ItemDialogSender
+import kor.toxicity.questadder.shop.blueprint.ShopBlueprint
+import kor.toxicity.questadder.shop.implement.Shop
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.util.gui.Gui
@@ -60,6 +63,7 @@ object DialogManager: QuestAdderManager {
     private val questMap = HashMap<String, Quest>()
     private val qnaMap = HashMap<String, QnA>()
     private val senderMap = HashMap<String, DialogSender>()
+    private val shopMap = ConcurrentHashMap<String, Shop>()
 
     private val questNpcMap = HashMap<String, QuestNPC>()
     private val actualNPCMap = HashMap<UUID, ActualNPC>()
@@ -455,6 +459,11 @@ object DialogManager: QuestAdderManager {
             }
             true
         }
+        QuestAdderBukkit.asyncTaskTimer(QuestAdderBukkit.Config.autoSaveTime, QuestAdderBukkit.Config.autoSaveTime) {
+            shopMap.forEach {
+                if (!QuestAdderBukkit.DB.using.saveShop(adder, it.value)) QuestAdderBukkit.warn("unable to save this shop: ${it.value.getId()}")
+            }
+        }
     }
     private fun registerNPC(npc: NPC) {
         questNpcMap.values.firstOrNull {
@@ -490,6 +499,7 @@ object DialogManager: QuestAdderManager {
     fun getNPC(name: String) = actualNPCMap.values.firstOrNull {
         it.questNPC.npcKey == name
     }
+    fun getShop(name: String) = shopMap[name]
     fun getQuestNPC(name: String) = questNpcMap[name]
     fun getAllNPC(): Set<ActualNPC> = HashSet(actualNPCMap.values)
 
@@ -546,6 +556,23 @@ object DialogManager: QuestAdderManager {
                 QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
             }
         }
+        val shopReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
+            try {
+                val bluePrint = ShopBlueprint(adder, file, key, c)
+                val json = try {
+                    QuestAdderBukkit.DB.using.loadShop(adder, bluePrint)
+                } catch (ex: Exception) {
+                    QuestAdderBukkit.warn("unable to load shop data: $c.get ($key in ${file.name})")
+                    JsonObject()
+                }
+                shopMap.put(key, Shop(bluePrint, json))?.let {
+                    QuestAdderBukkit.warn("shop name collision found: $key in ${file.name} and ${it.getFile().name}")
+                }
+            } catch (ex: Exception) {
+                QuestAdderBukkit.warn("unable to load shop. ($key in ${file.name})")
+                QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
+            }
+        }
 
         exampleMap.forEach {
             val file = File(File(adder.dataFolder, it.key).apply {
@@ -581,6 +608,7 @@ object DialogManager: QuestAdderManager {
         questNpcMap.clear()
         actualNPCMap.clear()
         senderMap.clear()
+        shopMap.clear()
 
         fun loadConfig(name: String, reader: (File,String,ConfigurationSection) -> Unit) {
             adder.loadFolder(name) { file, config ->
@@ -594,6 +622,7 @@ object DialogManager: QuestAdderManager {
                                 "npc" -> npcReader(file,it,c)
                                 "qna" -> qnaReader(file,it,c)
                                 "sender" -> senderReader(file,it,c)
+                                "shop" -> shopReader(file,it,c)
                                 else -> reader(file,it,c)
                             }
                         } ?: reader(file,it,c)
@@ -608,6 +637,7 @@ object DialogManager: QuestAdderManager {
         loadConfig("quests", questReader)
         loadConfig("npcs", npcReader)
         loadConfig("senders", senderReader)
+        loadConfig("shops", shopReader)
 
         CitizensAPI.getNPCRegistry().forEach {
             if (it.isSpawned) registerNPC(it)
@@ -631,5 +661,8 @@ object DialogManager: QuestAdderManager {
     }
 
     override fun end(adder: QuestAdderBukkit) {
+        shopMap.forEach {
+            if (!QuestAdderBukkit.DB.using.saveShop(adder, it.value)) QuestAdderBukkit.warn("unable to save this shop: ${it.value.getId()}")
+        }
     }
 }

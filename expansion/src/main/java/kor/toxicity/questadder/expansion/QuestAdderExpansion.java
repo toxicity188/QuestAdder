@@ -8,6 +8,8 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
+
 @SuppressWarnings("unused")
 public final class QuestAdderExpansion extends PlaceholderExpansion {
     @Override
@@ -20,7 +22,7 @@ public final class QuestAdderExpansion extends PlaceholderExpansion {
                     var conditions = selectedQuest.getConditions();
                     try {
                         var i = Integer.parseInt(subString.substring("condition_".length()));
-                        var comp = conditions.size() > i ? conditions.get(i).createComponent(new QuestInvokeEvent(selectedQuest,player)) : null;
+                        var comp = conditions.size() > i ? conditions.get(i).createComponent(new QuestInvokeEvent(selectedQuest,player), Collections.emptyMap()) : null;
                         return comp != null ? PlainTextComponentSerializer.plainText().serialize(comp) : "";
                     } catch (NumberFormatException e) {
                         return null;

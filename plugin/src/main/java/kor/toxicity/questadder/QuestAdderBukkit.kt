@@ -171,11 +171,11 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             LocationManager,
             GuiManager,
             ItemManager,
-            ShopManager,
             SkinManager,
             EntityManager,
             GestureManager,
-            DialogManager
+            DialogManager,
+            ShopManager
         )
     }
     object Config {

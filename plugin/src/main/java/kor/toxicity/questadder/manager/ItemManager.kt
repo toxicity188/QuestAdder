@@ -2,6 +2,7 @@ package kor.toxicity.questadder.manager
 
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.item.ItemDatabase
+import kor.toxicity.questadder.api.item.ItemSupplier
 import kor.toxicity.questadder.api.item.JsonItemDatabase
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
@@ -21,7 +22,7 @@ import java.util.regex.Pattern
 
 object ItemManager: QuestAdderManager {
 
-    private var itemMap = HashMap<String,ItemStack>()
+    private var itemMap = HashMap<String, ItemSupplier>()
     private var itemDatabaseList = ArrayList<ItemDatabase>()
 
     private val itemPattern = Pattern.compile("^(?<name>(([a-zA-Z]|[가-힣]|_|-|:)+))(?<argument>\\{[\\w|\\W]*})?$")
@@ -29,15 +30,37 @@ object ItemManager: QuestAdderManager {
     fun getItem(name: String): ItemStack? {
         val matcher = itemPattern.matcher(name)
         return try {
-            if (!matcher.find()) itemMap[name] ?: itemDatabaseList.firstNotNullOfOrNull {
+            if (!matcher.find()) itemMap[name]?.get() ?: itemDatabaseList.firstNotNullOfOrNull {
                 it.getItem(name)
+            } else {
+                val n = matcher.group("name")
+                val a = matcher.group("argument") ?: "{}"
+                return itemMap[n]?.get() ?: itemDatabaseList.firstNotNullOfOrNull {
+                    when (it) {
+                        is JsonItemDatabase -> it.getItemStack(n, a)
+                        else -> it.getItem(n)
+                    }
+                }
+            }
+        } catch (ex: Exception) {
+            QuestAdderBukkit.warn("unable to get this item: $name")
+            QuestAdderBukkit.warn("reason: ${ex.message ?: "unknown"}")
+            null
+        }
+    }
+    fun getItemSupplier(name: String): ItemSupplier? {
+        val matcher = itemPattern.matcher(name)
+        return try {
+            if (!matcher.find()) {
+                QuestAdderBukkit.warn("unable to read this pattern: $name")
+                null
             } else {
                 val n = matcher.group("name")
                 val a = matcher.group("argument") ?: "{}"
                 return itemMap[n] ?: itemDatabaseList.firstNotNullOfOrNull {
                     when (it) {
-                        is JsonItemDatabase -> it.getItemStack(n, a)
-                        else -> it.getItem(n)
+                        is JsonItemDatabase -> it.getItemSupplier(n, a)
+                        else -> null
                     }
                 }
             }
@@ -106,7 +129,9 @@ object ItemManager: QuestAdderManager {
                 config.getAsItemStack(it) { meta ->
                     meta.persistentDataContainer.set(QUEST_ADDER_ITEM_KEY, PersistentDataType.STRING, it)
                 }?.let { i ->
-                    itemMap.putIfAbsent(it,i)
+                    itemMap.putIfAbsent(it, ItemSupplier {
+                        i
+                    })
                     Unit
                 } ?: run {
                     QuestAdderBukkit.warn("syntax error: $it (${file.name})")
@@ -129,7 +154,7 @@ object ItemManager: QuestAdderManager {
             itemStack?.let {
                 it.itemMeta?.persistentDataContainer?.let { data ->
                     data.get(QUEST_ADDER_ITEM_KEY, PersistentDataType.STRING)?.let { key ->
-                        inv.setItem(i, itemMap[key]?.apply {
+                        inv.setItem(i, itemMap[key]?.get()?.apply {
                             amount = it.amount
                         })
                     }

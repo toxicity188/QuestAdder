@@ -1,10 +1,17 @@
 package kor.toxicity.questadder.util.database
 
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.data.PlayerData
 import kor.toxicity.questadder.data.QuestData
 import kor.toxicity.questadder.extension.getAsStringList
 import kor.toxicity.questadder.mechanic.quest.QuestRecord
+import kor.toxicity.questadder.shop.blueprint.ShopBlueprint
+import kor.toxicity.questadder.shop.implement.Shop
 import org.bukkit.OfflinePlayer
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.MemoryConfiguration
@@ -24,6 +31,36 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
                 },"${player.uniqueId}.yml")
 
                 override fun close() {
+                }
+
+                private fun getShopDataFile(adder: QuestAdderBukkit, name: String) = File(File(File(adder.dataFolder.apply {
+                    if (!exists()) mkdir()
+                },".data").apply {
+                    if (!exists()) mkdir()
+                },".shop").apply {
+                    if (!exists()) mkdir()
+                },"${name}.json").apply {
+                    if (!exists()) outputStream().buffered().use {
+                        it.write("{}".toByteArray())
+                    }
+                }
+
+                override fun loadShop(adder: QuestAdderBukkit, blueprint: ShopBlueprint): JsonObject {
+                    return JsonReader(getShopDataFile(adder, blueprint.id).bufferedReader()).use {
+                        JsonParser.parseReader(it).asJsonObject
+                    }
+                }
+
+                override fun saveShop(adder: QuestAdderBukkit, shop: Shop): Boolean {
+                    return try {
+                        JsonWriter(getShopDataFile(adder, shop.getId()).bufferedWriter()).use {
+                            it.setIndent(" ")
+                            Gson().toJson(shop.serialize(), it)
+                        }
+                        true
+                    } catch (ex: Exception) {
+                        false
+                    }
                 }
 
                 override fun load(adder: QuestAdderBukkit, player: OfflinePlayer): PlayerData {
@@ -118,6 +155,7 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
                     it.execute("CREATE TABLE IF NOT EXISTS indexes(uuid CHAR(36) NOT NULL, name VARCHAR(255) NOT NULL, value INT UNSIGNED NOT NULL, PRIMARY KEY(uuid,name));")
                     it.execute("CREATE TABLE IF NOT EXISTS variables(uuid CHAR(36) NOT NULL, name VARCHAR(255) NOT NULL, type VARCHAR(255) NOT NULL, value TEXT(65536) NOT NULL, PRIMARY KEY(uuid,name));")
                     it.execute("CREATE TABLE IF NOT EXISTS quests(uuid CHAR(36) NOT NULL, name VARCHAR(255) NOT NULL, value TEXT(65535) NOT NULL, PRIMARY KEY(uuid,name));")
+                    it.execute("CREATE TABLE IF NOT EXISTS shops(id VARCHAR(255) NOT NULL, value TEXT(65535) NOT NULL, PRIMARY KEY(id));")
                 }
             }
 
@@ -125,6 +163,38 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
                 override fun close() {
                     mysql.close()
                 }
+
+                private fun getShopDataFile(adder: QuestAdderBukkit, name: String) = File(File(File(adder.dataFolder.apply { //TODO make a mysql load and save code
+                    if (!exists()) mkdir()
+                },".data").apply {
+                    if (!exists()) mkdir()
+                },".shop").apply {
+                    if (!exists()) mkdir()
+                },"${name}.json").apply {
+                    if (!exists()) outputStream().buffered().use {
+                        it.write("{}".toByteArray())
+                    }
+                }
+
+
+                override fun loadShop(adder: QuestAdderBukkit, blueprint: ShopBlueprint): JsonObject {
+                    return JsonReader(getShopDataFile(adder, blueprint.id).bufferedReader()).use {
+                        JsonParser.parseReader(it).asJsonObject
+                    }
+                }
+
+                override fun saveShop(adder: QuestAdderBukkit, shop: Shop): Boolean {
+                    return try {
+                        JsonWriter(getShopDataFile(adder, shop.getId()).bufferedWriter()).use {
+                            it.setIndent(" ")
+                            Gson().toJson(shop.serialize(), it)
+                        }
+                        true
+                    } catch (ex: Exception) {
+                        false
+                    }
+                }
+
 
                 override fun save(adder: QuestAdderBukkit, player: OfflinePlayer, playerData: PlayerData): Boolean {
                     val uuid = player.uniqueId.toString()

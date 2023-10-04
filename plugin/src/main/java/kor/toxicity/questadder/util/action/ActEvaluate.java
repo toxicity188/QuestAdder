@@ -12,6 +12,8 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
+
 public class ActEvaluate extends AbstractAction {
     @DataField(aliases = "p", throwIfNull = true)
     public String parameter;
@@ -31,7 +33,7 @@ public class ActEvaluate extends AbstractAction {
     @NotNull
     @Override
     public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
-        var comp = componentReader.createComponent(event);
+        var comp = componentReader.createComponent(event, Collections.emptyMap());
         if (comp == null) {
             throwRuntimeError();
             return ActionResult.FAIL;

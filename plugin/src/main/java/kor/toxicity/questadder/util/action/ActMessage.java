@@ -9,6 +9,8 @@ import kor.toxicity.questadder.api.util.DataField;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
+
 public class ActMessage extends AbstractAction {
     @DataField(aliases = "m",throwIfNull = true)
     public String message;
@@ -28,7 +30,7 @@ public class ActMessage extends AbstractAction {
     @NotNull
     @Override
     public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
-        var component = reader.createComponent(event);
+        var component = reader.createComponent(event, Collections.emptyMap());
         if (component != null) {
             player.sendMessage(component);
             return ActionResult.SUCCESS;

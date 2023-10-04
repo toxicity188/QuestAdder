@@ -694,9 +694,7 @@ object FunctionBuilder {
 
             other as HashedClassList
 
-            if (classes != other.classes) return false
-
-            return true
+            return classes == other.classes
         }
 
         override fun hashCode(): Int {

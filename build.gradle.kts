@@ -1,3 +1,5 @@
+import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
+
 plugins {
     `java-library`
     id("org.jetbrains.kotlin.jvm") version("1.9.10")
@@ -141,6 +143,29 @@ tasks {
     }
 }
 
+val sourcesJar by tasks.creating(Jar::class.java) {
+    dependsOn(tasks.classes)
+    fun getProjectSource(project: Project): Array<File> {
+        return if (project.subprojects.isEmpty()) project.sourceSets.main.get().allSource.srcDirs.toTypedArray() else ArrayList<File>().apply {
+            project.subprojects.forEach {
+                addAll(getProjectSource(it))
+            }
+        }.toTypedArray()
+    }
+    archiveClassifier.set("sources")
+    from(*getProjectSource(project))
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+val dokkaJar by tasks.creating(Jar::class.java) {
+    dependsOn(tasks.dokkaHtmlMultiModule)
+    archiveClassifier.set("dokka")
+    from(file("${layout.buildDirectory.get()}/dokka"))
+}
+
+artifacts {
+    archives(dokkaJar)
+    archives(sourcesJar)
+}
 
 java {
     toolchain {

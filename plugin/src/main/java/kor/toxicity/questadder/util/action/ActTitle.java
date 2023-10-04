@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.function.BiConsumer;
 
 public class ActTitle extends AbstractAction {
@@ -50,8 +51,8 @@ public class ActTitle extends AbstractAction {
         var titleReader = (title != null) ? new ComponentReader<QuestAdderEvent>(title) : null;
         var subTitleReader = (subtitle != null) ? new ComponentReader<QuestAdderEvent>(subtitle) : null;
         consumer = (p,e) -> {
-            var comp1 = (titleReader != null) ? titleReader.createComponent(e) : Component.empty();
-            var comp2 = (subTitleReader != null) ? subTitleReader.createComponent(e) : Component.empty();
+            var comp1 = (titleReader != null) ? titleReader.createComponent(e, Collections.emptyMap()) : Component.empty();
+            var comp2 = (subTitleReader != null) ? subTitleReader.createComponent(e, Collections.emptyMap()) : Component.empty();
             p.showTitle(Title.title(
                     (comp1 != null) ? comp1 : ERROR_COMPONENT,
                     (comp2 != null) ? comp2 : ERROR_COMPONENT,

@@ -66,7 +66,7 @@ class ComponentReader<T : Any>(string: String) {
 
         private val pattern = Pattern.compile("<((?<name>([a-zA-Z]+)):(?<value>(\\w|,|_|-|#|:)+))>")
 
-        private fun getNullBuilder(d: ComponentData) = StringComponentBuilder("<none>",d)
+        private fun getNullBuilder(d: ComponentData) = StringComponentBuilder("<none>",d, emptyMap())
 
         private val textColorMap = mapOf(
             "BLACK" to NamedTextColor.BLACK,
@@ -103,7 +103,7 @@ class ComponentReader<T : Any>(string: String) {
                 null
             },
             "decoration" to { s, c ->
-                val map = TextDecoration.values().associateWith {
+                val map = TextDecoration.entries.associateWith {
                     TextDecoration.State.FALSE
                 }.toMutableMap()
                 s.split(',').forEach {
@@ -173,7 +173,7 @@ class ComponentReader<T : Any>(string: String) {
         }
     }
 
-    private val components = ArrayList<(T) -> ComponentBuilder>()
+    private val components = ArrayList<(T, Map<String, List<Component>>) -> ComponentBuilder>()
 
     init {
         val comp = ComponentData()
@@ -186,7 +186,7 @@ class ComponentReader<T : Any>(string: String) {
                     if (matcher.find()) {
                         dataApply[matcher.group("name")]?.let {
                             it(matcher.group("value"),comp)?.let { component ->
-                                components.add {
+                                components.add { _, _ ->
                                     component
                                 }
                             }
@@ -195,14 +195,13 @@ class ComponentReader<T : Any>(string: String) {
                         val copy = comp.copy()
                         comp.gradient?.let {
                             val builder = GradientComponentBuilder(s1,copy,it)
-                            components.add {
+                            components.add { _, _ ->
                                 builder
                             }
                             comp.gradient = null
                         } ?: run {
-                            val builder = StringComponentBuilder(s1,copy)
-                            components.add {
-                                builder
+                            components.add { _, m ->
+                                StringComponentBuilder(s1,copy,m)
                             }
                         }
                     }
@@ -210,9 +209,9 @@ class ComponentReader<T : Any>(string: String) {
             } else {
                 FunctionBuilder.evaluate(s).let { p ->
                     val copy = comp.copy()
-                    components.add { t ->
+                    components.add { t, m ->
                         p.apply(t)?.run {
-                            StringComponentBuilder(toString(),copy)
+                            StringComponentBuilder(toString(),copy,m)
                         } ?: getNullBuilder(copy)
                     }
                 }
@@ -248,12 +247,63 @@ class ComponentReader<T : Any>(string: String) {
     }
 
     private class StringComponentBuilder(
-        val string: String,
-        val data: ComponentData
+        string: String,
+        val data: ComponentData,
+        map: Map<String, List<Component>>
     ): ComponentBuilder {
-        override fun length() = string.length
-        override fun build(index: Int) = (if (string.isNotEmpty()) Component.text(string.substring(index, index + 1)) else Component.empty()).font(data.font).color(data.color).decorations(data.decoration)
-        override fun build() = Component.text(string).font(data.font).color(data.color).decorations(data.decoration)
+        private val listComponent: List<Component>
+        init {
+            listComponent = parse(string, map)
+        }
+
+        fun parse(original: String, pair: Map<String, List<Component>>): List<Component> {
+            return when (pair.size) {
+                0 -> original.toCharArray().map {
+                    Component.text(it)
+                }
+                else -> {
+                    val list = ArrayList<Component>()
+                    fun split(target: String, map: Map<String, List<Component>>) {
+                        when (map.size) {
+                            0 -> {
+                                //never reach this
+                            }
+                            1 -> {
+                                val entry = map.entries.single()
+                                val split = target.split(entry.key)
+                                split.forEachIndexed { index, s ->
+                                    list.addAll(parse(s, emptyMap()))
+                                    if (index < split.lastIndex) list.addAll(entry.value)
+                                }
+                            }
+                            else -> {
+                                val entry = map.entries.first()
+                                val newMap = HashMap(map).apply {
+                                    remove(entry.key)
+                                }
+                                val split = target.split(entry.key)
+                                split.forEachIndexed { index, s ->
+                                    split(s, newMap)
+                                    if (index < split.lastIndex) list.addAll(entry.value)
+                                }
+                            }
+                        }
+                    }
+                    split(original, pair)
+                    list
+                }
+            }
+        }
+
+        override fun length() = listComponent.size
+        override fun build(index: Int) = if (listComponent.isNotEmpty()) listComponent[index].font(data.font).color(data.color).decorations(data.decoration) else Component.empty()
+        override fun build(): Component {
+            var empty = Component.empty()
+            listComponent.forEach {
+                empty = empty.append(it)
+            }
+            return empty.font(data.font).color(data.color).decorations(data.decoration)
+        }
     }
     private class GradientComponentBuilder(
         val string: String,
@@ -306,15 +356,15 @@ class ComponentReader<T : Any>(string: String) {
         val from: TextColor,
         val to: TextColor,
     )
-    fun createIterator(t: T) = try {
-        ComponentIteratorImpl(t)
+    fun createIterator(t: T, map: Map<String, List<Component>> = emptyMap()) = try {
+        ComponentIteratorImpl(t, map)
     } catch (ex: Exception) {
         null
     }
-    fun createComponent(t: T): Component? = try {
+    fun createComponent(t: T, map: Map<String, List<Component>> = emptyMap()): Component? = try {
         var result: Component = Component.empty()
         components.forEach {
-            result = result.append(it(t).build())
+            result = result.append(it(t,map).build())
         }
         result
     } catch (ex: Exception) {
@@ -327,12 +377,12 @@ class ComponentReader<T : Any>(string: String) {
         fun nextLine(): Component
     }
 
-    inner class ComponentIteratorImpl(private val t: T): ComponentIterator {
+    inner class ComponentIteratorImpl(private val t: T, map: Map<String, List<Component>>): ComponentIterator {
         private var index1 = 0
         private var index2 = 0
 
         private val parsedComponent = components.map {
-            it(t)
+            it(t,map)
         }
 
         override fun hasNext(): Boolean {

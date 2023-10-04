@@ -17,6 +17,7 @@ import kor.toxicity.questadder.manager.GestureManager
 import kor.toxicity.questadder.manager.SlateManager
 import kor.toxicity.questadder.mechanic.qna.QnA
 import kor.toxicity.questadder.nms.VirtualArmorStand
+import kor.toxicity.questadder.shop.implement.Shop
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.Null
 import kor.toxicity.questadder.util.builder.ActionBuilder
@@ -132,6 +133,12 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 talkerComponent ?: current.sender.talkerName.asComponent().deepClear(),
                 if (talk.isNotEmpty()) talk.last().createComponent(current.event) ?: Component.empty() else null
             )
+            shop?.let {
+                if (it.isNotEmpty()) {
+                    it.random().open(current.player, current.sender)
+                }
+                return
+            }
             qna?.let {
                 if (it.isNotEmpty()) {
                     it.random().open(endData) { d ->
@@ -333,6 +340,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                         }
 
                         override fun run(talk: Component) {
+                            //TODO Make a tooltip display
                         }
 
                         override fun end() {
@@ -347,6 +355,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
     private val talker = HashMap<Int,ComponentReader<DialogStartEvent>>()
     private var dialog: MutableList<Dialog>? = null
     private var qna: MutableList<QnA>? = null
+    private var shop: MutableList<Shop>? = null
     private var subDialog: MutableList<Dialog>? = null
     private var executorMap = HashMap<Int, TypingManager>()
     private var predicate: (DialogCurrent) -> Boolean = {
@@ -818,6 +827,18 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 } ?: error("not found error: the qna named $it doesn't exist.")
             }
         }
+        section.findStringList("Shop","Shops","shop","shops")?.forEach {
+            adder.addLazyTask {
+                DialogManager.getShop(it)?.let { q ->
+                    shop?.add(q) ?: run {
+                        shop = ArrayList<Shop>().apply {
+                            add(q)
+                        }
+                    }
+                } ?: error("not found error: the shop named $it doesn't exist.")
+            }
+        }
+
     }
 
     override fun start(player: Player, sender: DialogSender): DialogState? {

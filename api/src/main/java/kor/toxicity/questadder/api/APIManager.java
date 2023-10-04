@@ -19,27 +19,27 @@ import java.util.function.Consumer;
  */
 public interface APIManager {
     /**
-     * Add the item database of QuestAdder.
+     * Adds the item database of QuestAdder.
      * @param itemDatabase a database of item.
      * @since 1.0
      */
     void addItemDatabase(@NotNull ItemDatabase itemDatabase);
 
     /**
-     * Reload this plugin asynchronously.
+     * Reloads this plugin asynchronously.
      * @param callback the function that will be called when reload task is end
      * @since 1.0
      */
     void reloadPlugin(@NotNull Consumer<Long> callback);
     /**
-     * Reload this plugin synchronously.
+     * Reloads this plugin synchronously.
      * This method doesn't call both ReloadStartEvent and ReloadEndEvent.
      * @since 1.0
      */
     void reloadPluginSync();
 
     /**
-     * Get the dialog.
+     * Gets the dialog.
      * @since 1.0
      * @param name The yaml key of the dialog
      * @return The object of dialog or null
@@ -48,7 +48,7 @@ public interface APIManager {
     IDialog getDialog(@NotNull String name);
 
     /**
-     * Get the quest.
+     * Gets the quest.
      * @since 1.0
      * @param name The yaml key of the quest
      * @return The object of dialog or null
@@ -56,7 +56,7 @@ public interface APIManager {
     @Nullable
     IQuest getQuest(@NotNull String name);
     /**
-     * Get the action.
+     * Gets the action.
      * @since 1.0
      * @param name The yaml key of the action
      * @return the object of action or null
@@ -64,7 +64,7 @@ public interface APIManager {
     @Nullable
     AbstractAction getAction(@NotNull String name);
     /**
-     * Get the location.
+     * Gets the location.
      * @since 1.0
      * @param name The yaml key of the location
      * @return The object of location or null
@@ -73,7 +73,7 @@ public interface APIManager {
     INamedLocation getLocation(@NotNull String name);
 
     /**
-     * Add function in QuestAdder.
+     * Adds function in QuestAdder.
      * @param name The function name
      * @param args The argument of that function
      * @param function The block of that function
@@ -82,7 +82,7 @@ public interface APIManager {
     <T,R> void addFunction(@NotNull String name, @NotNull List<Class<?>> args, @NotNull Class<T> argsClass, @NotNull Class<R> returnClass, @NotNull BiFunction<T,Object[],R> function);
 
     /**
-     * Get NPC object from given uuid.
+     * Gets NPC object from given uuid.
      *
      * @param uuid An entity uuid of NPC
      * @return An object of NPC of null
@@ -91,7 +91,7 @@ public interface APIManager {
     @Nullable
     IActualNPC getNPC(@NotNull UUID uuid);
     /**
-     * Get NPC object from given name.
+     * Gets NPC object from given name.
      *
      * @param name A yaml key of the NPC
      * @return An object of NPC of null
@@ -101,7 +101,7 @@ public interface APIManager {
     IActualNPC getNPC(@NotNull String name);
 
     /**
-     * Get all NPC in server.
+     * Gets all NPC in server.
      *
      * @return All object of NPC in server
      * @since 1.0.3
@@ -110,27 +110,27 @@ public interface APIManager {
     Set<IActualNPC> getAllNPC();
 
     /**
-     * Add action in QuestAdder.
+     * Adds action in QuestAdder.
      * @param clazz The class of action
      * @since 1.0.2
      */
     void addAction(@NotNull String name, @NotNull Class<? extends AbstractAction> clazz);
     /**
-     * Add event in QuestAdder.
+     * Adds event in QuestAdder.
      * @param clazz The class of action
      * @since 1.0.2
      */
     void addEvent(@NotNull String name, @NotNull Class<? extends AbstractEvent<?>> clazz);
 
     /**
-     * Start navigate to specific location.
+     * Starts navigate to specific location.
      * @param player Player
      * @param location Location to navigate
      * @since 1.0.3
      */
     void startNavigate(@NotNull Player player, @NotNull INamedLocation location);
     /**
-     * End navigate.
+     * Ends navigate.
      * @param player Player
      * @since 1.0.3
      */
@@ -182,7 +182,7 @@ public interface APIManager {
     boolean isSlated(@NotNull Player player);
 
     /**
-     * Get Sender object from given uuid.
+     * Gets Sender object from given uuid.
      *
      * @param name A yaml key of the NPC
      * @return An object of Sender of null

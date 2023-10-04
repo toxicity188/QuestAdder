@@ -14,6 +14,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 
 public class ActInput extends AbstractAction {
@@ -50,7 +51,7 @@ public class ActInput extends AbstractAction {
     @Override
     public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         if (cal != null && fa != null) {
-            var message = componentReader.createComponent(event);
+            var message = componentReader.createComponent(event, Collections.emptyMap());
             if (message != null) CallbackManager.INSTANCE.openSign(player, List.of(
                     Component.empty(),
                     message,

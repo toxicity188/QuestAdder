@@ -5,6 +5,7 @@ import kor.toxicity.questadder.extension.findInt
 import kor.toxicity.questadder.extension.findString
 import kor.toxicity.questadder.extension.findStringList
 import kor.toxicity.questadder.manager.ResourcePackManager
+import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.inventory.ItemFlag
@@ -31,14 +32,14 @@ class ItemWriter<T: Any>(section: ConfigurationSection) {
         }
     }
 
-    fun write(t: T) = ItemStack(type).apply {
+    fun write(t: T, map: Map<String, List<Component>> = emptyMap()) = ItemStack(type).apply {
         itemMeta = itemMeta?.apply {
-            displayName(display?.createComponent(t))
+            displayName(display?.createComponent(t, map))
             lore(writerLore?.map {
-                it.createComponent(t)
+                it.createComponent(t, map)
             })
             setCustomModelData(writerData)
-            addItemFlags(*ItemFlag.values())
+            addItemFlags(*ItemFlag.entries.toTypedArray())
             isUnbreakable = true
         }
     }
