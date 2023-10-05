@@ -1,5 +1,6 @@
 package kor.toxicity.questadder.extension
 
+import kor.toxicity.questadder.QuestAdderBukkit
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.NamedTextColor
@@ -13,19 +14,7 @@ import java.util.*
 val QUEST_ADDER_ITEM_KEY = NamespacedKey.fromString("questadder.item.key")!!
 val QUEST_ADDER_SENDER_KEY = NamespacedKey.fromString("questadder.sender.key")!!
 
-fun ItemStack.serializeToString(): String {
-    return Base64.getEncoder().encodeToString(serializeAsBytes())
-}
-fun String.deserializeToItemStack(): ItemStack? {
-    return try {
-        ItemStack.deserializeBytes((Base64.getDecoder().decode(this)))
-    } catch (ex: Exception) {
-        null
-    }
-}
-
-fun ItemStack.getNameComponent() = (itemMeta.displayName() ?: type.toString().lowercase().asClearComponent()).append(
-    Component.space()).append("x$amount".asComponent(NamedTextColor.GREEN).decorate(TextDecoration.BOLD,TextDecoration.ITALIC)).hoverEvent(this)
+fun ItemStack.getNameComponent() = QuestAdderBukkit.platform.getItemName(this)
 
 fun List<ItemStack>.getNameComponent(): Component {
     var component = Component.empty()
@@ -46,6 +35,4 @@ fun List<ItemStack>.getNameString(): String {
     return component.toString()
 }
 
-fun ItemStack.getNameString() = "${itemMeta.displayName()?.let { c ->
-    LegacyComponentSerializer.legacySection().serialize(c)
-} ?: type.toString().lowercase()} x$amount"
+fun ItemStack.getNameString() = LegacyComponentSerializer.legacySection().serialize(getNameComponent())

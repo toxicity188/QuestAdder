@@ -48,8 +48,8 @@ class QuestBlock(private val blockKey: String, section: ConfigurationSection): I
         b.setBlockData(blockData,false)
         if (print.light != 0 && Bukkit.getPluginManager().isPluginEnabled("LightAPI")) {
             try {
-                val get = LightAPI.get().getLightLevel(location.world.name,location.blockX,location.blockY,location.blockZ)
-                LightAPI.get().setLightLevel(location.world.name,location.blockX,location.blockY,location.blockZ,get + print.light)
+                val get = LightAPI.get().getLightLevel(location.world!!.name,location.blockX,location.blockY,location.blockZ)
+                LightAPI.get().setLightLevel(location.world!!.name,location.blockX,location.blockY,location.blockZ,get + print.light)
             } catch (ex: Throwable) {
                 QuestAdderBukkit.warn("An error has occurred while using LightAPI.")
             }

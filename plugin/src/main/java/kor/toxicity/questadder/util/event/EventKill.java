@@ -32,8 +32,8 @@ public class EventKill extends AbstractEvent<EntityDeathEvent> {
         if (killer != null) {
             if (type != null && event.getEntityType() != type) return;
             if (name != null) {
-                var component = entity.customName();
-                if (component != null && !ComponentsKt.onlyText(component).equals(name)) return;
+                var component = entity.getCustomName();
+                if (component != null && !component.equals(name)) return;
             }
             apply(killer);
         }

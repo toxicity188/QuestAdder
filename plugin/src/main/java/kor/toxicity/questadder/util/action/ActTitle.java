@@ -1,5 +1,6 @@
 package kor.toxicity.questadder.util.action;
 
+import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
@@ -53,7 +54,7 @@ public class ActTitle extends AbstractAction {
         consumer = (p,e) -> {
             var comp1 = (titleReader != null) ? titleReader.createComponent(e, Collections.emptyMap()) : Component.empty();
             var comp2 = (subTitleReader != null) ? subTitleReader.createComponent(e, Collections.emptyMap()) : Component.empty();
-            p.showTitle(Title.title(
+            QuestAdderBukkit.Companion.getAudience().player(p).showTitle(Title.title(
                     (comp1 != null) ? comp1 : ERROR_COMPONENT,
                     (comp2 != null) ? comp2 : ERROR_COMPONENT,
                     times

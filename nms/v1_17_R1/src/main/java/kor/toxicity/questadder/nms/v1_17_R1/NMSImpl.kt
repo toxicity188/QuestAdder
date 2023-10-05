@@ -6,6 +6,7 @@ import com.mojang.datafixers.util.Pair
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.nms.*
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import net.minecraft.network.protocol.game.*
 import net.minecraft.network.syncher.DataWatcherObject
 import net.minecraft.network.syncher.DataWatcherRegistry
@@ -23,7 +24,7 @@ import org.bukkit.craftbukkit.v1_17_R1.CraftServer
 import org.bukkit.craftbukkit.v1_17_R1.CraftWorld
 import org.bukkit.craftbukkit.v1_17_R1.entity.CraftPlayer
 import org.bukkit.craftbukkit.v1_17_R1.inventory.CraftItemStack
-import org.bukkit.entity.ArmorStand
+import org.bukkit.craftbukkit.v1_17_R1.util.CraftChatMessage
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
@@ -91,7 +92,7 @@ class NMSImpl: NMS {
         }
 
         override fun setText(text: Component) {
-            (display.bukkitEntity as ArmorStand).customName(text)
+            display.customName = CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(text))
             connection.sendPacket(PacketPlayOutEntityMetadata(display.id, display.dataWatcher,true))
         }
 

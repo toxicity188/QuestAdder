@@ -7,6 +7,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.RegionEnterEvent
 import kor.toxicity.questadder.api.event.RegionExitEvent
+import kor.toxicity.questadder.extension.call
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -63,10 +64,10 @@ object WorldGuardManager: QuestAdderManager {
             }
             if (enterSet.isNotEmpty() && exitSet.isNotEmpty()) QuestAdderBukkit.task {
                 enterSet.forEach {
-                    RegionEnterEvent(player, it).callEvent()
+                    RegionEnterEvent(player, it).call()
                 }
                 exitSet.forEach {
-                    RegionExitEvent(player, it).callEvent()
+                    RegionExitEvent(player, it).call()
                 }
             }
         }

@@ -5,7 +5,6 @@ import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,8 +26,8 @@ public class EventMMOCastSkill extends AbstractEvent<PlayerCastSkillEvent> {
             var target = meta.getTargetEntity();
             if (type != null && target.getType() != type) return;
             if (name != null) {
-                var n = target.customName();
-                if (n != null && !PlainTextComponentSerializer.plainText().serialize(n).equals(name)) return;
+                var n = target.getCustomName();
+                if (n != null && !n.equals(name)) return;
             }
         }
         apply(event.getPlayer());

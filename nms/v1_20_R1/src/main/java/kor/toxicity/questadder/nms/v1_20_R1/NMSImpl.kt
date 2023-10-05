@@ -25,14 +25,13 @@ import org.bukkit.Location
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
+import org.bukkit.command.SimpleCommandMap
 import org.bukkit.craftbukkit.v1_20_R1.CraftServer
 import org.bukkit.craftbukkit.v1_20_R1.CraftWorld
 import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer
 import org.bukkit.craftbukkit.v1_20_R1.inventory.CraftItemStack
 import org.bukkit.craftbukkit.v1_20_R1.util.CraftChatMessage
-import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.Player
-import org.bukkit.entity.TextDisplay
 import org.bukkit.inventory.ItemStack
 import org.joml.Vector3f
 import java.util.*
@@ -71,8 +70,12 @@ class NMSImpl: NMS {
         if (!map.register("questadder",obj)) QuestAdderBukkit.warn("unable to register command: $name")
         return object: RuntimeCommand {
             override fun unregister() {
-                map.knownCommands.remove("questadder:$name")
-                map.knownCommands.remove(name)
+                val field = SimpleCommandMap::class.java.getDeclaredField("knownCommands")
+                field.isAccessible = true
+                val getMap = field.get(map) as MutableMap<*,*>
+                getMap.remove("questadder:$name")
+                getMap.remove(name)
+                field.isAccessible = false
             }
         }
     }
@@ -110,13 +113,13 @@ class NMSImpl: NMS {
             connection.a(PacketPlayOutEntityMetadata(entity.af(),entity.aj().c()))
         }
         override fun setText(text: Component) {
-            (entity.bukkitEntity as ArmorStand).customName(text)
+            entity.b(CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(text)))
             connection.a(PacketPlayOutEntityMetadata(entity.af(),entity.aj().c()))
         }
         override fun setItem(itemStack: ItemStack) {
             val item = CraftItemStack.asNMSCopy(itemStack)
             entity.setItemSlot(EnumItemSlot.f, item,true)
-            connection.a(PacketPlayOutEntityEquipment(entity.af(), listOf(Pair(EnumItemSlot.f,item))))
+            connection.a(PacketPlayOutEntityEquipment(entity.af(), listOf(Pair.of(EnumItemSlot.f,item))))
         }
     }
     override fun createItemDisplay(player: Player, location: Location): VirtualItemDisplay {
@@ -148,7 +151,7 @@ class NMSImpl: NMS {
         a(Display.BillboardConstraints.d)
     }), VirtualTextDisplay {
         override fun setText(text: Component) {
-            (entity.bukkitEntity as TextDisplay).text(text)
+            entity.c(CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(text)))
             connection.a(PacketPlayOutEntityMetadata(entity.af(),entity.aj().c()))
         }
     }
@@ -157,7 +160,7 @@ class NMSImpl: NMS {
     }
 
     override fun changeFakeItemInHand(player: Player, itemStack: ItemStack, targetPlayer: Collection<Player>) {
-        val packet = PacketPlayOutEntityEquipment(player.entityId, listOf(Pair(EnumItemSlot.a,CraftItemStack.asNMSCopy(itemStack))))
+        val packet = PacketPlayOutEntityEquipment(player.entityId, listOf(Pair.of(EnumItemSlot.a,CraftItemStack.asNMSCopy(itemStack))))
         targetPlayer.forEach {
             (it as CraftPlayer).handle.c.a(packet)
         }

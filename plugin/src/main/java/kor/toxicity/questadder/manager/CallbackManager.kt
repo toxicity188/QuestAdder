@@ -36,7 +36,7 @@ object CallbackManager: QuestAdderManager {
                 blockData.write(0,WrappedBlockData.createData(Material.OAK_SIGN))
                 blockPositionModifier.write(0,position)
             })
-            player.sendSignChange(loc, array)
+            QuestAdderBukkit.platform.changeSign(player, loc, array)
             sendServerPacket(player, createPacket(PacketType.Play.Server.OPEN_SIGN_EDITOR).apply {
                 blockPositionModifier.write(0,position)
             })

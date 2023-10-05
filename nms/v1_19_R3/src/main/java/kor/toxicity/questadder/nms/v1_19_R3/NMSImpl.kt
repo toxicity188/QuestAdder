@@ -25,12 +25,13 @@ import org.bukkit.Location
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
+import org.bukkit.command.SimpleCommandMap
 import org.bukkit.craftbukkit.v1_19_R3.CraftServer
 import org.bukkit.craftbukkit.v1_19_R3.CraftWorld
 import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer
+import org.bukkit.craftbukkit.v1_19_R3.entity.CraftTextDisplay
 import org.bukkit.craftbukkit.v1_19_R3.inventory.CraftItemStack
 import org.bukkit.craftbukkit.v1_19_R3.util.CraftChatMessage
-import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.inventory.ItemStack
@@ -71,8 +72,12 @@ class NMSImpl: NMS {
         if (!map.register("questadder",obj)) QuestAdderBukkit.warn("unable to register command: $name")
         return object: RuntimeCommand {
             override fun unregister() {
-                map.knownCommands.remove("questadder:$name")
-                map.knownCommands.remove(name)
+                val field = SimpleCommandMap::class.java.getDeclaredField("knownCommands")
+                field.isAccessible = true
+                val getMap = field.get(map) as MutableMap<*,*>
+                getMap.remove("questadder:$name")
+                getMap.remove(name)
+                field.isAccessible = false
             }
         }
     }
@@ -116,7 +121,7 @@ class NMSImpl: NMS {
             connection.a(PacketPlayOutEntityMetadata(entity.af(),entity.aj().c()))
         }
         override fun setText(text: Component) {
-            (entity.bukkitEntity as ArmorStand).customName(text)
+            entity.b(CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(text)))
             connection.a(PacketPlayOutEntityMetadata(entity.af(),entity.aj().c()))
         }
         override fun setItem(itemStack: ItemStack) {
@@ -147,7 +152,7 @@ class NMSImpl: NMS {
         a(Display.BillboardConstraints.d)
     }), VirtualTextDisplay {
         override fun setText(text: Component) {
-            (entity.bukkitEntity as TextDisplay).text(text)
+            entity.c(CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(text)))
             connection.a(PacketPlayOutEntityMetadata(entity.af(),entity.aj().c()))
         }
     }

@@ -7,7 +7,7 @@ import kor.toxicity.questadder.api.QuestAdder
 import kor.toxicity.questadder.api.event.DialogStartEvent
 import kor.toxicity.questadder.api.gui.GuiData
 import kor.toxicity.questadder.api.gui.GuiExecutor
-import kor.toxicity.questadder.api.gui.GuiHolder
+import kor.toxicity.questadder.api.gui.IGuiHolder
 import kor.toxicity.questadder.api.gui.MouseButton
 import kor.toxicity.questadder.api.mechanic.DialogSender
 import kor.toxicity.questadder.api.mechanic.IActualNPC
@@ -58,7 +58,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
 
         val typingSpeedMap = HashMap<String, Long>()
         val typingSoundMap = HashMap<String, SoundData>()
-        var inventory: GuiHolder? = null
+        var inventory: IGuiHolder? = null
         var display: VirtualArmorStand? = null
         var safeEnd = false
     }
@@ -71,7 +71,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 questNPC,
                 this@Dialog
             ).apply {
-                callEvent()
+                call()
             },this)
         }
         constructor(dialogCurrent: DialogCurrent) {
@@ -246,8 +246,8 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
 
                 return object : TypingExecutor {
                     override fun initialize(talker: Component?) {
-                        item.itemMeta = meta.apply {
-                            displayName((talker ?: current.sender.talkerName.asComponent().deepClear()).append(":".asComponent().deepClear()))
+                        item.itemMeta = meta?.apply {
+                            QuestAdderBukkit.platform.setDisplay(this, (talker ?: current.sender.talkerName.asComponent().deepClear()).append(":".asComponent().deepClear()))
                         }
                         for (i in 0..44) {
                             inv.inventory.setItem(i,null)
@@ -261,8 +261,8 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                     }
 
                     override fun run(talk: Component) {
-                        item.itemMeta = meta.apply {
-                            lore(listOf(talk))
+                        item.itemMeta = meta?.apply {
+                            QuestAdderBukkit.platform.setLore(this, listOf(talk))
                         }
                         inv.inventory.setItem(22, item)
                         current.player.updateInventory()
@@ -292,7 +292,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                         private var talker: Component = Component.empty()
 
                         override fun run(talk: Component) {
-                            current.player.showTitle(Title.title(
+                            QuestAdderBukkit.audience.player(current.player).showTitle(Title.title(
                                 talker,
                                 talk,
                                 Title.Times.times(

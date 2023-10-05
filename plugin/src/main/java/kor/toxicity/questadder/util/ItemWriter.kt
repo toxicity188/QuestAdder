@@ -1,5 +1,6 @@
 package kor.toxicity.questadder.util
 
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.extension.findConfig
 import kor.toxicity.questadder.extension.findInt
 import kor.toxicity.questadder.extension.findString
@@ -34,8 +35,8 @@ class ItemWriter<T: Any>(section: ConfigurationSection) {
 
     fun write(t: T, map: Map<String, List<Component>> = emptyMap()) = ItemStack(type).apply {
         itemMeta = itemMeta?.apply {
-            displayName(display?.createComponent(t, map))
-            lore(writerLore?.map {
+            QuestAdderBukkit.platform.setDisplay(this, display?.createComponent(t, map))
+            QuestAdderBukkit.platform.setLore(this, writerLore?.mapNotNull {
                 it.createComponent(t, map)
             })
             setCustomModelData(writerData)

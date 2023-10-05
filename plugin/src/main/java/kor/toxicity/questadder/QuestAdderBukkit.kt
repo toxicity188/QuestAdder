@@ -22,6 +22,9 @@ import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.database.StandardDatabaseSupplier
 import kor.toxicity.questadder.api.mechanic.AbstractEvent
 import kor.toxicity.questadder.api.util.SoundData
+import kor.toxicity.questadder.platform.PaperPlatformAdapter
+import kor.toxicity.questadder.platform.PlatformAdapter
+import kor.toxicity.questadder.platform.SpigotPlatformAdapter
 import kor.toxicity.questadder.util.event.itemsadder.EventCustomBlockBreak
 import kor.toxicity.questadder.util.event.itemsadder.EventCustomBlockClick
 import kor.toxicity.questadder.util.event.itemsadder.EventCustomBlockPlace
@@ -55,6 +58,8 @@ import kor.toxicity.questadder.util.event.worldguard.EventRegionExit
 import kor.toxicity.questadder.util.gui.ButtonGui
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButton
 import kor.toxicity.questadder.util.gui.player.PlayerGuiButtonType
+import net.kyori.adventure.audience.Audience
+import net.kyori.adventure.platform.bukkit.BukkitAudiences
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import org.bstats.bukkit.Metrics
@@ -101,6 +106,9 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
 
         var reloaded = false
             private set
+        lateinit var audience: BukkitAudiences
+            private set
+        val platform: PlatformAdapter = if (Bukkit.getConsoleSender() is Audience) PaperPlatformAdapter() else SpigotPlatformAdapter()
 
         private lateinit var plugin: QuestAdderBukkit
 
@@ -418,6 +426,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
     override fun onEnable() {
         plugin = this
         QuestAdderAPI.setInstance(Companion)
+        audience = BukkitAudiences.create(this)
         try {
             nms = Class.forName("kor.toxicity.questadder.nms.${Bukkit.getServer()::class.java.`package`.name.split(".")[3]}.NMSImpl").getConstructor().newInstance() as NMS
         } catch (ex: Exception) {
@@ -479,10 +488,11 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         },this)
         Metrics(this,19565)
         task {
-            PluginLoadStartEvent().callEvent()
+            PluginLoadStartEvent().call()
             load()
-            PluginLoadEndEvent().callEvent()
+            PluginLoadEndEvent().call()
             send("plugin enabled.")
+            send("current platform: ${platform.getTargetPlatFormName()}")
             try {
                 val get = HttpClient.newHttpClient().send(
                     HttpRequest.newBuilder()
@@ -561,14 +571,14 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         }
     }
     private fun reload(callback: (Long) -> Unit) {
-        ReloadStartEvent().callEvent()
+        ReloadStartEvent().call()
         asyncTask {
             var time = System.currentTimeMillis()
             reloadSync()
             time = System.currentTimeMillis() - time
             task {
                 callback(time)
-                ReloadEndEvent().callEvent()
+                ReloadEndEvent().call()
             }
         }
     }
@@ -597,7 +607,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         private val task = asyncTaskTimer(Config.autoSaveTime,Config.autoSaveTime) {
             save()
             task {
-                UserDataAutoSaveEvent(player, data).callEvent()
+                UserDataAutoSaveEvent(player, data).call()
             }
         }
         private val remove = asyncTaskTimer(60 * 20, 60 * 20) {
@@ -608,7 +618,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         }
         init {
             task {
-                UserDataLoadEvent(player, data).callEvent()
+                UserDataLoadEvent(player, data).call()
             }
         }
         fun save() {

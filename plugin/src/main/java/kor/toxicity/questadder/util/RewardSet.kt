@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.event.GiveRewardEvent
 import kor.toxicity.questadder.api.util.IRewardSet
 import kor.toxicity.questadder.api.util.IRewardSetContent
 import kor.toxicity.questadder.extension.addMoney
+import kor.toxicity.questadder.extension.call
 import kor.toxicity.questadder.extension.give
 import kor.toxicity.questadder.extension.storage
 import kor.toxicity.questadder.manager.ItemManager
@@ -56,7 +57,7 @@ class RewardSet(section: ConfigurationSection): IRewardSet {
 
     fun give(player: Player): GiveRewardEvent {
         val event = GiveRewardEvent(player, this).apply {
-            callEvent()
+            call()
         }
         if (!event.isCancelled) {
             player.addMoney(event.money)

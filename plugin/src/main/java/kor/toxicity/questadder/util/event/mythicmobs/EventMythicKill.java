@@ -5,7 +5,6 @@ import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.jetbrains.annotations.NotNull;
@@ -31,8 +30,8 @@ public class EventMythicKill extends AbstractEvent<MythicMobDeathEvent> {
             if (id != null && !event.getMob().getMobType().equals(id)) return;
             if (type != null && livingEntity.getType() != type) return;
             if (name != null) {
-                var n = livingEntity.customName();
-                if (n != null && !PlainTextComponentSerializer.plainText().serialize(n).equals(name)) return;
+                var n = livingEntity.getCustomName();
+                if (n != null && !n.equals(name)) return;
             }
             apply(killer);
         }

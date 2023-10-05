@@ -19,6 +19,9 @@
             <option value="$PROJECT_DIR$/nms/v1_19_R3" />
             <option value="$PROJECT_DIR$/nms/v1_20_R1" />
             <option value="$PROJECT_DIR$/nms/v1_20_R2" />
+            <option value="$PROJECT_DIR$/platform" />
+            <option value="$PROJECT_DIR$/platform/paper" />
+            <option value="$PROJECT_DIR$/platform/spigot" />
             <option value="$PROJECT_DIR$/plugin" />
           </set>
         </option>

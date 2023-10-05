@@ -48,8 +48,8 @@ class QnA(adder: QuestAdderBukkit, file: File, key: String, section: Configurati
         createInventory(name ?: data.guiName,size,HashMap<Int, ItemStack>().apply {
             if (data.talk != null) put(center, ItemStack(Material.ENCHANTED_BOOK).apply {
                 itemMeta = itemMeta?.apply {
-                    displayName(data.talker.append(":".asClearComponent()))
-                    lore(listOf(data.talk))
+                    QuestAdderBukkit.platform.setDisplay(this, data.talker.append(":".asClearComponent()))
+                    QuestAdderBukkit.platform.setLore(this, listOf(data.talk))
                 }
             })
             qnaItemMap.forEach {

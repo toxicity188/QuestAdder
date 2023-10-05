@@ -2,6 +2,7 @@ package kor.toxicity.questadder.shop.implement
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.gui.GuiData
 import kor.toxicity.questadder.api.gui.GuiExecutor
 import kor.toxicity.questadder.api.gui.MouseButton
@@ -61,32 +62,32 @@ class Shop(private val blueprint: ShopBlueprint, jsonObject: JsonObject): IShop 
                     if (it.key >= size - 9) return@forEach
                     inv.setItem(it.key,it.value.builder().apply {
                         itemMeta = itemMeta?.apply {
-                            lore((lore() ?: ArrayList()).apply {
+                            QuestAdderBukkit.platform.setLore(this, QuestAdderBukkit.platform.getLore(this).toMutableList().apply {
                                 val canBuy = it.value.buyPrice.price > 0
                                 val canSell = it.value.sellPrice.price > 0
 
-                                if (canBuy) addAll(ShopManager.loreBuyPrice.map { reader ->
+                                if (canBuy) addAll(ShopManager.loreBuyPrice.mapNotNull { reader ->
                                     reader.createComponent(player, mapOf("\$price" to listOf(Component.text(it.value.buyPrice.price))))
                                 })
-                                if (canSell) addAll(ShopManager.loreSellPrice.map { reader ->
+                                if (canSell) addAll(ShopManager.loreSellPrice.mapNotNull { reader ->
                                     reader.createComponent(player, mapOf("\$price" to listOf(Component.text(it.value.sellPrice.price))))
                                 })
-                                if (it.value.stock > 0) addAll(ShopManager.loreRemainStock.map { reader ->
+                                if (it.value.stock > 0) addAll(ShopManager.loreRemainStock.mapNotNull { reader ->
                                     reader.createComponent(player, mapOf("\$stock" to listOf(Component.text(it.value.stock))))
                                 })
 
                                 if (canBuy && canSell) {
-                                    addAll(ShopManager.loreBuyAndSell.map { reader ->
+                                    addAll(ShopManager.loreBuyAndSell.mapNotNull { reader ->
                                         reader.createComponent(player)
                                     })
                                 }
                                 else if (canBuy) {
-                                    addAll(ShopManager.loreBuy.map { reader ->
+                                    addAll(ShopManager.loreBuy.mapNotNull { reader ->
                                         reader.createComponent(player)
                                     })
                                 }
                                 else if (canSell) {
-                                    addAll(ShopManager.loreSell.map { reader ->
+                                    addAll(ShopManager.loreSell.mapNotNull { reader ->
                                         reader.createComponent(player)
                                     })
                                 }

@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Map;
 
 public interface IGui {
-    @NotNull GuiHolder open(@NotNull Player player, @NotNull GuiExecutor executor);
+    @NotNull IGuiHolder open(@NotNull Player player, @NotNull GuiExecutor executor);
     @NotNull
     Component getGuiName();
     @NotNull

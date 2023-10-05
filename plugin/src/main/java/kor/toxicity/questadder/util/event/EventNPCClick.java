@@ -5,7 +5,6 @@ import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
 import kor.toxicity.questadder.api.util.DataField;
 import net.citizensnpcs.api.event.NPCRightClickEvent;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,8 +26,8 @@ public class EventNPCClick extends AbstractEvent<NPCRightClickEvent> {
         var entity = event.getNPC().getEntity();
         if (type != null && entity.getType() != type) return;
         if (name != null) {
-            var n = entity.customName();
-            if (n != null && !PlainTextComponentSerializer.plainText().serialize(n).equals(name)) return;
+            var n = entity.getCustomName();
+            if (n != null && !n.equals(name)) return;
         }
         if (id >= 0 && event.getNPC().getId() != id) return;
         apply(event.getClicker());

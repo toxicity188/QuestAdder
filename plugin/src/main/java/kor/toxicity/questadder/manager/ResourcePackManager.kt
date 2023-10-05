@@ -85,8 +85,8 @@ object ResourcePackManager: QuestAdderManager {
                 executor = { c, a ->
                     (c as Player).give(ItemStack(Material.NOTE_BLOCK).apply {
                         itemMeta = itemMeta?.apply {
-                            displayName("Block editor - ${a[1]}".asClearComponent().color(NamedTextColor.YELLOW))
-                            lore(listOf(
+                            QuestAdderBukkit.platform.setDisplay(this, "Block editor - ${a[1]}".asClearComponent().color(NamedTextColor.YELLOW))
+                            QuestAdderBukkit.platform.setLore(this, listOf(
                                 "Right click - place".asClearComponent().color(NamedTextColor.GRAY)
                             ))
                             persistentDataContainer.set(blockEditorKey, PersistentDataType.STRING, a[1])
@@ -114,7 +114,7 @@ object ResourcePackManager: QuestAdderManager {
                 e.clickedBlock?.let {
                     update(it.location)
                     blockRegistry.get(it.blockData)?.let { b ->
-                        QuestBlockInteractEvent(b,e).callEvent()
+                        QuestBlockInteractEvent(b,e).call()
                     }
                 }
             }
@@ -132,15 +132,15 @@ object ResourcePackManager: QuestAdderManager {
             fun blockBreak(e: BlockBreakEvent) {
                 update(e.block.location)
                 blockRegistry.get(e.block.blockData)?.let {
-                    QuestBlockBreakEvent(it,e).callEvent()
+                    QuestBlockBreakEvent(it,e).call()
                     e.isCancelled = true
                     val b = e.block
                     b.setBlockData(Material.AIR.createBlockData(),false)
                     if (Bukkit.getPluginManager().isPluginEnabled("LightAPI")) {
                         val loc = b.location
                         if (it.bluePrint.light != 0) try {
-                            val get = LightAPI.get().getLightLevel(loc.world.name, loc.blockX, loc.blockY, loc.blockZ)
-                            LightAPI.get().setLightLevel(loc.world.name, loc.blockX, loc.blockY, loc.blockZ, get - it.bluePrint.light)
+                            val get = LightAPI.get().getLightLevel(loc.world!!.name, loc.blockX, loc.blockY, loc.blockZ)
+                            LightAPI.get().setLightLevel(loc.world!!.name, loc.blockX, loc.blockY, loc.blockZ, get - it.bluePrint.light)
                         } catch (ex: Throwable) {
                             QuestAdderBukkit.warn("An error has occurred while using LightAPI.")
                         }
@@ -157,7 +157,7 @@ object ResourcePackManager: QuestAdderManager {
                     }
                 }
                 blockRegistry.get(e.block.blockData)?.let {
-                    QuestBlockPlaceEvent(it,e).callEvent()
+                    QuestBlockPlaceEvent(it,e).call()
                 }
             }
             @EventHandler

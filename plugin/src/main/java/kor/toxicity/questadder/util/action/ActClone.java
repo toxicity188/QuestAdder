@@ -1,7 +1,6 @@
 package kor.toxicity.questadder.util.action;
 
 import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
 import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;

@@ -2,14 +2,13 @@ package kor.toxicity.questadder.manager
 
 import com.comphenix.protocol.ProtocolLibrary
 import com.ticxo.playeranimator.api.model.player.PlayerModel
-import kor.toxicity.questadder.QuestAdderAPIBukkit
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.extension.send
 import net.citizensnpcs.api.npc.NPC
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import java.io.File
-import java.util.UUID
+import java.util.*
 
 object GestureManager: QuestAdderManager {
     private val gestureMap = HashMap<UUID,QuestPlayerModel>()

@@ -2,7 +2,6 @@ package kor.toxicity.questadder.util.gui
 
 import kor.toxicity.questadder.api.gui.GuiData
 import kor.toxicity.questadder.api.gui.GuiExecutor
-import kor.toxicity.questadder.api.gui.GuiHolder
 import kor.toxicity.questadder.api.gui.MouseButton
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.util.ComponentReader

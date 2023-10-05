@@ -51,7 +51,7 @@ object LocationManager: QuestAdderManager {
                                     load(file)
                                     set(args[2], MemoryConfiguration().apply {
                                         set("name", name)
-                                        set("world", location.world.name)
+                                        set("world", location.world!!.name)
                                         set("x", location.x)
                                         set("y", location.y)
                                         set("z", location.z)

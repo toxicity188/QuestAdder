@@ -26,12 +26,12 @@ import org.bukkit.Location
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
+import org.bukkit.command.SimpleCommandMap
 import org.bukkit.craftbukkit.v1_18_R1.CraftServer
 import org.bukkit.craftbukkit.v1_18_R1.CraftWorld
 import org.bukkit.craftbukkit.v1_18_R1.entity.CraftPlayer
 import org.bukkit.craftbukkit.v1_18_R1.inventory.CraftItemStack
 import org.bukkit.craftbukkit.v1_18_R1.util.CraftChatMessage
-import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
@@ -70,8 +70,12 @@ class NMSImpl: NMS {
         if (!map.register("questadder",obj)) QuestAdderBukkit.warn("unable to register command: $name")
         return object: RuntimeCommand {
             override fun unregister() {
-                map.knownCommands.remove("questadder:$name")
-                map.knownCommands.remove(name)
+                val field = SimpleCommandMap::class.java.getDeclaredField("knownCommands")
+                field.isAccessible = true
+                val getMap = field.get(map) as MutableMap<*,*>
+                getMap.remove("questadder:$name")
+                getMap.remove(name)
+                field.isAccessible = false
             }
         }
     }
@@ -97,7 +101,7 @@ class NMSImpl: NMS {
             connection.a(PacketPlayOutEntityMetadata(entity.ae(),entity.ai(),true))
         }
         override fun setText(text: Component) {
-            (entity.bukkitEntity as ArmorStand).customName(text)
+            entity.a(CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(text)))
             connection.a(PacketPlayOutEntityMetadata(entity.ae(),entity.ai(),true))
         }
         override fun setItem(itemStack: ItemStack) {

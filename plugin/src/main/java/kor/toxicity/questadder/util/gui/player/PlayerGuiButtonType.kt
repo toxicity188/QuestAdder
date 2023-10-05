@@ -1,5 +1,6 @@
 package kor.toxicity.questadder.util.gui.player
 
+import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.extension.GRAY
 import kor.toxicity.questadder.extension.WHITE
 import kor.toxicity.questadder.extension.asClearComponent
@@ -22,8 +23,8 @@ enum class PlayerGuiButtonType {
         override fun applyItem(data: PlayerGuiData, itemStack: ItemStack): ItemStack {
             val split = " / ".asClearComponent().color(GRAY)
             return itemStack.apply {
-                itemMeta = itemMeta?.apply {
-                    lore(ArrayList<Component>().apply {
+                itemMeta = itemMeta?.also { meta ->
+                    QuestAdderBukkit.platform.setLore(meta,ArrayList<Component>().apply {
                         var comp = Component.empty()
                         val typeSet = data.typeSet
                         typeSet.forEachIndexed { index, s ->
@@ -32,9 +33,10 @@ enum class PlayerGuiButtonType {
                             if (index < typeSet.lastIndex) comp = comp.append(split)
                         }
                         add(comp)
-                        lore()?.let {
+                        val lore = QuestAdderBukkit.platform.getLore(meta)
+                        if (lore.isNotEmpty()) {
                             add(Component.empty())
-                            addAll(it)
+                            addAll(lore)
                         }
                     })
                 }

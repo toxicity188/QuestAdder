@@ -33,8 +33,8 @@ public class EventAttack extends AbstractEvent<EntityDamageByEntityEvent> {
             var victim = event.getEntity();
             if (type != null && victim.getType() != type) return;
             if (name != null) {
-                var n = victim.customName();
-                if (n != null && !ComponentsKt.onlyText(n).equals(name)) return;
+                var n = victim.getCustomName();
+                if (n != null && n.equals(name)) return;
             }
             apply(player);
         }

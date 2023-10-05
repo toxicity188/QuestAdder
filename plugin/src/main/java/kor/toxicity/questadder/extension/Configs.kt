@@ -15,7 +15,6 @@ import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
-import org.bukkit.persistence.PersistentDataType
 import java.util.*
 import java.util.regex.Pattern
 
@@ -75,23 +74,23 @@ fun ConfigurationSection.getAsItemStack(key: String, apply: (ItemMeta) -> Unit =
         Material.APPLE
     }).let { material ->
         ItemStack(material).apply {
-            itemMeta = itemMeta?.apply {
-                setCustomModelData(findInt(0,"CustomModelData","custom-model-data","Data","data"))
+            itemMeta = itemMeta?.also { meta ->
+                meta.setCustomModelData(findInt(0,"CustomModelData","custom-model-data","Data","data"))
                 findString("Display","display")?.run {
-                    displayName(colored())
+                    QuestAdderBukkit.platform.setDisplay(meta ,colored())
                 }
                 findStringList("Lore","lore")?.run {
-                    lore(colored())
+                    QuestAdderBukkit.platform.setLore(meta, colored())
                 }
-                isUnbreakable = findBoolean("Unbreakable","unbreakable")
+                meta.isUnbreakable = findBoolean("Unbreakable","unbreakable")
                 ItemFlag.entries.forEach {
-                    addItemFlags(it)
+                    meta.addItemFlags(it)
                 }
                 findStringList("Attributes","attributes","Attribute","attribute")?.forEach {
                     val split = it.split(' ')
                     if (split.size == 4) {
                         try {
-                            addAttributeModifier(
+                            meta.addAttributeModifier(
                                 Attribute.valueOf(split[0].uppercase().replace('.','_')), AttributeModifier(
                                     ATTRIBUTE_UUID,
                                     ATTRIBUTE_NAME,
@@ -127,7 +126,7 @@ fun ConfigurationSection.getAsItemStack(key: String, apply: (ItemMeta) -> Unit =
                         }
                     }
                 }
-                apply(this)
+                apply(meta)
             }
         }
     }
@@ -137,7 +136,7 @@ fun ConfigurationSection.getAsItemStack(key: String, apply: (ItemMeta) -> Unit =
         ItemStack(Material.valueOf(matcher.group("type"))).apply {
             itemMeta = itemMeta?.apply {
                 setCustomModelData(matcher.group("data").toInt())
-                displayName(matcher.group("display").colored())
+                QuestAdderBukkit.platform.setDisplay(this, matcher.group("display").colored())
             }
         }
     } catch (ex: Exception) {

@@ -152,7 +152,7 @@ class Quest(adder: QuestAdder, val file: File, val questKey: String, section: Co
                                 this@Quest,
                                 player
                             ).apply {
-                                callEvent()
+                                call()
                             }
                             if (conditions.all { wf ->
                                     val t = wf.apply(questEvent)
@@ -182,13 +182,13 @@ class Quest(adder: QuestAdder, val file: File, val questKey: String, section: Co
     override fun give(player: Player) {
         QuestAdderBukkit.getPlayerData(player)?.giveQuest(questKey)
         onGive(QuestGiveEvent(this, player).apply {
-            callEvent()
+            call()
         })
     }
     override fun remove(player: Player) {
         QuestAdderBukkit.getPlayerData(player)?.removeQuest(questKey)
         onRemove(QuestRemoveEvent(this, player).apply {
-            callEvent()
+            call()
         })
     }
     override fun complete(player: Player) {
@@ -202,7 +202,7 @@ class Quest(adder: QuestAdder, val file: File, val questKey: String, section: Co
                 reward?.exp ?: 0.0,
                 reward?.itemStacks ?: emptyList()
             ).apply {
-            callEvent()
+            call()
         })
     }
 
@@ -210,7 +210,7 @@ class Quest(adder: QuestAdder, val file: File, val questKey: String, section: Co
         val data = QuestAdderBukkit.getPlayerData(player) ?: return false
         if (data.questVariables[questKey]?.state != QuestRecord.HAS) return false
         val invokeEvent = QuestInvokeEvent(this, player).apply {
-            callEvent()
+            call()
         }
         return condition.isNotEmpty() && condition.all {
             val get = it.second.apply(invokeEvent)
@@ -225,7 +225,7 @@ class Quest(adder: QuestAdder, val file: File, val questKey: String, section: Co
     override fun has(player: Player) = QuestAdderBukkit.getPlayerData(player)?.hasQuest(questKey) ?: false
     override fun getIcon(player: Player, suffix: List<Component>): ItemStack {
         val event = QuestInvokeEvent(this, player).apply {
-            callEvent()
+            call()
         }
         val data = QuestAdderBukkit.getPlayerData(player)?.questVariables?.get(questKey)
         val cond = condition.map {
@@ -237,11 +237,9 @@ class Quest(adder: QuestAdder, val file: File, val questKey: String, section: Co
             }
         }
         return item.write(event).apply {
-            itemMeta = itemMeta?.apply {
-                lore(ArrayList<Component>().apply {
-                    lore()?.let { l ->
-                        addAll(l)
-                    }
+            itemMeta = itemMeta?.also { meta ->
+                QuestAdderBukkit.platform.setLore(meta,ArrayList<Component>().apply {
+                    addAll(QuestAdderBukkit.platform.getLore(meta))
                     recommend?.let {
                         add(Component.empty())
                         add(QuestAdderBukkit.Prefix.recommend)
@@ -280,7 +278,7 @@ class Quest(adder: QuestAdder, val file: File, val questKey: String, section: Co
                 })
                 if (cond.isNotEmpty() && cond.all {
                     it
-                    }) addEnchant(Enchantment.DURABILITY,1, true)
+                    }) meta.addEnchant(Enchantment.DURABILITY,1, true)
             }
         }
     }

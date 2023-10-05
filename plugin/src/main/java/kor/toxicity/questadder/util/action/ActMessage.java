@@ -1,5 +1,6 @@
 package kor.toxicity.questadder.util.action;
 
+import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
@@ -32,7 +33,7 @@ public class ActMessage extends AbstractAction {
     public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         var component = reader.createComponent(event, Collections.emptyMap());
         if (component != null) {
-            player.sendMessage(component);
+            QuestAdderBukkit.Companion.getAudience().player(player).sendMessage(component);
             return ActionResult.SUCCESS;
         }
         return ActionResult.FAIL;

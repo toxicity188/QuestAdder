@@ -1,7 +1,6 @@
 package kor.toxicity.questadder.manager
 
 import kor.toxicity.questadder.QuestAdderBukkit
-import kor.toxicity.questadder.extension.findConfig
 import kor.toxicity.questadder.extension.getAsStringList
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.ItemWriter

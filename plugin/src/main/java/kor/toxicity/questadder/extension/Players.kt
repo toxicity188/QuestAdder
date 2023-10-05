@@ -13,11 +13,11 @@ import org.bukkit.inventory.ItemStack
 import java.text.DecimalFormat
 
 fun CommandSender.send(message: String) = send(message.colored())
-fun CommandSender.send(message: Component) = sendMessage(QuestAdderBukkit.Prefix.plugin.append(message))
+fun CommandSender.send(message: Component) = QuestAdderBukkit.audience.sender(this).sendMessage(QuestAdderBukkit.Prefix.plugin.append(message))
 fun CommandSender.info(message: String) = info(message.colored())
-fun CommandSender.info(message: Component) = sendMessage(QuestAdderBukkit.Prefix.info.append(message))
+fun CommandSender.info(message: Component) = QuestAdderBukkit.audience.sender(this).sendMessage(QuestAdderBukkit.Prefix.info.append(message))
 fun CommandSender.warn(message: String) = warn(message.colored())
-fun CommandSender.warn(message: Component) = sendMessage(QuestAdderBukkit.Prefix.warn.append(message))
+fun CommandSender.warn(message: Component) = QuestAdderBukkit.audience.sender(this).sendMessage(QuestAdderBukkit.Prefix.warn.append(message))
 
 object Money {
     private val economy = try {

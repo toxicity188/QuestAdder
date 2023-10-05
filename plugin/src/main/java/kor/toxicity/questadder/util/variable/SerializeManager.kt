@@ -53,15 +53,6 @@ object SerializeManager {
         }
         put(HashedClass(PrimitiveType.BOOLEAN.primitive), boolean)
         put(HashedClass(PrimitiveType.BOOLEAN.reference), boolean)
-        put(HashedClass(ItemStack::class.java), object : VariableSerializer {
-            override fun serialize(any: Any): String {
-                return Base64.getEncoder().encodeToString((any as ItemStack).serializeAsBytes())
-            }
-
-            override fun deserialize(string: String): Any {
-                return ItemStack.deserializeBytes(Base64.getDecoder().decode(string))
-            }
-        })
         put(HashedClass(Null::class.java), object : VariableSerializer {
             override fun deserialize(string: String): Any? {
                 return null

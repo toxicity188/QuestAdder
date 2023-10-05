@@ -128,7 +128,7 @@ object ActionBuilder {
             it.value.cancel(player)
             cancelled = true
         }
-        if (cancelled) ActionCancelEvent(player, reason).callEvent()
+        if (cancelled) ActionCancelEvent(player, reason).call()
     }
 
     fun addAction(name: String, clazz: Class<out AbstractAction>) {
@@ -230,7 +230,7 @@ object ActionBuilder {
                     action = object : CancellableAction(adder) {
                         override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
                             if (it.invoke(player,event) == ActionResult.FAIL) {
-                                player.kick("An error has occurred while playing action line ${parameter.length - index}".asClearComponent())
+                                QuestAdderBukkit.platform.kick(player, "An error has occurred while playing action line ${parameter.length - index}".asClearComponent())
                                 return ActionResult.FAIL
                             }
                             return t.invoke(player,event)

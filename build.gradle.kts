@@ -1,5 +1,3 @@
-import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
-
 plugins {
     `java-library`
     id("org.jetbrains.kotlin.jvm") version("1.9.10")
@@ -10,6 +8,9 @@ plugins {
 
 val questAdderGroup = "kor.toxicity.questadder"
 val questAdderVersion = "1.1.4"
+
+val adventureVersion = "4.14.0"
+val platformVersion = "4.3.1"
 
 allprojects {
     apply(plugin = "java")
@@ -53,26 +54,20 @@ allprojects {
     dependencies {
         testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
-        testImplementation("io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT")
 
-        compileOnly("io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT")
-        compileOnly("net.byteflux:libby-bukkit:1.1.5")
-        compileOnly("com.github.oraxen:oraxen:1.158.0")
-        compileOnly("com.github.LoneDev6:api-itemsadder:3.5.0b")
-        compileOnly("net.citizensnpcs:citizens-main:2.0.32-SNAPSHOT")
-        compileOnly("com.github.MilkBowl:VaultAPI:1.7")
-        compileOnly("com.mojang:brigadier:1.1.8")
-        compileOnly("com.mojang:datafixerupper:6.0.8")
-        compileOnly("com.comphenix.protocol:ProtocolLib:4.8.0")
+
+        compileOnly("net.kyori:adventure-api:${adventureVersion}")
+        compileOnly("net.kyori:adventure-text-serializer-legacy:${adventureVersion}")
+        compileOnly("net.kyori:adventure-text-serializer-gson:${adventureVersion}")
+        compileOnly("net.kyori:adventure-text-serializer-plain:${adventureVersion}")
+        compileOnly("net.kyori:adventure-platform-bukkit:${platformVersion}")
+
         compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.0-SNAPSHOT")
         compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.1.0-SNAPSHOT")
-        compileOnly(fileTree("libs"))
-        compileOnly("io.lumine:Mythic-Dist:5.3.5")
-        compileOnly("com.bgsoftware:SuperiorSkyblockAPI:2023.2")
-        compileOnly("net.Indyuce:MMOCore-API:1.12-SNAPSHOT")
-        compileOnly("net.Indyuce:MMOItems-API:6.9.5-SNAPSHOT")
-        compileOnly("io.lumine:MythicLib-dist:1.6.2-SNAPSHOT")
-        compileOnly("com.github.BeYkeRYkt.LightAPI:lightapi-bukkit-common:5.3.0-Bukkit")
+        compileOnly("net.byteflux:libby-bukkit:1.1.5")
+        compileOnly("net.citizensnpcs:citizens-main:2.0.32-SNAPSHOT")
+        compileOnly("com.mojang:brigadier:1.1.8")
+        compileOnly("com.mojang:datafixerupper:6.0.8")
     }
 }
 subprojects {
@@ -105,7 +100,9 @@ tasks {
     processResources {
         filteringCharset = Charsets.UTF_8.name()
         val props = mapOf(
-            "version" to version
+            "version" to version,
+            "adventureVersion" to adventureVersion,
+            "platformVersion" to platformVersion
         )
         inputs.properties(props)
         filesMatching("plugin.yml") {

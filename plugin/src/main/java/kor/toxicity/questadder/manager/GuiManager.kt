@@ -1,9 +1,8 @@
 package kor.toxicity.questadder.manager
 
 import kor.toxicity.questadder.QuestAdderBukkit
-import kor.toxicity.questadder.api.gui.GuiHolder
+import kor.toxicity.questadder.util.gui.GuiHolder
 import kor.toxicity.questadder.api.gui.MouseButton
-import kor.toxicity.questadder.util.gui.Gui
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener

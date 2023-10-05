@@ -5,6 +5,7 @@ import kor.toxicity.questadder.api.event.NavigateCompleteEvent
 import kor.toxicity.questadder.api.util.INamedLocation
 import kor.toxicity.questadder.extension.WHITE
 import kor.toxicity.questadder.extension.asComponent
+import kor.toxicity.questadder.extension.call
 import kor.toxicity.questadder.extension.rotateYaw
 import kor.toxicity.questadder.nms.TextContainer
 import kor.toxicity.questadder.nms.VirtualEntity
@@ -138,7 +139,7 @@ object NavigationManager: QuestAdderManager {
                         NavigateCompleteEvent(
                             player,
                             it.destination
-                        ).callEvent()
+                        ).call()
                     } else it.update()
                 }
             }
@@ -148,7 +149,7 @@ object NavigationManager: QuestAdderManager {
             }
             @EventHandler
             fun death(e: PlayerDeathEvent) {
-                endNavigate(e.player)
+                endNavigate(e.entity)
             }
         },adder)
     }

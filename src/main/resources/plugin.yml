@@ -8,6 +8,12 @@ api-version: 1.17
 depend:
   - Citizens
   - ProtocolLib
+libraries:
+  - "net.kyori:adventure-api:${adventureVersion}"
+  - "net.kyori:adventure-text-serializer-legacy:${adventureVersion}"
+  - "net.kyori:adventure-text-serializer-gson:${adventureVersion}"
+  - "net.kyori:adventure-text-serializer-plain:${adventureVersion}"
+  - "net.kyori:adventure-platform-bukkit:${platformVersion}"
 softdepend:
   - Vault
   - ItemsAdder

@@ -1,10 +1,10 @@
 package kor.toxicity.questadder.api.event;
 
-import io.th0rgal.oraxen.shaded.jetbrains.annotations.NotNull;
 import kor.toxicity.questadder.api.mechanic.IAction;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 public class ActionInvokeEvent extends QuestAdderPlayerEvent implements Cancellable, ActionEvent {
 
