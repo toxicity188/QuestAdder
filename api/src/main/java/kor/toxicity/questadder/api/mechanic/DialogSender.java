@@ -16,4 +16,5 @@ public interface DialogSender {
     long getTypingSpeed();
     @Nullable
     IGui getGui();
+
 }

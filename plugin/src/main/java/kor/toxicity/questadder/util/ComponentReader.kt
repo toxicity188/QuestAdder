@@ -171,6 +171,44 @@ class ComponentReader<T : Any>(string: String) {
             if (sb.isNotEmpty()) list.add(sb.toString())
             return list
         }
+        private fun parse(original: String, pair: Map<String, List<Component>>): List<Component> {
+            return when (pair.size) {
+                0 -> original.toCharArray().map {
+                    Component.text(it)
+                }
+                else -> {
+                    val list = ArrayList<Component>()
+                    fun split(target: String, map: Map<String, List<Component>>) {
+                        when (map.size) {
+                            0 -> {
+                                //never reach this
+                            }
+                            1 -> {
+                                val entry = map.entries.single()
+                                val split = target.split(entry.key)
+                                split.forEachIndexed { index, s ->
+                                    list.addAll(parse(s, emptyMap()))
+                                    if (index < split.lastIndex) list.addAll(entry.value)
+                                }
+                            }
+                            else -> {
+                                val entry = map.entries.first()
+                                val newMap = HashMap(map).apply {
+                                    remove(entry.key)
+                                }
+                                val split = target.split(entry.key)
+                                split.forEachIndexed { index, s ->
+                                    split(s, newMap)
+                                    if (index < split.lastIndex) list.addAll(entry.value)
+                                }
+                            }
+                        }
+                    }
+                    split(original, pair)
+                    list
+                }
+            }
+        }
     }
 
     private val components = ArrayList<(T, Map<String, List<Component>>) -> ComponentBuilder>()
@@ -194,9 +232,8 @@ class ComponentReader<T : Any>(string: String) {
                     } else {
                         val copy = comp.copy()
                         comp.gradient?.let {
-                            val builder = GradientComponentBuilder(s1,copy,it)
-                            components.add { _, _ ->
-                                builder
+                            components.add { _, m ->
+                                GradientComponentBuilder(s1,copy,it,m)
                             }
                             comp.gradient = null
                         } ?: run {
@@ -253,62 +290,28 @@ class ComponentReader<T : Any>(string: String) {
     ): ComponentBuilder {
         private val listComponent: List<Component>
         init {
-            listComponent = parse(string, map)
-        }
-
-        fun parse(original: String, pair: Map<String, List<Component>>): List<Component> {
-            return when (pair.size) {
-                0 -> original.toCharArray().map {
-                    Component.text(it)
-                }
-                else -> {
-                    val list = ArrayList<Component>()
-                    fun split(target: String, map: Map<String, List<Component>>) {
-                        when (map.size) {
-                            0 -> {
-                                //never reach this
-                            }
-                            1 -> {
-                                val entry = map.entries.single()
-                                val split = target.split(entry.key)
-                                split.forEachIndexed { index, s ->
-                                    list.addAll(parse(s, emptyMap()))
-                                    if (index < split.lastIndex) list.addAll(entry.value)
-                                }
-                            }
-                            else -> {
-                                val entry = map.entries.first()
-                                val newMap = HashMap(map).apply {
-                                    remove(entry.key)
-                                }
-                                val split = target.split(entry.key)
-                                split.forEachIndexed { index, s ->
-                                    split(s, newMap)
-                                    if (index < split.lastIndex) list.addAll(entry.value)
-                                }
-                            }
-                        }
-                    }
-                    split(original, pair)
-                    list
-                }
+            listComponent = parse(string, map).map {
+                it.font(data.font).color(data.color).decorations(data.decoration)
             }
         }
 
+
         override fun length() = listComponent.size
-        override fun build(index: Int) = if (listComponent.isNotEmpty()) listComponent[index].font(data.font).color(data.color).decorations(data.decoration) else Component.empty()
+        override fun build(index: Int) = if (listComponent.isNotEmpty()) listComponent[index] else Component.empty()
         override fun build(): Component {
             var empty = Component.empty()
             listComponent.forEach {
                 empty = empty.append(it)
             }
-            return empty.font(data.font).color(data.color).decorations(data.decoration)
+            return empty
         }
     }
+
     private class GradientComponentBuilder(
-        val string: String,
-        data: ComponentData,
+        string: String,
+        private val data: ComponentData,
         gradient: GradientData,
+        map: Map<String, List<Component>>
     ): ComponentBuilder {
         private val dataList = run {
             val from = gradient.from
@@ -322,15 +325,14 @@ class ComponentReader<T : Any>(string: String) {
             val calGreen = (to.green() - fromGreen).toDouble()
             val calBlue = (to.blue() - fromBlue).toDouble()
 
-            Array(string.length) {
-                val t = it.toDouble() / string.length.toDouble()
-                string.substring(it,it + 1).asComponent().font(data.font).decorations(data.decoration).color(
-                    TextColor.color(
-                        fromRed + (calRed * t).toInt(),
-                        fromGreen + (calGreen * t).toInt(),
-                        fromBlue + (calBlue * t).toInt()
-                    )
-                )
+            val comp = parse(string, map)
+            comp.mapIndexed { index, component ->
+                val t = index.toDouble() / comp.size.toDouble()
+                component.color(TextColor.color(
+                    fromRed + (calRed * t).toInt(),
+                    fromGreen + (calGreen * t).toInt(),
+                    fromBlue + (calBlue * t).toInt()
+                )).font(data.font).decorations(data.decoration)
             }
         }
 

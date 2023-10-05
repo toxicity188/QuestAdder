@@ -1,5 +1,7 @@
 package kor.toxicity.questadder.mechanic.dialog
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.QuestAdder
 import kor.toxicity.questadder.api.event.DialogStartEvent
@@ -42,7 +44,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
         fun end()
     }
     private interface TypingManager {
-        fun create(current: DialogCurrent): TypingExecutor
+        fun create(current: DialogCurrent, jsonObject: JsonObject): TypingExecutor
     }
 
     private class DialogCurrent(
@@ -91,9 +93,9 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
             if (talkIndex < talk.size) {
                 this@Dialog.executorMap[talkIndex + 1]?.let { d ->
                     current.executor?.end()
-                    current.executor = d.create(current)
+                    current.executor = d.second.create(current,d.first)
                 }
-                if (current.executor == null) current.executor = defaultExecutor.create(current)
+                if (current.executor == null) current.executor = defaultExecutor.create(current, JsonObject())
                 started = true
                 talkComponent = Component.empty()
                 talkerComponent = talker[talkIndex + 1]?.createComponent(current.event)
@@ -190,13 +192,22 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
 
     companion object {
         private val talkPattern = Pattern.compile("^((?<talker>(\\w|\\W)+)::)?(\\s+)?(?<talk>(\\w|\\W)+)$")
+        private val typingManagerPattern = Pattern.compile("^(?<name>(([a-zA-Z])+))(?<argument>\\{[\\w|\\W]*})?$")
         private val playerTask = ConcurrentHashMap<UUID, DialogRun>()
         private val defaultExecutor = object : TypingManager {
-            override fun create(current: DialogCurrent): TypingExecutor {
-                val selectedInv = current.sender.gui ?: createInventory("talking with ${current.sender.talkerName}".asComponent(),5)
-                val inv = current.inventory?.apply {
-                    current.player.openInventory(inventory)
-                } ?: selectedInv.open(current.player, object :
+            override fun create(current: DialogCurrent, jsonObject: JsonObject): TypingExecutor {
+                val jsonGuiName = try {
+                    jsonObject.getAsJsonPrimitive("name")?.let {
+                        ComponentReader<Player>(it.asString).createComponent(current.player)
+                    }
+                } catch (ex: Exception) {
+                    null
+                }
+                val getInv = current.sender.gui ?: createInventory("talking with ${current.sender.talkerName}".asComponent(),5)
+                val selectedInv = jsonGuiName?.let {
+                    getInv.setName(it)
+                } ?: getInv
+                val inv = selectedInv.open(current.player, object :
                     GuiExecutor {
                     override fun end(data: GuiData) {
                         if (!current.safeEnd) {
@@ -276,7 +287,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
         private val typingManagerMap = HashMap<String, TypingManager>().apply {
             put("default", defaultExecutor)
             put("title", object : TypingManager {
-                override fun create(current: DialogCurrent): TypingExecutor {
+                override fun create(current: DialogCurrent, jsonObject: JsonObject): TypingExecutor {
                     return object : TypingExecutor {
                         private var talker: Component = Component.empty()
 
@@ -300,7 +311,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 }
             })
             put("text", object : TypingManager {
-                override fun create(current: DialogCurrent): TypingExecutor {
+                override fun create(current: DialogCurrent, jsonObject: JsonObject): TypingExecutor {
                     return object : TypingExecutor {
 
                         private var referencedEntity = current.sender.entity ?: current.player
@@ -331,7 +342,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 }
             })
             put("tooltip", object : TypingManager {
-                override fun create(current: DialogCurrent): TypingExecutor {
+                override fun create(current: DialogCurrent, jsonObject: JsonObject): TypingExecutor {
                     return object : TypingExecutor {
                         private var talker: Component = Component.empty()
 
@@ -357,7 +368,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
     private var qna: MutableList<QnA>? = null
     private var shop: MutableList<Shop>? = null
     private var subDialog: MutableList<Dialog>? = null
-    private var executorMap = HashMap<Int, TypingManager>()
+    private var executorMap = HashMap<Int, Pair<JsonObject,TypingManager>>()
     private var predicate: (DialogCurrent) -> Boolean = {
         true
     }
@@ -519,13 +530,25 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
         section.findConfig("Interface","interface")?.let { c ->
             c.getKeys(false).forEach {
                 c.getString(it)?.let { s ->
-                    typingManagerMap[s]?.let { manager ->
-                        try {
-                            executorMap[it.toInt()] = manager
-                        } catch (ex: Exception) {
-                            error("syntax error: the argument \"$it\" is not an int.")
-                        }
-                    } ?: error("not found error: the interface named $s doesn't exist.")
+                    val matcher = typingManagerPattern.matcher(s)
+                    if (matcher.find()) {
+                        val name = matcher.group("name")
+                        val args = matcher.group("argument")?.let { argString ->
+                            try {
+                                JsonParser.parseString(argString).asJsonObject
+                            } catch (ex: Exception) {
+                                error("unable to read this json: $argString")
+                                JsonObject()
+                            }
+                        } ?: JsonObject()
+                        typingManagerMap[name]?.let { manager ->
+                            try {
+                                executorMap[it.toInt()] = args to manager
+                            } catch (ex: Exception) {
+                                error("syntax error: the argument \"$it\" is not an int.")
+                            }
+                        } ?: error("not found error: the interface named $s doesn't exist.")
+                    } else error("syntax error: cannot read this typing manager syntax: $s")
                 } ?: error("syntax error: the value \"$it\" is not a string.")
             }
         }

@@ -2,6 +2,8 @@ package kor.toxicity.questadder.shop.implement
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import kor.toxicity.questadder.api.event.ShopBuyEvent
+import kor.toxicity.questadder.api.event.ShopSellEvent
 import kor.toxicity.questadder.api.mechanic.DialogSender
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.ShopManager
@@ -41,7 +43,7 @@ class ShopItem(val blueprint: ShopItemBlueprint, jsonObject: JsonObject) {
         }
     }
 
-    fun buy(player: Player, sender: DialogSender): Boolean {
+    fun buy(player: Player, sender: DialogSender, shop: Shop): Boolean {
         val moneyValue = blueprint.buyPrice.price
         if (moneyValue < 0) {
             ShopManager.messageBuyCannotBuying.createComponent(player)?.let {
@@ -89,6 +91,7 @@ class ShopItem(val blueprint: ShopItemBlueprint, jsonObject: JsonObject) {
                     player.take(it.first)
                 }
             }
+            ShopBuyEvent(player, shop, i).callEvent()
         }
         blueprint.buyPrice.dialog?.let {
             it.start(player, sender)?.let { state ->
@@ -101,7 +104,7 @@ class ShopItem(val blueprint: ShopItemBlueprint, jsonObject: JsonObject) {
         return true
     }
 
-    fun sell(player: Player, sender: DialogSender): Boolean {
+    fun sell(player: Player, sender: DialogSender, shop: Shop): Boolean {
         val moneyValue = blueprint.sellPrice.price
         if (moneyValue < 0) {
             ShopManager.messageSellCannotSelling.createComponent(player)?.let {
@@ -137,6 +140,7 @@ class ShopItem(val blueprint: ShopItemBlueprint, jsonObject: JsonObject) {
                     player.give(it.first)
                 }
             }
+            ShopSellEvent(player, shop, item).callEvent()
         }
         blueprint.sellPrice.dialog?.let {
             it.start(player, sender)?.let { state ->

@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.gui.GuiData
 import kor.toxicity.questadder.api.gui.GuiExecutor
 import kor.toxicity.questadder.api.gui.MouseButton
 import kor.toxicity.questadder.api.mechanic.DialogSender
+import kor.toxicity.questadder.api.shop.IShop
 import kor.toxicity.questadder.extension.applyComma
 import kor.toxicity.questadder.extension.asComponent
 import kor.toxicity.questadder.extension.createInventory
@@ -17,7 +18,7 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 
-class Shop(private val blueprint: ShopBlueprint, jsonObject: JsonObject) {
+class Shop(private val blueprint: ShopBlueprint, jsonObject: JsonObject): IShop {
     companion object {
         private val emptyArray = JsonArray()
         private val emptyObject = JsonObject()
@@ -44,7 +45,7 @@ class Shop(private val blueprint: ShopBlueprint, jsonObject: JsonObject) {
         })
     }
 
-    fun open(player: Player, sender: DialogSender) {
+    override fun open(player: Player, sender: DialogSender) {
         createInventory(blueprint.name.createComponent(player) ?: Component.text("error"), blueprint.size).open(player, object : GuiExecutor {
 
             private var currentShopPage = shopPage[0]
@@ -137,11 +138,11 @@ class Shop(private val blueprint: ShopBlueprint, jsonObject: JsonObject) {
                     currentShopPage.shopItem[clickedSlot]?.let {
                         when (button) {
                             MouseButton.LEFT,MouseButton.SHIFT_LEFT -> {
-                                if (it.buy(player, sender)) initialize(data)
+                                if (it.buy(player, sender, this@Shop)) initialize(data)
                                 Unit
                             }
                             MouseButton.RIGHT,MouseButton.SHIFT_RIGHT -> {
-                                if (it.sell(player, sender)) initialize(data)
+                                if (it.sell(player, sender, this@Shop)) initialize(data)
                                 Unit
                             }
                             else -> {}
@@ -154,6 +155,6 @@ class Shop(private val blueprint: ShopBlueprint, jsonObject: JsonObject) {
             }
         })
     }
-    fun getId() = blueprint.id
+    override fun getKey() = blueprint.id
     fun getFile() = blueprint.file
 }

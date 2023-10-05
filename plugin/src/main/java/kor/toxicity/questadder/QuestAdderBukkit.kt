@@ -207,6 +207,8 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             private set
         var zipResourcePack = true
             private set
+        var importOtherResourcePack = emptyList<String>()
+            private set
         fun getPlayerGuiButton(type: PlayerGuiButtonType) = playerGuiButton[type]
         internal fun reload(section: ConfigurationSection) {
             defaultTypingSpeed = section.getLong("default-typing-speed",1L)
@@ -269,6 +271,9 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
                 }
             }
             zipResourcePack = section.getBoolean("zip-resource-pack", true)
+            section.getAsStringList("import-other-resource-pack")?.let {
+                importOtherResourcePack = it
+            }
         }
     }
     object Prefix {

@@ -53,7 +53,7 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
 
                 override fun saveShop(adder: QuestAdderBukkit, shop: Shop): Boolean {
                     return try {
-                        JsonWriter(getShopDataFile(adder, shop.getId()).bufferedWriter()).use {
+                        JsonWriter(getShopDataFile(adder, shop.getKey()).bufferedWriter()).use {
                             it.setIndent(" ")
                             Gson().toJson(shop.serialize(), it)
                         }
@@ -185,7 +185,7 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
 
                 override fun saveShop(adder: QuestAdderBukkit, shop: Shop): Boolean {
                     return try {
-                        JsonWriter(getShopDataFile(adder, shop.getId()).bufferedWriter()).use {
+                        JsonWriter(getShopDataFile(adder, shop.getKey()).bufferedWriter()).use {
                             it.setIndent(" ")
                             Gson().toJson(shop.serialize(), it)
                         }

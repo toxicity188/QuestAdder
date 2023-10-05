@@ -3,6 +3,7 @@ package kor.toxicity.questadder.api;
 import kor.toxicity.questadder.api.item.ItemDatabase;
 import kor.toxicity.questadder.api.mechanic.*;
 import kor.toxicity.questadder.api.registry.IBlockRegistry;
+import kor.toxicity.questadder.api.shop.IShop;
 import kor.toxicity.questadder.api.util.INamedLocation;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -189,4 +190,19 @@ public interface APIManager {
      * @since 1.1.1
      */
     @Nullable DialogSender getDialogSender(@NotNull String name);
+
+    /**
+     * Gets the shop.
+     * @param name the name of shop
+     * @return An object of shop or null if not exist
+     * @since 1.1.4
+     */
+    @Nullable
+    IShop getShop(@NotNull String name);
+
+    /**
+     * @return A keys of all of loaded shops.
+     * @since 1.1.4
+     */
+    @NotNull List<String> getShopKey();
 }

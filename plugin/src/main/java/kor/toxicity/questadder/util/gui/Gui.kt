@@ -10,7 +10,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import org.bukkit.inventory.ItemStack
 
-class Gui(size: Int, val name: Component, val items: Map<Int,ItemStack>): IGui {
+class Gui(private val rawSize: Int, val name: Component, private val items: Map<Int,ItemStack>): IGui {
 
     constructor(size: Int, section: ConfigurationSection): this(
         size,
@@ -27,8 +27,15 @@ class Gui(size: Int, val name: Component, val items: Map<Int,ItemStack>): IGui {
         }
     )
 
-    val size = size.coerceAtLeast(1).coerceAtMost(6) * 9
+    val size = rawSize.coerceAtLeast(1).coerceAtMost(6) * 9
 
+    override fun copy(): IGui {
+        return Gui(rawSize, name, items)
+    }
+
+    override fun setName(component: Component): IGui {
+        return Gui(rawSize, component, items)
+    }
 
     override fun open(player: Player, executor: GuiExecutor): GuiHolder {
         val beforeHolder = player.openInventory.topInventory.holder

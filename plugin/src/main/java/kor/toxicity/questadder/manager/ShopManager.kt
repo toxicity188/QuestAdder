@@ -154,7 +154,7 @@ object ShopManager: QuestAdderManager {
             }
 
             pageBefore = ItemWriter(it.getConfigurationSection("button-page-before") ?: pageBeforeConfig)
-            pageAfter = ItemWriter(it.getConfigurationSection("button-page-after") ?: pageBeforeConfig)
+            pageAfter = ItemWriter(it.getConfigurationSection("button-page-after") ?: pageAfterConfig)
             playerStatus = ItemWriter(it.getConfigurationSection("button-player-status") ?: playerStatusConfig)
         }
     }

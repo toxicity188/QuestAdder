@@ -44,3 +44,5 @@ quest-suffix:
   - ""
   - "<color:gray>(Left - open navigation menu, Right - mark quest)"
   - "<color:gray>(Shift+Left - give up quest)"
+
+import-other-resource-pack: []

@@ -13,4 +13,9 @@ public interface IGui {
     Component getGuiName();
     @NotNull
     Map<Integer, ItemStack> getInnerItems();
+    @NotNull
+    IGui copy();
+
+    @NotNull
+    IGui setName(@NotNull Component component);
 }

@@ -461,7 +461,7 @@ object DialogManager: QuestAdderManager {
         }
         QuestAdderBukkit.asyncTaskTimer(QuestAdderBukkit.Config.autoSaveTime, QuestAdderBukkit.Config.autoSaveTime) {
             shopMap.forEach {
-                if (!QuestAdderBukkit.DB.using.saveShop(adder, it.value)) QuestAdderBukkit.warn("unable to save this shop: ${it.value.getId()}")
+                if (!QuestAdderBukkit.DB.using.saveShop(adder, it.value)) QuestAdderBukkit.warn("unable to save this shop: ${it.value.getKey()}")
             }
         }
     }
@@ -500,6 +500,7 @@ object DialogManager: QuestAdderManager {
         it.questNPC.npcKey == name
     }
     fun getShop(name: String) = shopMap[name]
+    fun getShopKey() = shopMap.keys.toList()
     fun getQuestNPC(name: String) = questNpcMap[name]
     fun getAllNPC(): Set<ActualNPC> = HashSet(actualNPCMap.values)
 
@@ -662,7 +663,7 @@ object DialogManager: QuestAdderManager {
 
     override fun end(adder: QuestAdderBukkit) {
         shopMap.forEach {
-            if (!QuestAdderBukkit.DB.using.saveShop(adder, it.value)) QuestAdderBukkit.warn("unable to save this shop: ${it.value.getId()}")
+            if (!QuestAdderBukkit.DB.using.saveShop(adder, it.value)) QuestAdderBukkit.warn("unable to save this shop: ${it.value.getKey()}")
         }
     }
 }

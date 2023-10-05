@@ -1,6 +1,9 @@
 package kor.toxicity.questadder.manager
 
-import com.google.gson.*
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.google.gson.stream.JsonWriter
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.QuestBlockBreakEvent
@@ -11,7 +14,10 @@ import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.registry.BlockRegistry
+import kor.toxicity.questadder.tooltip.FontData
+import kor.toxicity.questadder.tooltip.FontPair
 import kor.toxicity.questadder.util.ResourcePackData
+import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -22,27 +28,27 @@ import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.block.BlockBreakEvent
-import org.bukkit.event.block.BlockBurnEvent
-import org.bukkit.event.block.BlockIgniteEvent
-import org.bukkit.event.block.BlockPlaceEvent
-import org.bukkit.event.block.NotePlayEvent
+import org.bukkit.event.block.*
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.util.Vector
 import org.zeroturnaround.zip.ZipUtil
 import ru.beykerykt.minecraft.lightapi.common.LightAPI
+import java.awt.AlphaComposite
+import java.awt.Font
+import java.awt.RenderingHints
+import java.awt.font.FontRenderContext
+import java.awt.image.BufferedImage
 import java.io.*
 import java.util.*
 import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import javax.imageio.ImageIO
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
-import kotlin.collections.LinkedHashMap
+import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.min
 
 object ResourcePackManager: QuestAdderManager {
     private val gson = GsonBuilder().disableHtmlEscaping().create()
@@ -63,6 +69,8 @@ object ResourcePackManager: QuestAdderManager {
 
     private val emptyConfig = MemoryConfiguration()
     private val fontMap = HashMap<String,String>()
+
+    private val tooltipMap = HashMap<String,List<FontPair>>()
 
     val blockRegistry = BlockRegistry()
 
@@ -198,6 +206,9 @@ object ResourcePackManager: QuestAdderManager {
         val fonts = File(resource,"fonts").apply {
             mkdir()
         }
+        val tooltips = File(resource, "tooltips").apply {
+            mkdir()
+        }
         val blocks = File(resource, "blocks").apply {
             mkdir()
         }
@@ -232,6 +243,12 @@ object ResourcePackManager: QuestAdderManager {
             mkdir()
         }
         val questFont = File(questAdder, "font").apply {
+            mkdir()
+        }
+        val questFontTooltip = File(questFont, "tooltip").apply {
+            mkdir()
+        }
+        val questFontTexturesTooltip = File(questFontTextures,"tooltip").apply {
             mkdir()
         }
         val minecraftModels = File(File(minecraft, "models").apply {
@@ -283,6 +300,54 @@ object ResourcePackManager: QuestAdderManager {
             gson.toJson(JsonObject().apply {
                 add("providers",json)
             },it)
+        }
+
+        //Tooltips
+        val tooltipList = tooltips.listFiles() ?: emptyArray()
+        val toolTipYamlSet = HashSet<FontData>().apply {
+            tooltipList.forEach {
+                if (it.extension == "yml") {
+                    try {
+                        YamlConfiguration().run {
+                            load(it)
+                            val name = findString("Name","name") ?: it.nameWithoutExtension
+                            val height = findInt(8,"Height","height").coerceAtLeast(1)
+                            val ascent = findInt(0,"Ascent", "ascent").coerceAtMost(height)
+                            val size = findInt(4,"Size","size").coerceAtLeast(4)
+                            for (t in 0 until findInt(1,"Line","line").coerceAtLeast(1)) {
+                                add(FontData(
+                                    size,
+                                    name,
+                                    -height * t + ascent,
+                                    height
+                                ))
+                            }
+                        }
+                    } catch (ex: Exception) {
+                        QuestAdderBukkit.warn("unable to read this file: ${it.name}")
+                        QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
+                    }
+                }
+            }
+        }
+
+        //Tooltip
+        tooltipMap.clear()
+        tooltipList.forEach {
+            when (it.extension) {
+                "ttf","otf" -> {
+                    val name = it.nameWithoutExtension
+                    val filter = toolTipYamlSet.filter { data ->
+                        data.name == name
+                    }
+                    if (filter.isNotEmpty()) it.inputStream().buffered().use { stream ->
+                        val font = Font.createFont(Font.TRUETYPE_FONT,stream)
+                        tooltipMap[name] = filter.mapNotNull { data ->
+                            writeToolTipFont(font, data, questFontTexturesTooltip, questFontTooltip)
+                        }
+                    }
+                }
+            }
         }
 
         //block
@@ -426,6 +491,15 @@ object ResourcePackManager: QuestAdderManager {
                     saveCustomModelData(it.key,it.value.entries)
                 }
                 val buildPath = build.path
+                val parent = adder.dataFolder.parentFile
+                QuestAdderBukkit.Config.importOtherResourcePack.forEach {
+                    val importFile = File(parent,it)
+                    if (importFile.exists() && importFile.isDirectory) {
+                        importFile.copyTo(build)
+                    } else {
+                        QuestAdderBukkit.warn("this file doesn't exist or is not directory: ${importFile.name}")
+                    }
+                }
                 if (QuestAdderBukkit.Config.zipResourcePack) ZipOutputStream(FileOutputStream(File(resource,"build.zip").apply {
                     if (!exists()) delete()
                 }).buffered()).use {
@@ -616,6 +690,97 @@ object ResourcePackManager: QuestAdderManager {
             }
         }
     }
+    private fun writeToolTipFont(targetFont: Font, data: FontData, fontTargetDir: File, jsonTargetDir: File): FontPair? {
+
+        val parsedUTF8 = (Char.MIN_VALUE..Char.MAX_VALUE).filter {
+            targetFont.canDisplay(it)
+        }.toCharArray().run {
+            copyOf(size - size % 16)
+        }
+        val name = data.name
+        val key = "${name}_${abs(data.ascent)}_${abs(data.height)}"
+        if (parsedUTF8.isEmpty()) return null
+        val fontSize = 1 shl data.size
+
+        var i = 0
+        var num = 1
+        val array = JsonArray().apply {
+            add(JsonObject().apply {
+                addProperty("type","space")
+                add("advances",JsonObject().apply {
+                    addProperty(" ", 4)
+                })
+            })
+        }
+        val pow = fontSize shl 4
+
+        val folder = File(fontTargetDir,data.name)
+        val exists = folder.exists()
+        val newFont = targetFont.deriveFont(fontSize.toFloat())
+        val frc = FontRenderContext(null ,true, true)
+        if (!exists) {
+            folder.mkdir()
+        }
+
+        while (i < parsedUTF8.size) {
+            val finalName = "${name}_${num++}"
+            val utf = parsedUTF8.copyOfRange(i, (i + 256).coerceAtMost(parsedUTF8.size))
+            val json = JsonArray()
+
+            if (!exists) {
+                val image = BufferedImage(pow, pow, BufferedImage.TYPE_INT_ARGB)
+                val graphics = image.createGraphics().apply {
+                    composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER)
+
+                    font = newFont
+                    setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
+                    setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON)
+                }
+                for (i2 in 0 until 16.coerceAtMost(utf.size / 16)) {
+                    val str = String(utf.copyOfRange(i2 * 16, ((i2 + 1) * 16).coerceAtMost(utf.size)))
+                    if (str.isNotEmpty()) {
+                        str.forEachIndexed { index, c ->
+                            val s = c.toString()
+                            val bound = newFont.getStringBounds(s, frc)
+                            graphics.drawString(
+                                s,
+                                index * fontSize.toFloat(),
+                                (i2 + 1) * fontSize.toFloat() + min(fontSize - bound.height, -bound.y - fontSize).toFloat()
+                            )
+                        }
+                        json.add(str)
+                    }
+                }
+                graphics.dispose()
+                ImageIO.write(image, "png", File(folder, "$finalName.png"))
+            } else {
+                for (i2 in 0 until 16.coerceAtMost(utf.size / 16)) {
+                    val str = String(utf.copyOfRange(i2 * 16, ((i2 + 1) * 16).coerceAtMost(utf.size)))
+                    if (str.isNotEmpty()) {
+                        json.add(str)
+                    }
+                }
+            }
+            i += 256
+            array.add(JsonObject().apply {
+                addProperty("type","bitmap")
+                addProperty("file","questadder:font/tooltip/$name/$finalName.png")
+                addProperty("ascent",data.ascent)
+                addProperty("height",data.height)
+                add("chars",json)
+            })
+        }
+        JsonWriter(File(jsonTargetDir,"$key.json").bufferedWriter()).use {
+            gson.toJson(JsonObject().apply {
+                add("providers", array)
+            },it)
+        }
+        return FontPair(
+            Key.key(key),
+            newFont
+        )
+    }
+
 
     override fun end(adder: QuestAdderBukkit) {
     }

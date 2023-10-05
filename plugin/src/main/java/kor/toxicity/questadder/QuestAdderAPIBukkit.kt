@@ -9,6 +9,7 @@ import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.api.mechanic.AbstractEvent
 import kor.toxicity.questadder.api.mechanic.DialogSender
 import kor.toxicity.questadder.api.registry.IBlockRegistry
+import kor.toxicity.questadder.api.shop.IShop
 import kor.toxicity.questadder.api.util.INamedLocation
 import kor.toxicity.questadder.manager.*
 import org.bukkit.entity.Player
@@ -200,5 +201,13 @@ object QuestAdderAPIBukkit: APIManager {
 
     override fun getDialogSender(name: String): DialogSender? {
         return DialogManager.getDialogSender(name)
+    }
+
+    override fun getShop(name: String): IShop? {
+        return DialogManager.getShop(name)
+    }
+
+    override fun getShopKey(): List<String> {
+        return DialogManager.getShopKey()
     }
 }
