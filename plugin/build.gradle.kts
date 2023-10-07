@@ -13,6 +13,7 @@ dependencies {
     compileOnly("net.Indyuce:MMOItems-API:6.9.5-SNAPSHOT")
     compileOnly("io.lumine:MythicLib-dist:1.6.2-SNAPSHOT")
     compileOnly("com.github.BeYkeRYkt.LightAPI:lightapi-bukkit-common:5.3.0-Bukkit")
+    compileOnly("io.lumine:MythicCrucible:1.5.0")
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.ticxo.playeranimator:PlayerAnimator:R1.2.7")

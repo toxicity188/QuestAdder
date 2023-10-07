@@ -9,6 +9,7 @@ import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.hooker.item.ItemsAdderItemDatabase
 import kor.toxicity.questadder.hooker.item.MMOItemsItemDatabase
+import kor.toxicity.questadder.hooker.item.MythicCrucibleItemDatabase
 import kor.toxicity.questadder.hooker.item.OraxenItemDatabase
 import kor.toxicity.questadder.mechanic.sender.ItemDialogSender
 import org.bukkit.Bukkit
@@ -76,6 +77,7 @@ object ItemManager: QuestAdderManager {
             if (isPluginEnabled("ItemsAdder")) itemDatabaseList.add(ItemsAdderItemDatabase())
             if (isPluginEnabled("Oraxen")) itemDatabaseList.add(OraxenItemDatabase())
             if (isPluginEnabled("MMOItems")) itemDatabaseList.add(MMOItemsItemDatabase())
+            if (isPluginEnabled("MythicCrucible")) itemDatabaseList.add(MythicCrucibleItemDatabase())
             registerEvents(object : Listener {
                 @EventHandler
                 fun join(e: PlayerJoinEvent) {
