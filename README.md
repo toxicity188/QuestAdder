@@ -9,6 +9,6 @@ ProtocolLib
 Citizens
 
 ## Link
-[Wiki](https://github.com/toxicity188/QuestAdder/wiki) | [Discord](https://discord.com/invite/rePyFESDbk) | [Youtube](https://youtu.be/rZeRAL2zQFM?si=rlXGL7eml8AIttOz)
+[Wiki](https://github.com/toxicity188/QuestAdder/wiki) | [Discord](https://discord.com/invite/rePyFESDbk) | [Youtube](https://youtu.be/rZeRAL2zQFM?si=rlXGL7eml8AIttOz) | [Wiki(Korean)](https://github.com/toxicity188/QuestAdder-korean/tree/main)
 
 </div>
