@@ -12,6 +12,7 @@ import kor.toxicity.questadder.manager.*
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import java.util.*
 import java.util.function.BiFunction
 import java.util.function.Consumer
@@ -208,5 +209,9 @@ object QuestAdderAPIBukkit: APIManager {
 
     override fun getShopKey(): List<String> {
         return DialogManager.getShopKey()
+    }
+
+    override fun getItem(format: String): ItemStack? {
+        return ItemManager.getItem(format)
     }
 }

@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.registry.IBlockRegistry;
 import kor.toxicity.questadder.api.shop.IShop;
 import kor.toxicity.questadder.api.util.INamedLocation;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -205,4 +206,6 @@ public interface APIManager {
      * @since 1.1.4
      */
     @NotNull List<String> getShopKey();
+
+    @Nullable ItemStack getItem(@NotNull String format);
 }
