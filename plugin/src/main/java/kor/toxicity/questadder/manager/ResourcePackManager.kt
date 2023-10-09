@@ -495,7 +495,16 @@ object ResourcePackManager: QuestAdderManager {
                 QuestAdderBukkit.Config.importOtherResourcePack.forEach {
                     val importFile = File(parent,it)
                     if (importFile.exists() && importFile.isDirectory) {
-                        importFile.copyTo(build)
+                        fun copy(from: File, to: File) {
+                            if (from.isDirectory) {
+                                from.listFiles()?.forEach { file ->
+                                    copy(file, File(to,file.name))
+                                }
+                            } else {
+                                if (!to.exists()) from.copyTo(to)
+                            }
+                        }
+                        copy(importFile, build)
                     } else {
                         QuestAdderBukkit.warn("this file doesn't exist or is not directory: ${importFile.name}")
                     }

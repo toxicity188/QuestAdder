@@ -76,6 +76,7 @@ object ActionBuilder {
 
         put("potion",ActPotion::class.java)
         put("clearpotion",ActClearPotion::class.java)
+        put("entityeffect", ActEntityEffect::class.java)
 
         put("clone", ActClone::class.java)
         put("removeentity", ActRemoveEntity::class.java)

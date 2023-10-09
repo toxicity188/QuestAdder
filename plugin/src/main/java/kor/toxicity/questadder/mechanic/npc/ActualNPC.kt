@@ -23,7 +23,7 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
     private val playerDisplayMap = HashMap<UUID,PlayerDisplay>()
 
     private val thread = QuestAdderBukkit.asyncTaskTimer(questNPC.thread,questNPC.thread) {
-        val entity = npc.entity
+        val entity = npc.entity ?: return@asyncTaskTimer
         val loc = entity.location
         val players = Bukkit.getOnlinePlayers().filter {
             it.world == entity.world && loc.distance(it.location) <= questNPC.renderDistance
@@ -114,11 +114,12 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
         }
         fun update() {
             val newState = getState()
+            val entity = npc.entity ?: return
             if (state != newState) {
                 state = newState
                 thread?.remove()
                 thread = when (state) {
-                    State.COMPLETE -> EntityThread(QuestAdderBukkit.nms.createArmorStand(player,npc.entity.location).apply {
+                    State.COMPLETE -> EntityThread(QuestAdderBukkit.nms.createArmorStand(player,entity.location).apply {
                         setText(Component.empty())
                         setItem(ItemStack(QuestAdderBukkit.Config.defaultResourcePackItem).apply {
                             itemMeta = itemMeta?.apply {
@@ -126,7 +127,7 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
                             }
                         })
                     })
-                    State.READY_TO_REQUEST -> EntityThread(QuestAdderBukkit.nms.createArmorStand(player,npc.entity.location).apply {
+                    State.READY_TO_REQUEST -> EntityThread(QuestAdderBukkit.nms.createArmorStand(player,entity.location).apply {
                         setText(Component.empty())
                         setItem(ItemStack(QuestAdderBukkit.Config.defaultResourcePackItem).apply {
                             itemMeta = itemMeta?.apply {
@@ -142,7 +143,7 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
         private inner class EntityThread(val entity: VirtualEntity) {
 
             private val task = QuestAdderBukkit.asyncTaskTimer(1,1) {
-                entity.teleport(npc.entity.location.apply {
+                entity.teleport((npc.entity ?: return@asyncTaskTimer).location.apply {
                     pitch = 0F
                     yaw = player.location.yaw - 180F
                 })

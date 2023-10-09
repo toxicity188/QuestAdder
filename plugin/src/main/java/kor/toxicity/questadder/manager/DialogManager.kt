@@ -2,7 +2,6 @@ package kor.toxicity.questadder.manager
 
 import com.google.gson.JsonObject
 import kor.toxicity.questadder.QuestAdderBukkit
-import kor.toxicity.questadder.api.QuestAdder
 import kor.toxicity.questadder.api.event.*
 import kor.toxicity.questadder.api.gui.GuiData
 import kor.toxicity.questadder.api.gui.MouseButton
@@ -67,7 +66,8 @@ object DialogManager: QuestAdderManager {
     private val shopMap = ConcurrentHashMap<String, Shop>()
 
     private val questNpcMap = HashMap<String, QuestNPC>()
-    private val actualNPCMap = HashMap<UUID, ActualNPC>()
+    private val npcIdMap = HashMap<Int, QuestNPC>()
+    private val actualNPCMap = ConcurrentHashMap<UUID, ActualNPC>()
 
     private val exampleMap = mapOf(
         "actions" to "example-action.yml",
@@ -79,8 +79,8 @@ object DialogManager: QuestAdderManager {
     fun getSelectedQuest(player: Player) = selectedQuestMap[player.uniqueId]
 
     override fun start(adder: QuestAdderBukkit) {
-
-        Bukkit.getPluginManager().registerEvents(object : Listener {
+        val pluginManager = Bukkit.getPluginManager()
+        pluginManager.registerEvents(object : Listener {
             @EventHandler
             fun quit(e: PlayerQuitEvent) {
                 val player = e.player
@@ -119,11 +119,15 @@ object DialogManager: QuestAdderManager {
             }
             @EventHandler
             fun click(e: PlayerInteractAtEntityEvent) {
-                val uuid = e.rightClicked.uniqueId
                 val player = e.player
-                actualNPCMap[uuid]?.let {
+
+                val npc = CitizensAPI.getNPCRegistry().getNPC(e.rightClicked) ?: return
+
+                actualNPCMap[npc.uniqueId]?.let {
+
                     val questNpc = it.questNPC
                     QuestAdderBukkit.getPlayerData(player)?.let { data ->
+
                         if (questNpc.dialogs.isNotEmpty()) {
                             val dialog = questNpc.dialogs[(data.npcIndexes.getOrPut(it.questNPC.npcKey) {
                                 0
@@ -146,8 +150,9 @@ object DialogManager: QuestAdderManager {
             }
             @EventHandler
             fun reload(e: CitizensReloadEvent) {
-                dialogReload(adder)
+                QuestAdderBukkit.reloadSync()
             }
+
             @EventHandler
             fun itemClick(e: PlayerInteractEvent) {
                 e.item?.let {
@@ -467,12 +472,13 @@ object DialogManager: QuestAdderManager {
         }
     }
     private fun registerNPC(npc: NPC) {
-        questNpcMap.values.firstOrNull {
-            npc.id == it.id
-        }?.let {
-            val actual = ActualNPC(npc,it)
-            actualNPCMap[npc.entity.uniqueId] = actual
-            senderMap[actual.questNPC.npcKey] = actual
+        npcIdMap[npc.id]?.let {
+            val uuid = npc.uniqueId
+            if (!actualNPCMap.containsKey(uuid)) {
+                val actual = ActualNPC(npc,it)
+                actualNPCMap[uuid] = actual
+                senderMap[actual.questNPC.npcKey] = actual
+            }
         }
     }
 
@@ -540,7 +546,11 @@ object DialogManager: QuestAdderManager {
         val npcReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
             try {
                 if (senderMap.containsKey(key)) throw RuntimeException("name collision found: $key")
-                questNpcMap.put(key,QuestNPC(adder, file, key, c))?.let {
+                val npc = QuestNPC(adder, file, key, c)
+                npcIdMap.put(npc.id, npc)?.let {
+                    QuestAdderBukkit.warn("npc id collision found: $key in ${file.name} and ${it.file.name}")
+                }
+                questNpcMap.put(key, npc)?.let {
                     QuestAdderBukkit.warn("npc name collision found: $key in ${file.name} and ${it.file.name}")
                 }
             } catch (ex: Exception) {
@@ -611,6 +621,7 @@ object DialogManager: QuestAdderManager {
         actualNPCMap.clear()
         senderMap.clear()
         shopMap.clear()
+        npcIdMap.clear()
 
         fun loadConfig(name: String, reader: (File,String,ConfigurationSection) -> Unit) {
             adder.loadFolder(name) { file, config ->
@@ -641,8 +652,10 @@ object DialogManager: QuestAdderManager {
         loadConfig("senders", senderReader)
         loadConfig("shops", shopReader)
 
-        CitizensAPI.getNPCRegistry().forEach {
-            if (it.isSpawned) registerNPC(it)
+        CitizensAPI.getNPCRegistries().forEach {
+            it.forEach { npc ->
+                registerNPC(npc)
+            }
         }
         Bukkit.getConsoleSender().run {
             send("${actionMap.size} of actions has successfully loaded.")
