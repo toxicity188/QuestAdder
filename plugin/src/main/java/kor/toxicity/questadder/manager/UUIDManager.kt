@@ -19,7 +19,7 @@ object UUIDManager: QuestAdderManager {
 
     fun createRandomUUID(): UUID {
         var uuid = UUID.randomUUID()
-        while (uuidRegistry.contains(uuid)) uuid = UUID.randomUUID()
+        while (!uuidRegistry.add(uuid)) uuid = UUID.randomUUID()
         return uuid
     }
 }

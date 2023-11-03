@@ -17,4 +17,9 @@ public record SoundData(@NotNull String name, float volume, float pitch) {
     public void play(@NotNull Player player) {
         player.playSound(player.getLocation(), name, volume, pitch);
     }
+
+    @Override
+    public String toString() {
+        return name + " " + volume + " " + pitch;
+    }
 }

@@ -1,10 +1,7 @@
 package kor.toxicity.questadder.util
 
 import kor.toxicity.questadder.QuestAdderBukkit
-import kor.toxicity.questadder.extension.EMPTY_DECORATION
-import kor.toxicity.questadder.extension.asComponent
-import kor.toxicity.questadder.extension.deepClear
-import kor.toxicity.questadder.extension.parseChar
+import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.ResourcePackManager
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import net.kyori.adventure.key.Key
@@ -16,9 +13,6 @@ import java.util.regex.Pattern
 
 class ComponentReader<T : Any>(string: String) {
     companion object {
-        private val spaceFont = Key.key("questadder:space")
-        private val buildFont = Key.key("questadder:build")
-        private val legacySpaceFont = Key.key("questadder:legacy_space")
 
         private val emptyIterator = object : ComponentIterator {
             override fun nextLine(): Component {
@@ -263,7 +257,7 @@ class ComponentReader<T : Any>(string: String) {
     private class SpaceComponentBuilder(
         pixel: Int
     ): ComponentBuilder {
-        private val component = (0xD0000 + pixel).parseChar().asComponent().font(spaceFont)
+        private val component = (0xD0000 + pixel).parseChar().asComponent().font(SPACE_FONT)
         override fun length(): Int = 1
         override fun build(): Component = component
         override fun build(index: Int): Component = component
@@ -271,13 +265,13 @@ class ComponentReader<T : Any>(string: String) {
     private class LegacySpaceComponentBuilder(
         pixel: Int
     ): ComponentBuilder {
-        private val component = (0xFFC00 + pixel).parseChar().asComponent().font(legacySpaceFont)
+        private val component = (0xFFC00 + pixel).parseChar().asComponent().font(LEGACY_SPACE_FONT)
         override fun length(): Int = 1
         override fun build(): Component = component
         override fun build(index: Int): Component = component
     }
     private class ImageComponentBuilder(string: String, data: ComponentData): ComponentBuilder {
-        private val component = string.asComponent().color(data.color).decorations(data.decoration).font(buildFont)
+        private val component = string.asComponent().color(data.color).decorations(data.decoration).font(BUILD_FONT)
         override fun length(): Int = 1
         override fun build(): Component = component
         override fun build(index: Int): Component = component

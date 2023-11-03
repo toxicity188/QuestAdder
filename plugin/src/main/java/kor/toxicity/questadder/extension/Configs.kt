@@ -10,6 +10,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
 import org.bukkit.configuration.ConfigurationSection
+import org.bukkit.configuration.MemoryConfiguration
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemFlag
@@ -17,6 +18,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
 import java.util.*
 import java.util.regex.Pattern
+import kotlin.collections.ArrayList
 
 private const val ATTRIBUTE_NAME = "questadder.attribute"
 private val ATTRIBUTE_UUID = UUID.fromString("8d1fc1b6-00fe-11ee-be56-0242ac120002")
@@ -143,3 +145,58 @@ fun ConfigurationSection.getAsItemStack(key: String, apply: (ItemMeta) -> Unit =
         null
     } else ItemManager.getItem(it)
 } else null
+
+fun ConfigurationSection.copy(): ConfigurationSection {
+    fun copy0(any: Any): Any {
+        return if (any is ConfigurationSection) {
+            val config = MemoryConfiguration()
+            any.getKeys(false).forEach {
+                any.get(it)?.let { any0 ->
+                    config.set(it,copy0(any0))
+                }
+            }
+            config
+        } else any
+    }
+    val config = MemoryConfiguration()
+    getKeys(false).forEach {
+        get(it)?.let { any ->
+            config.set(it, copy0(any))
+        }
+    }
+    return config
+}
+
+inline fun <reified T> Array<T>.addElement(element: T) = toMutableList().apply {
+    add(element)
+}.toTypedArray()
+inline fun <reified T> Array<T>.addElement(index: Int, element: T): Array<T> {
+    return if (index > lastIndex) addElement(element) else toMutableList().apply {
+        add(index, element)
+    }.toTypedArray()
+}
+inline fun <reified T> Array<T>.removeLast(): Array<T>? {
+    if (size <= 1) return null
+    return toMutableList().apply {
+        removeAt(lastIndex)
+    }.toTypedArray()
+}
+inline fun <reified T> Array<T>.removeAt(int: Int): Array<T> = toMutableList().apply {
+    removeAt(int)
+}.toTypedArray()
+
+private val INT_PATTERN = Pattern.compile("([0-9]+)")
+fun ConfigurationSection.rebase(pos: Int, add: Int) {
+    val tree = TreeMap<Int, Any>()
+    getKeys(false).forEach {
+        if (!INT_PATTERN.matcher(it).find()) return@forEach
+        val int = it.toInt()
+        val any = get(it) ?: return@forEach
+        if (int > pos) tree[int + add] = any
+        else tree[int] = any
+        set(it, null)
+    }
+    tree.forEach {
+        set(it.key.toString(), it.value)
+    }
+}

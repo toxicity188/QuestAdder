@@ -4,7 +4,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface IDialog {
+public interface IDialog extends Mechanic {
     /**
      * Get a key of that Dialog
      * @return A yaml key of Dialog

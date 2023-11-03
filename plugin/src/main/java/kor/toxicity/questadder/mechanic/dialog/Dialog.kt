@@ -12,10 +12,12 @@ import kor.toxicity.questadder.api.gui.MouseButton
 import kor.toxicity.questadder.api.mechanic.DialogSender
 import kor.toxicity.questadder.api.mechanic.IActualNPC
 import kor.toxicity.questadder.api.mechanic.IDialog
+import kor.toxicity.questadder.api.mechanic.MechanicBlueprint
 import kor.toxicity.questadder.api.util.SoundData
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.manager.GestureManager
+import kor.toxicity.questadder.manager.ResourcePackManager
 import kor.toxicity.questadder.manager.SlateManager
 import kor.toxicity.questadder.mechanic.qna.QnA
 import kor.toxicity.questadder.nms.VirtualArmorStand
@@ -24,10 +26,13 @@ import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.Null
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
+import kor.toxicity.questadder.util.gui.SubExecutor
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.title.Title
+import org.bukkit.Material
 import org.bukkit.configuration.ConfigurationSection
+import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitTask
@@ -36,8 +41,15 @@ import java.time.Duration
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
+import kotlin.collections.ArrayList
 
 class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, section: ConfigurationSection): IDialog {
+
+    private val bluePrint = DialogBlueprint(section)
+    override fun getOriginalBlueprint(): MechanicBlueprint {
+        return bluePrint.copy()
+    }
+
     private interface TypingExecutor {
         fun initialize(talker: Component?)
         fun run(talk: Component)
@@ -81,7 +93,6 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
         }
         private var talkIndex = 0
         private var talkerComponent: Component? = null
-        private var talkComponent = Component.empty()
         private var task: BukkitTask? = null
         private var iterator = ComponentReader.emptyIterator()
 
@@ -93,11 +104,15 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
             if (talkIndex < talk.size) {
                 this@Dialog.executorMap[talkIndex + 1]?.let { d ->
                     current.executor?.end()
-                    current.executor = d.second.create(current,d.first)
+                    try {
+                        current.executor = d.second.create(current, d.first)
+                    } catch (ex: Exception) {
+                        QuestAdderBukkit.warn("runtime error: cannot read this flag: ${d.first}")
+                        QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
+                    }
                 }
                 if (current.executor == null) current.executor = defaultExecutor.create(current, JsonObject())
                 started = true
-                talkComponent = Component.empty()
                 talkerComponent = talker[talkIndex + 1]?.createComponent(current.event)
                 current.executor!!.initialize(talkerComponent)
                 iterator = talk[talkIndex].createIterator(current.event) ?: ComponentReader.errorIterator()
@@ -175,9 +190,8 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 if (iterator.hasNext()) {
                     val next = iterator.nextLine()
                     if ((next as TextComponent).content() != "*") {
-                        talkComponent = talkComponent.append(next)
                         sound.play(current.player)
-                        current.executor!!.run(talkComponent)
+                        current.executor!!.run(next)
                     }
                 } else {
                     cancel()
@@ -245,7 +259,11 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 val meta = item.itemMeta
 
                 return object : TypingExecutor {
+
+                    private var comp = Component.empty()
+
                     override fun initialize(talker: Component?) {
+                        comp = Component.empty()
                         item.itemMeta = meta?.apply {
                             QuestAdderBukkit.platform.setDisplay(this, (talker ?: current.sender.talkerName.asComponent().deepClear()).append(":".asComponent().deepClear()))
                         }
@@ -261,8 +279,9 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                     }
 
                     override fun run(talk: Component) {
+                        comp = comp.append(talk)
                         item.itemMeta = meta?.apply {
-                            QuestAdderBukkit.platform.setLore(this, listOf(talk))
+                            QuestAdderBukkit.platform.setLore(this, listOf(comp))
                         }
                         inv.inventory.setItem(22, item)
                         current.player.updateInventory()
@@ -290,11 +309,13 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 override fun create(current: DialogCurrent, jsonObject: JsonObject): TypingExecutor {
                     return object : TypingExecutor {
                         private var talker: Component = Component.empty()
+                        private var comp = Component.empty()
 
                         override fun run(talk: Component) {
+                            comp = comp.append(talk)
                             QuestAdderBukkit.audience.player(current.player).showTitle(Title.title(
                                 talker,
-                                talk,
+                                comp,
                                 Title.Times.times(
                                     Duration.ZERO,
                                     Duration.ofSeconds(2),
@@ -303,6 +324,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                             ))
                         }
                         override fun initialize(talker: Component?) {
+                            comp = Component.empty()
                             this.talker = talker ?: current.sender.talkerName.asComponent().deepClear()
                         }
                         override fun end() {
@@ -315,6 +337,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                     return object : TypingExecutor {
 
                         private var referencedEntity = current.sender.entity ?: current.player
+                        private var comp = Component.empty()
 
                         private val display = current.display ?: QuestAdderBukkit.nms.createArmorStand(current.player,referencedEntity.location).apply {
                             setText(Component.empty())
@@ -326,6 +349,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                         }
 
                         override fun initialize(talker: Component?) {
+                            comp = Component.empty()
                             referencedEntity = if (talker != null && talker.onlyText() == "player") {
                                 current.player
                             }
@@ -333,7 +357,8 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                         }
 
                         override fun run(talk: Component) {
-                            display.setText(talk)
+                            comp = comp.append(talk)
+                            display.setText(comp)
                             display.teleport(referencedEntity.location.apply {
                                 y += 0.25
                             })
@@ -343,15 +368,88 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
             })
             put("tooltip", object : TypingManager {
                 override fun create(current: DialogCurrent, jsonObject: JsonObject): TypingExecutor {
+
+                    val name = jsonObject.getAsJsonPrimitive("name")?.asString ?: throw RuntimeException("\"name\" field not found.")
+                    val data = ResourcePackManager.getToolTip(name) ?: throw RuntimeException("unable to find \"$name\" tooltip.")
+                    val split = data.split
+
+                    var gui = Component.empty()
+                    if (data.fade) {
+                        val onePixelBack = (-1).parseToSpaceComponent()
+                        val halfPixelBack = (-512).parseToSpaceComponent()
+                        gui = gui.append(halfPixelBack)
+                            //Upper
+                            .append(FADE_COMPONENT_UPPER)
+                            .append(onePixelBack)
+                            .append(FADE_COMPONENT_UPPER)
+                            .append(onePixelBack)
+                            .append(FADE_COMPONENT_UPPER)
+                            .append(onePixelBack)
+                            .append(FADE_COMPONENT_UPPER)
+
+                            //1024 - 3
+                            .append((-1021).parseToSpaceComponent())
+
+                            //under
+                            .append(FADE_COMPONENT_UNDER)
+                            .append(onePixelBack)
+                            .append(FADE_COMPONENT_UNDER)
+                            .append(onePixelBack)
+                            .append(FADE_COMPONENT_UNDER)
+                            .append(onePixelBack)
+                            .append(FADE_COMPONENT_UNDER)
+                            .append(halfPixelBack)
+                    }
+                    gui = gui.append(data.offset.parseToSpaceComponent()).append(data.gui.component).append((-data.gui.width / 2).parseToSpaceComponent()).append(data.chatOffset.parseToSpaceComponent())
+
                     return object : TypingExecutor {
                         private var talker: Component = Component.empty()
+                        private val list = ArrayList<Component>()
 
                         override fun initialize(talker: Component?) {
+                            list.clear()
                             this.talker = talker ?: current.sender.talkerName.asComponent().deepClear()
                         }
 
                         override fun run(talk: Component) {
-                            //TODO Make a tooltip display
+                            val talkList = ArrayList<Component>()
+                            list.add(talk)
+                            var result = gui.append(data.talker.offset.parseToSpaceComponent()).append(data.talker.font.asComponent(talker)).append((-data.talker.font.widthComponent(talker)).parseToSpaceComponent()).append((-data.talker.offset).parseToSpaceComponent())
+                            list.forEachIndexed { index, component ->
+                                val selectedData = data.talk[(index / split).coerceAtMost(data.talk.lastIndex)]
+                                talkList.add(selectedData.font.asComponent(component))
+                                if ((index + 1) % split == 0) {
+                                    var comp = Component.empty()
+                                    talkList.forEach {
+                                        comp = comp.append(it)
+                                    }
+                                    result = result.append(selectedData.offset.parseToSpaceComponent())
+                                        .append(comp)
+                                        .append(selectedData.font.widthComponent(-talkList.size))
+                                        .append((-selectedData.offset).parseToSpaceComponent())
+                                    talkList.clear()
+                                }
+                            }
+                            if (talkList.isNotEmpty()) {
+                                val selectedData = data.talk[(list.size / split).coerceAtMost(data.talk.lastIndex)]
+                                var comp = Component.empty()
+                                talkList.forEach {
+                                    comp = comp.append(it)
+                                }
+                                result = result.append(selectedData.offset.parseToSpaceComponent())
+                                    .append(comp)
+                                    .append(selectedData.font.widthComponent(-talkList.size))
+                                    .append((-selectedData.offset).parseToSpaceComponent())
+                            }
+                            QuestAdderBukkit.audience.player(current.player).showTitle(Title.title(
+                                Component.empty(),
+                                result,
+                                Title.Times.times(
+                                    Duration.ZERO,
+                                    Duration.ofSeconds(2),
+                                    Duration.ofSeconds(1)
+                                )
+                            ))
                         }
 
                         override fun end() {
@@ -375,7 +473,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
     private var lastAction: (DialogCurrent) -> Unit = {}
     private var talkTask = HashMap<Int,(DialogCurrent) -> Unit>()
     private val typingSound = HashMap<String,SoundData>().apply {
-        section.findConfig("TypingSound","typing-sound")?.let { config ->
+        bluePrint.typingSound?.let { config ->
             config.getKeys(false).forEach {
                 config.getAsSoundData(it)?.let { sound ->
                     put(it,sound)
@@ -384,7 +482,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
         }
     }
     private val typingSpeed = HashMap<String,Long>().apply {
-        section.findConfig("TypingSpeed","typing-speed")?.let { config ->
+        bluePrint.typingSpeed?.let { config ->
             config.getKeys(false).forEach {
                 put(it,config.getLong(it).coerceAtLeast(1).coerceAtMost(4))
             }
@@ -443,7 +541,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
         fun error(message: String) {
             QuestAdderBukkit.warn("$message ($dialogKey in ${file.name})")
         }
-        section.findStringList("talk","Talk")?.let { t ->
+        bluePrint.talk?.let { t ->
             t.forEach {
                 val matcher = talkPattern.matcher(it)
                 if (matcher.find()) {
@@ -453,7 +551,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 }
             }
         }
-        section.findConfig("talker","Talker","sender","Sender")?.let { config ->
+        bluePrint.talker?.let { config ->
             config.getKeys(false).forEach {
                 config.getString(it)?.let { s ->
                     try {
@@ -464,7 +562,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 } ?: error("syntax error: the key '$it' is not a string.")
             }
         }
-        section.findStringList("dialog","Dialog","LinkedDialog","linked-dialog")?.let { t ->
+        bluePrint.dialog?.let { t ->
             adder.addLazyTask {
                 t.forEach {
                     DialogManager.getDialog(it)?.let { d ->
@@ -477,7 +575,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 }
             }
         }
-        section.findConfig("Action","action","actions","Actions")?.let { g ->
+        bluePrint.action?.let { g ->
             g.getKeys(false).forEach {
                 g.getAsStringList(it)?.let { s ->
                     ActionBuilder.create(adder,s)?.let { action ->
@@ -492,14 +590,14 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 } ?: error("syntax error: the value \"$it\" is not a string.")
             }
         }
-        section.findStringList("EndAction","end-action")?.let {
-            ActionBuilder.create(adder,it)?.let { action ->
+        bluePrint.endAction?.let {
+            ActionBuilder.create(adder,it.toList())?.let { action ->
                 addLastAction { current ->
                     action.invoke(current.player,current.event)
                 }
             } ?: error("unable to get end action.")
         }
-        section.findConfig("Gesture","gesture","gestures","Gestures")?.let { g ->
+        bluePrint.gestures?.let { g ->
             g.getKeys(false).forEach {
                 g.getString(it)?.let { s ->
                     try {
@@ -513,7 +611,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 } ?: error("syntax error: the value \"$it\" is not a string.")
             }
         }
-        section.findConfig("Sound","Sounds","sounds","sound")?.let { sound ->
+        bluePrint.sounds?.let { sound ->
             for (j in sound.getKeys(false)) {
                 val data = sound.getString(j)?.let { t ->
                     SoundData.fromString(t)
@@ -527,7 +625,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 }
             }
         }
-        section.findConfig("Interface","interface")?.let { c ->
+        bluePrint.interfaces?.let { c ->
             c.getKeys(false).forEach {
                 c.getString(it)?.let { s ->
                     val matcher = typingManagerPattern.matcher(s)
@@ -552,7 +650,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 } ?: error("syntax error: the value \"$it\" is not a string.")
             }
         }
-        section.findStringList("SubDialog","sub-dialog","LinkedSubDialog","linked-sub-dialog")?.let { t ->
+        bluePrint.subDialog?.let { t ->
             adder.addLazyTask {
                 t.forEach {
                     DialogManager.getDialog(it)?.let { d ->
@@ -566,7 +664,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
             }
         }
         fun throwRuntimeError() = error("runtime error: unable to load the function.")
-        section.findStringList("index","Index","Indexes","indexes")?.forEach {
+        bluePrint.index?.forEach {
             val matcher = ANNOTATION_PATTERN.matcher(it)
             while (matcher.find()) {
                 val name = matcher.group("name")
@@ -615,7 +713,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 }
             }
         }
-        section.findStringList("set-vars","SetVars","Vars","vars","Variables","variables","variable","Variable")?.forEach {
+        bluePrint.variable?.forEach {
             val matcher = ANNOTATION_PATTERN.matcher(it)
             while (matcher.find()) {
                 val name = matcher.group("name")
@@ -704,7 +802,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 }
             }
         }
-        section.findStringList("conditions","Conditions","condition","Condition")?.let { cond ->
+        bluePrint.condition?.let { cond ->
             adder.addLazyTask {
                 fun throwRuntimeError(result: Any?) {
                     error("runtime error: the value \"$result\" is not a boolean.")
@@ -762,7 +860,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 }
             }
         }
-        section.findStringList("quest","Quest","SetQuest","set-quest")?.forEach {
+        bluePrint.setQuest?.forEach {
             val split = it.split(' ')
             if (split.size > 1) {
                 adder.addLazyTask {
@@ -785,7 +883,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 }
             }
         }
-        section.findStringList("Check","check","CheckQuest","check-quest")?.forEach {
+        bluePrint.checkQuest?.forEach {
             val split = it.split(' ')
             if (split.size > 1) {
                 adder.addLazyTask {
@@ -839,7 +937,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 }
             }
         }
-        section.findStringList("QnA","QnAs","qna","qnas")?.forEach {
+        bluePrint.qna?.forEach {
             adder.addLazyTask {
                 DialogManager.getQnA(it)?.let { q ->
                     qna?.add(q) ?: run {
@@ -850,7 +948,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 } ?: error("not found error: the qna named $it doesn't exist.")
             }
         }
-        section.findStringList("Shop","Shops","shop","shops")?.forEach {
+        bluePrint.shops?.forEach {
             adder.addLazyTask {
                 DialogManager.getShop(it)?.let { q ->
                     shop?.add(q) ?: run {
@@ -900,5 +998,224 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
 
     override fun getKey(): String {
         return dialogKey
+    }
+
+    fun getEditor(player: Player) {
+        DialogEditor(player)
+    }
+    private class DialogTalkData(
+        val talk: String,
+        val talker: String?,
+        val sound: String?,
+        val typingInterface: String?
+    )
+    private inner class DialogEditor(val player: Player) {
+        private val print = bluePrint.copy()
+
+        init {
+            open()
+        }
+        fun open() {
+            val mainComponent = "Dialog: ${file.name}: $dialog".asComponent()
+            createInventory(mainComponent, 6).open(player, object : GuiExecutor {
+
+                private var currentPage = 0
+                private var talkList: List<DialogTalkData> = emptyList()
+
+                override fun initialize(data: GuiData) {
+                    val inv = data.inventory
+                    for (i in 0..<54) {
+                        inv.setItem(i, null)
+                    }
+                    setupTalk()
+                    val platform = QuestAdderBukkit.platform
+                    talkList.forEachIndexed { index, talkData ->
+                        inv.setItem(9 + index, ItemStack(Material.BOOK).apply {
+                            itemMeta = itemMeta?.apply {
+                                platform.setDisplay(this, "Talker: ".asComponent(YELLOW).clear().append((talkData.talker ?: "<npc>").asComponent(
+                                    WHITE).clear()))
+                                platform.setLore(this, listOf(
+                                    "Talk: ".asComponent(YELLOW).clear().append(talkData.talk.asComponent(WHITE).clear()),
+                                    "Sound: ".asComponent(YELLOW).clear().append((talkData.sound ?: "<none>").asComponent(WHITE).clear()),
+                                    "Interface: ".asComponent(YELLOW).clear().append((talkData.typingInterface ?: "<none>").asComponent(WHITE).clear()),
+                                    Component.empty(),
+                                    "(Left click - edit this talk)".asComponent(GRAY).clear()
+                                ))
+                            }
+                        })
+                    }
+                    val pageLore = "Current Page - ${currentPage + 1} / ${(print.talk?.size ?: 0) / 36 + 1}".asClearComponent()
+                    inv.setItem(46, ItemStack(Material.STONE_BUTTON).apply {
+                        itemMeta = itemMeta?.apply {
+                            platform.setDisplay(this, "Before Page".asClearComponent())
+                            platform.setLore(this, listOf(
+                                Component.empty(),
+                                pageLore,
+                                Component.empty(),
+                                "(Click - Go to before page)".asComponent(GRAY).clear()
+                            ))
+                        }
+                    })
+                    inv.setItem(49, ItemStack(Material.ENCHANTED_BOOK).apply {
+                        itemMeta = itemMeta?.apply {
+                            platform.setDisplay(this, "Add new talk".asClearComponent())
+                            platform.setLore(this, listOf(
+                                Component.empty(),
+                                "(Click - Add new talk)".asComponent(GRAY).clear()
+                            ))
+                        }
+                    })
+                    inv.setItem(52, ItemStack(Material.STONE_BUTTON).apply {
+                        itemMeta = itemMeta?.apply {
+                            platform.setDisplay(this, "After Page".asClearComponent())
+                            platform.setLore(this, listOf(
+                                Component.empty(),
+                                pageLore,
+                                Component.empty(),
+                                "(Click - Go to After page)".asComponent(GRAY).clear()
+                            ))
+                        }
+                    })
+                    inv.setItem(45, ItemStack(Material.REDSTONE_BLOCK).apply {
+                        itemMeta = itemMeta?.apply {
+                            platform.setDisplay(this, "Exit without save".asComponent(RED).clear())
+                            platform.setLore(this, listOf(
+                                Component.empty(),
+                                "(Click - exit without save)".asComponent(GRAY).clear()
+                            ))
+                        }
+                    })
+                    inv.setItem(53, ItemStack(Material.BEACON).apply {
+                        itemMeta = itemMeta?.apply {
+                            platform.setDisplay(this, "Save and exit".asComponent(GREEN).clear())
+                            platform.setLore(this, listOf(
+                                Component.empty(),
+                                "(Click - save and exit)".asComponent(GRAY).clear()
+                            ))
+                        }
+                    })
+                }
+
+                private fun setupTalk() {
+                    print.talk?.let {
+                        val newList = ArrayList<DialogTalkData>()
+                        for (i in currentPage..<currentPage + 36) {
+                            if (it.lastIndex < i) break
+                            val talker: String?
+                            val talk: String
+
+                            val matcher = talkPattern.matcher(it[i])
+                            if (matcher.find()) {
+                                talker = matcher.group("talker")
+                                talk = matcher.group("talk")
+                            } else {
+                                talker = print.talker?.getString(i.toString())
+                                talk = it[i]
+                            }
+                            newList.add(DialogTalkData(
+                                talk,
+                                talker,
+                                print.sounds?.getString(i.toString()),
+                                print.interfaces?.getString(i.toString())
+                            ))
+                        }
+                        talkList = newList
+                    }
+                }
+
+                override fun click(
+                    data: GuiData,
+                    clickedItem: ItemStack,
+                    clickedSlot: Int,
+                    isPlayerInventory: Boolean,
+                    button: MouseButton
+                ) {
+                    if (isPlayerInventory) return
+                    if (clickedItem.type == Material.AIR) return
+                    if (clickedSlot in 9..44) {
+                        val selectedSlot = clickedSlot - 9 + currentPage * 36
+                        val selectedData = talkList[selectedSlot]
+
+                        fun rebase(pos: Int, amount: Int) {
+                            print.talker?.rebase(pos, amount)
+                            print.sounds?.rebase(pos, amount)
+                            print.interfaces?.rebase(pos, amount)
+                        }
+
+                        when (button) {
+                            MouseButton.LEFT -> {
+                                createInventory(mainComponent.append(": ${selectedSlot + 1}".asComponent()),3).open(player, object : SubExecutor(data) {
+                                    override fun initialize(data: GuiData) {
+                                    }
+
+                                    override fun click(
+                                        data: GuiData,
+                                        clickedItem: ItemStack,
+                                        clickedSlot: Int,
+                                        isPlayerInventory: Boolean,
+                                        button: MouseButton
+                                    ) {
+                                        if (isPlayerInventory) return
+                                        if (clickedItem.type == Material.AIR) return
+                                    }
+
+                                })
+                            }
+                            MouseButton.RIGHT -> {
+                                val plus = selectedSlot + 1
+                                print.talk = print.talk?.addElement(plus, "a new talk") ?: Array(1) {
+                                    "a new talk"
+                                }
+                                rebase(plus, 1)
+                                initialize(data)
+                            }
+                            MouseButton.SHIFT_RIGHT -> {
+                                print.talk = print.talk?.removeAt(selectedSlot)
+                                rebase(selectedSlot, -1)
+                                initialize(data)
+                            }
+                            else -> {}
+                        }
+                    } else {
+                        when (clickedSlot) {
+                            46 -> {
+                                currentPage = (currentPage - 1).coerceAtLeast(0)
+                                initialize(data)
+                            }
+                            52 -> {
+                                currentPage = (currentPage + 1).coerceAtMost((print.talk?.size ?: 0) / 36)
+                                initialize(data)
+                            }
+                            49 -> {
+                                print.talk = (print.talk?.addElement("a new talk") ?: Array(1) {
+                                    "a new talk"
+                                })
+                                initialize(data)
+                            }
+                        }
+                    }
+                }
+
+                override fun end(data: GuiData) {
+                }
+
+            })
+        }
+
+        fun save() {
+            try {
+                YamlConfiguration().run {
+                    load(file)
+                    set(dialogKey, print.config)
+                    save(file)
+                }
+                player.info("successfully saved.")
+                player.info("command \"/qa reload\" to apply your change.")
+            } catch (ex: Exception) {
+                player.warn("unable to save the dialog: ($dialog in ${file.name})")
+                player.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
+            }
+            player.closeInventory()
+        }
     }
 }
