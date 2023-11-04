@@ -64,8 +64,8 @@ allprojects {
 
         compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.0-SNAPSHOT")
         compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.1.0-SNAPSHOT")
-        compileOnly("net.byteflux:libby-bukkit:1.1.5")
-        compileOnly("net.citizensnpcs:citizens-main:2.0.32-SNAPSHOT")
+        compileOnly("net.byteflux:libby-bukkit:1.3.0")
+        compileOnly("net.citizensnpcs:citizens-main:2.0.33-SNAPSHOT")
         compileOnly("com.mojang:brigadier:1.1.8")
         compileOnly("com.mojang:datafixerupper:6.0.8")
     }

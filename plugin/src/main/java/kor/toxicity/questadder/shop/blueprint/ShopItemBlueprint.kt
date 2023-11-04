@@ -20,7 +20,7 @@ data class ShopItemBlueprint(
         private val emptyPrice = ShopPrice(-1, emptyList())
         private fun buildItem(section: ConfigurationSection) = (section.findString("Item","item") ?: throw RuntimeException("item value not found!")).let {
             ItemManager.getItemSupplier(it)?.let { supplier ->
-                val i = supplier.get() ?: throw RuntimeException("unable to build this item: $it")
+                val i = supplier.get()
                 val a = section.findInt(1,"Amount","amount").coerceAtLeast(1).coerceAtMost(i.maxStackSize)
                 if (section.findBoolean("AlwaysRebuild","always-rebuild")) {
                     {

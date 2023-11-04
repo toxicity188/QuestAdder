@@ -22,11 +22,11 @@ public enum PrimitiveType {
         this.reference = reference;
     }
 
-    public Class<?> getPrimitive() {
+    public @NotNull Class<?> getPrimitive() {
         return primitive;
     }
 
-    public Class<?> getReference() {
+    public @NotNull Class<?> getReference() {
         return reference;
     }
 

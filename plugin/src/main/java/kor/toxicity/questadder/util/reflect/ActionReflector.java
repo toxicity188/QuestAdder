@@ -8,6 +8,7 @@ import kor.toxicity.questadder.api.util.DataField;
 import kor.toxicity.questadder.api.util.DataObject;
 import kor.toxicity.questadder.util.builder.FunctionBuilder;
 import kor.toxicity.questadder.util.function.WrappedFunction;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
@@ -20,7 +21,7 @@ public class ActionReflector<T extends DataObject> {
 
     private final T object;
 
-    public ActionReflector(T object, JsonObject jsonObject) {
+    public ActionReflector(@NotNull T object, @NotNull JsonObject jsonObject) {
         this.object = object;
         var fields = new ArrayList<AnnotatedField>();
         for (Field field : object.getClass().getFields()) {
@@ -34,7 +35,7 @@ public class ActionReflector<T extends DataObject> {
                 Object value;
                 if (type.isEnum()) {
                     var upperCase = entry.getValue().getAsString().toUpperCase();
-                    value = Arrays.stream(type.getEnumConstants()).filter(obj -> upperCase.equals(obj.toString())).findFirst().orElse(null);
+                    value = Arrays.stream(type.getEnumConstants()).filter(obj -> upperCase.equals(((Enum<?>) obj).name())).findFirst().orElse(null);
                     if (value == null) QuestAdderBukkit.Companion.warn("not found error: no enum constant \"" + upperCase + "\" found.");
                 } else {
                     var parse = DataType.findByClass(type);
@@ -60,7 +61,7 @@ public class ActionReflector<T extends DataObject> {
         QuestAdderBukkit.Companion.warn("reflection error: cannot invoke field \"" + n + "\".");
     }
 
-    public T getResult() {
+    public @NotNull T getResult() {
         return object;
     }
 

@@ -41,7 +41,6 @@ import java.time.Duration
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
-import kotlin.collections.ArrayList
 
 class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, section: ConfigurationSection): IDialog {
 

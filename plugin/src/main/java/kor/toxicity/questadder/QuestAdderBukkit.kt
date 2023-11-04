@@ -2,6 +2,8 @@ package kor.toxicity.questadder
 
 import com.ticxo.playeranimator.PlayerAnimatorImpl
 import com.ticxo.playeranimator.api.PlayerAnimator
+import com.ticxo.playeranimator.api.model.ModelManager
+import com.ticxo.playeranimator.api.model.player.PlayerModel
 import kor.toxicity.questadder.api.APIManager
 import kor.toxicity.questadder.api.QuestAdder
 import kor.toxicity.questadder.api.QuestAdderAPI
@@ -69,6 +71,7 @@ import org.bukkit.OfflinePlayer
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.MemoryConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
+import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
@@ -78,6 +81,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.scheduler.BukkitTask
 import org.jetbrains.annotations.ApiStatus.Internal
 import java.io.File
 import java.net.URI
@@ -436,7 +440,39 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             return
         }
         try {
-            animator = PlayerAnimatorImpl.initialize(this)
+            animator = PlayerAnimatorImpl.initialize(this).apply {
+                modelManager = object : ModelManager() {
+                    private val playerMap = ConcurrentHashMap<UUID, PlayerModel>()
+
+                    private var task: BukkitTask? = null
+
+                    override fun activate() {
+                        task?.cancel()
+                        task = asyncTaskTimer(1,1) {
+                            val iterator = playerMap.values.iterator()
+                            while (iterator.hasNext()) {
+                                val next = iterator.next()
+                                if (!next.update()) {
+                                    iterator.remove()
+                                    next.despawn()
+                                }
+                            }
+                        }
+                    }
+
+                    override fun getPlayerModel(entity: Entity): PlayerModel? {
+                        return playerMap[entity.uniqueId]
+                    }
+
+                    override fun unregisterModel(entity: Entity) {
+                        playerMap.remove(entity.uniqueId)
+                    }
+
+                    override fun registerModel(model: PlayerModel) {
+                        playerMap[model.base.uniqueId] = model
+                    }
+                }
+            }
         } catch (ex: Exception) {
             warn("this version does not support gesture.")
         }

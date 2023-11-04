@@ -8,11 +8,11 @@ import java.util.Collection;
 
 public interface ItemDatabase {
 
-    Collection<String> getKeys();
+    Collection<@NotNull String> getKeys();
     @Nullable
     ItemStack getItem(@NotNull String name);
     @NotNull
-    Collection<ItemPair> getItems();
+    Collection<@NotNull ItemPair> getItems();
     void reload();
     @NotNull String requiredPlugin();
 }
