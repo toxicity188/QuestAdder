@@ -593,7 +593,7 @@ object ResourcePackManager: QuestAdderManager {
                     build.listFiles()?.forEach { f ->
                         zip(f)
                     }
-                    adder.getResource("pack.png")?.buffered()?.let { png ->
+                    adder.getResource("pack.png")?.buffered()?.use { png ->
                         val entry = ZipEntry("pack.png")
                         it.putNextEntry(entry)
                         it.write(png.readBytes())
@@ -762,108 +762,6 @@ object ResourcePackManager: QuestAdderManager {
             }
         }
     }
-//    private fun writeToolTipFont(targetFont: Font, data: FontBlueprint, fontTargetDir: File, jsonTargetDir: File): ToolTipFontData? {
-//
-//
-//        val parsedUTF8 = (Char.MIN_VALUE..Char.MAX_VALUE).filter {
-//            targetFont.canDisplay(it)
-//        }.toCharArray().run {
-//            copyOf(size - size % 16)
-//        }
-//        val name = data.name
-//        val key = "${name}_${abs(data.ascent)}_${abs(data.height)}"
-//        if (parsedUTF8.isEmpty()) return null
-//        val fontSize = 16 shl data.size
-//
-//        var i = 0
-//        var num = 1
-//        val array = JsonArray().apply {
-//            add(JsonObject().apply {
-//                addProperty("type","space")
-//                add("advances",JsonObject().apply {
-//                    addProperty(" ", 4)
-//                })
-//            })
-//        }
-//        val pow = fontSize shl 4
-//
-//        val folder = File(fontTargetDir,data.name)
-//        val exists = folder.exists()
-//        val newFont = targetFont.deriveFont(fontSize.toFloat() * 0.75F)
-//        if (!exists) {
-//            folder.mkdir()
-//        }
-//
-//        val spriteMap = HashMap<Int, CharSprite>()
-//
-//        val multiplier = data.height.toDouble() / fontSize
-//        while (i < parsedUTF8.size) {
-//            val finalName = "${name}_${num++}"
-//            val utf = parsedUTF8.copyOfRange(i, (i + 256).coerceAtMost(parsedUTF8.size))
-//            val json = JsonArray()
-//
-//            if (!exists) {
-//                val image = BufferedImage(pow, pow, BufferedImage.TYPE_INT_ARGB)
-//                val graphics = image.createGraphics().apply {
-//                    composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER)
-//
-//                    font = newFont
-//                    setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
-//                    setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON)
-//                }
-//                for (i2 in 0 until 16.coerceAtMost(utf.size / 16)) {
-//                    val str = String(utf.copyOfRange(i2 * 16, ((i2 + 1) * 16).coerceAtMost(utf.size)))
-//                    if (str.isNotEmpty()) {
-//                        str.forEachIndexed { index, c ->
-//                            val s = c.toString()
-//                            val bound = newFont.getStringBounds(s, fontRenderContent)
-//
-//                            val draw = newFont.createGlyphVector(fontRenderContent, s).getPixelBounds(fontRenderContent, 0F, 0F)
-//                            spriteMap[c.code] = CharSprite(ceil(draw.width * multiplier).toInt(), ceil(draw.height * multiplier).toInt())
-//
-//                            graphics.drawString(
-//                                s,
-//                                index * fontSize.toFloat(),
-//                                (i2 + 1) * fontSize.toFloat() + min(fontSize - bound.height, -bound.y - fontSize).toFloat() * 0.75F
-//                            )
-//                        }
-//                        json.add(str)
-//                    }
-//                }
-//                graphics.dispose()
-//                ImageIO.write(image, "png", File(folder, "$finalName.png"))
-//            } else {
-//                for (i2 in 0 until 16.coerceAtMost(utf.size / 16)) {
-//                    val str = String(utf.copyOfRange(i2 * 16, ((i2 + 1) * 16).coerceAtMost(utf.size)))
-//                    if (str.isNotEmpty()) {
-//                        json.add(str)
-//                        str.forEach {
-//                            val draw = newFont.createGlyphVector(fontRenderContent, it.toString()).getPixelBounds(fontRenderContent, 0F, 0F)
-//                            spriteMap[it.code] = CharSprite(ceil(draw.width * multiplier).toInt(), ceil(draw.height * multiplier).toInt())
-//                        }
-//                    }
-//                }
-//            }
-//            i += 256
-//            array.add(JsonObject().apply {
-//                addProperty("type","bitmap")
-//                addProperty("file","questadder:font/tooltip/$name/$finalName.png")
-//                addProperty("ascent",data.ascent)
-//                addProperty("height",data.height)
-//                add("chars",json)
-//            })
-//        }
-//        JsonWriter(File(jsonTargetDir,"$key.json").bufferedWriter()).use {
-//            gson.toJson(JsonObject().apply {
-//                add("providers", array)
-//            },it)
-//        }
-//        return ToolTipFontData(
-//            Key.key("questadder:tooltip/$key"),
-//            data.fontOffset,
-//            spriteMap
-//        )
-//    }
 
     fun getToolTip(name: String) = tooltipMap[name]
 

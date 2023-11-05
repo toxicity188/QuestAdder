@@ -15,6 +15,7 @@ import kor.toxicity.questadder.util.function.ArgumentFunction
 import kor.toxicity.questadder.util.function.QuestOperator
 import kor.toxicity.questadder.util.function.WrappedFunction
 import kor.toxicity.questadder.util.reflect.PrimitiveType
+import me.clip.placeholderapi.PlaceholderAPI
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -317,6 +318,27 @@ object FunctionBuilder {
         }
         addFunction("region") { e: RegionEvent, _ ->
             e.region.id
+        }
+        addFunction("papiStrOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
+            try {
+                PlaceholderAPI.setPlaceholders(args[0] as Player, args[1] as String)
+            } catch (ex: Throwable) {
+                "<none>"
+            }
+        }
+        addFunction("papiNumOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
+            try {
+                PlaceholderAPI.setPlaceholders(args[0] as Player, args[1] as String).toInt()
+            } catch (ex: Throwable) {
+                0
+            }
+        }
+        addFunction("papiBoolOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
+            try {
+                PlaceholderAPI.setPlaceholders(args[0] as Player, args[1] as String).toBoolean()
+            } catch (ex: Throwable) {
+                false
+            }
         }
     }
     inline fun <reified T, reified R : Any> addOperation(name: String, priority: Int, noinline operate: (T, T) -> R) {
