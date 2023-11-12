@@ -98,7 +98,7 @@ import java.util.concurrent.ThreadLocalRandom
 class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
     companion object: QuestAdder {
 
-        const val VERSION = "1.1.6"
+        const val VERSION = "1.1.7"
 
         private val listener = object : Listener {
         }

@@ -89,9 +89,9 @@ object QuestAdderAPIBukkit: APIManager {
      * @since 1.0
      */
 
-    override fun <T, R> addFunction(
+    override fun <T : Any, R : Any> addFunction(
         name: String,
-        args: MutableList<Class<*>>,
+        args: List<Class<*>>,
         argsClass: Class<T>,
         returnClass: Class<R>,
         function: BiFunction<T, Array<Any>, R>

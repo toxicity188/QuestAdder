@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 
 public interface IQuestNPC {
     @Nullable Integer getIndex(@NotNull Player player);
-    void getIndexAsync(@NotNull Player player, @NotNull Consumer<Integer> consumer);
+    void getIndexAsync(@NotNull Player player, @NotNull Consumer<@NotNull Integer> consumer);
     boolean setIndex(@NotNull Player player, int index);
     void setIndexAsync(@NotNull OfflinePlayer player, int index);
     @NotNull String getKey();

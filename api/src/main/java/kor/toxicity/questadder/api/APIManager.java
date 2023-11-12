@@ -32,7 +32,7 @@ public interface APIManager {
      * @param callback the function that will be called when reload task is end
      * @since 1.0
      */
-    void reloadPlugin(@NotNull Consumer<Long> callback);
+    void reloadPlugin(@NotNull Consumer<@NotNull Long> callback);
     /**
      * Reloads this plugin synchronously.
      * This method doesn't call both ReloadStartEvent and ReloadEndEvent.
@@ -81,7 +81,7 @@ public interface APIManager {
      * @param function The block of that function
      * @since 1.0
      */
-    <T,R> void addFunction(@NotNull String name, @NotNull List<Class<?>> args, @NotNull Class<T> argsClass, @NotNull Class<R> returnClass, @NotNull BiFunction<T,Object[],R> function);
+    <T,R> void addFunction(@NotNull String name, @NotNull List<@NotNull Class<?>> args, @NotNull Class<T> argsClass, @NotNull Class<R> returnClass, @NotNull BiFunction<@NotNull T, @NotNull Object[], @NotNull R> function);
 
     /**
      * Gets NPC object from given uuid.
@@ -109,7 +109,7 @@ public interface APIManager {
      * @since 1.0.3
      */
     @NotNull
-    Set<IActualNPC> getAllNPC();
+    Set<@NotNull IActualNPC> getAllNPC();
 
     /**
      * Adds action in QuestAdder.
@@ -142,32 +142,32 @@ public interface APIManager {
      * @return A keys of all of loaded dialogs.
      * @since 1.0.7
      */
-    @NotNull List<String> getDialogKeys();
+    @NotNull List<@NotNull String> getDialogKeys();
     /**
      * @return A keys of all of loaded quests.
      * @since 1.0.7
      */
-    @NotNull List<String> getQuestKeys();
+    @NotNull List<@NotNull String> getQuestKeys();
     /**
      * @return A keys of all of loaded QnAs.
      * @since 1.0.7
      */
-    @NotNull List<String> getQnaKeys();
+    @NotNull List<@NotNull String> getQnaKeys();
     /**
      * @return A keys of all of loaded Actions.
      * @since 1.0.7
      */
-    @NotNull List<String> getActionKeys();
+    @NotNull List<@NotNull String> getActionKeys();
     /**
      * @return A keys of all of loaded NPCs.
      * @since 1.0.7
      */
-    @NotNull List<String> getNPCKeys();
+    @NotNull List<@NotNull String> getNPCKeys();
     /**
      * @return A keys of all of loaded quest NPCs.
      * @since 1.0.7
      */
-    @NotNull List<String> getQuestNPCKeys();
+    @NotNull List<@NotNull String> getQuestNPCKeys();
 
     /**
      * @since 1.0.10

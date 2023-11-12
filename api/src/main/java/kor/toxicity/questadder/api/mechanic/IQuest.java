@@ -21,5 +21,5 @@ public interface IQuest {
     @NotNull ItemStack getIcon(@NotNull Player player, @NotNull List<Component> components);
     @NotNull String getName();
     @NotNull String getKey();
-    @NotNull SortedSet<String> getTypes();
+    @NotNull SortedSet<@NotNull String> getTypes();
 }

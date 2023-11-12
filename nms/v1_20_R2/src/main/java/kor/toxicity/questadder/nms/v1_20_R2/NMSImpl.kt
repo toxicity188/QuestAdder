@@ -40,8 +40,8 @@ class NMSImpl: NMS {
 
     override fun removePlayer(player: Player, target: Player) {
         (player as CraftPlayer).handle.c.run {
-            a(PacketPlayOutEntityDestroy(target.entityId))
-            a(ClientboundPlayerInfoRemovePacket(listOf(target.uniqueId)))
+            b(PacketPlayOutEntityDestroy(target.entityId))
+            b(ClientboundPlayerInfoRemovePacket(listOf(target.uniqueId)))
         }
     }
     override fun sendAdvancementMessage(player: Player, itemStack: ItemStack, component: Component) {
@@ -94,14 +94,14 @@ class NMSImpl: NMS {
     }
     private abstract class VirtualEntityImpl<T: Entity>(player: Player, protected val entity: T): VirtualEntity {
         protected val connection: PlayerConnection = (player as CraftPlayer).handle.c.apply {
-            a(PacketPlayOutSpawnEntity(entity))
+            b(PacketPlayOutSpawnEntity(entity))
         }
         override fun teleport(location: Location) {
             entity.a(location.x,location.y,location.z,location.yaw,location.pitch)
-            connection.a(PacketPlayOutEntityTeleport(entity))
+            connection.b(PacketPlayOutEntityTeleport(entity))
         }
         override fun remove() {
-            connection.a(PacketPlayOutEntityDestroy(entity.ah()))
+            connection.b(PacketPlayOutEntityDestroy(entity.ah()))
         }
     }
     private class VirtualArmorStandImpl(player: Player, location: Location): VirtualEntityImpl<EntityArmorStand>(player,EntityArmorStand(EntityTypes.d,(location.world as CraftWorld).handle).apply {
@@ -110,16 +110,16 @@ class NMSImpl: NMS {
         n(true)
     }), VirtualArmorStand {
         init {
-            connection.a(PacketPlayOutEntityMetadata(entity.ah(),entity.al().c()))
+            connection.b(PacketPlayOutEntityMetadata(entity.ah(),entity.al().c()))
         }
         override fun setText(text: Component) {
             entity.b(CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(text)))
-            connection.a(PacketPlayOutEntityMetadata(entity.ah(),entity.al().c()))
+            connection.b(PacketPlayOutEntityMetadata(entity.ah(),entity.al().c()))
         }
         override fun setItem(itemStack: ItemStack) {
             val item = CraftItemStack.asNMSCopy(itemStack)
             entity.setItemSlot(EnumItemSlot.f, item,true)
-            connection.a(PacketPlayOutEntityEquipment(entity.ah(), listOf(Pair(EnumItemSlot.f,item))))
+            connection.b(PacketPlayOutEntityEquipment(entity.ah(), listOf(Pair(EnumItemSlot.f,item))))
         }
     }
     override fun createItemDisplay(player: Player, location: Location): VirtualItemDisplay {
@@ -129,7 +129,7 @@ class NMSImpl: NMS {
     private abstract class VirtualDisplayImpl<T: Display>(player: Player, entity: T): VirtualEntityImpl<T>(player,entity), VirtualDisplay {
         override fun setSize(x: Double, y: Double, z: Double) {
             entity.a(Transformation(null,null, Vector3f(x.toFloat(),y.toFloat(),z.toFloat()),null))
-            connection.a(PacketPlayOutEntityMetadata(entity.ah(),entity.al().c()))
+            connection.b(PacketPlayOutEntityMetadata(entity.ah(),entity.al().c()))
         }
     }
 
@@ -138,7 +138,7 @@ class NMSImpl: NMS {
     }), VirtualItemDisplay {
         override fun setItem(itemStack: ItemStack) {
             entity.a(CraftItemStack.asNMSCopy(itemStack))
-            connection.a(PacketPlayOutEntityMetadata(entity.ah(),entity.al().c()))
+            connection.b(PacketPlayOutEntityMetadata(entity.ah(),entity.al().c()))
         }
     }
 
@@ -152,7 +152,7 @@ class NMSImpl: NMS {
     }), VirtualTextDisplay {
         override fun setText(text: Component) {
             entity.c(CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(text)))
-            connection.a(PacketPlayOutEntityMetadata(entity.ah(),entity.al().c()))
+            connection.b(PacketPlayOutEntityMetadata(entity.ah(),entity.al().c()))
         }
     }
     override fun getVersion(): NMSVersion {
@@ -162,12 +162,12 @@ class NMSImpl: NMS {
     override fun changeFakeItemInHand(player: Player, itemStack: ItemStack, targetPlayer: Collection<Player>) {
         val packet = PacketPlayOutEntityEquipment(player.entityId, listOf(Pair(EnumItemSlot.a,CraftItemStack.asNMSCopy(itemStack))))
         targetPlayer.forEach {
-            (it as CraftPlayer).handle.c.a(packet)
+            (it as CraftPlayer).handle.c.b(packet)
         }
     }
 
     override fun changePosition(player: Player, location: Location) {
-        (player as CraftPlayer).handle.c.a(PacketPlayOutPosition(
+        (player as CraftPlayer).handle.c.b(PacketPlayOutPosition(
             location.x,
             location.y,
             location.z,
@@ -185,16 +185,16 @@ class NMSImpl: NMS {
         a(location.x,location.y,location.z,location.yaw,location.pitch)
     }), VirtualPlayer {
         init {
-            connection.a(ClientboundPlayerInfoUpdatePacket(EnumSet.noneOf(ClientboundPlayerInfoUpdatePacket.a::class.java).apply {
+            connection.b(ClientboundPlayerInfoUpdatePacket(EnumSet.noneOf(ClientboundPlayerInfoUpdatePacket.a::class.java).apply {
                 add(ClientboundPlayerInfoUpdatePacket.a.entries[0])
             },listOf(entity)))
             val watcher = entity.al()
             watcher.a(DataWatcherObject(17, DataWatcherRegistry.a), 127, true)
-            connection.a(PacketPlayOutEntityMetadata(entity.ah(),watcher.c()))
+            connection.b(PacketPlayOutEntityMetadata(entity.ah(),watcher.c()))
         }
 
         override fun remove() {
-            connection.a(ClientboundPlayerInfoRemovePacket(listOf(entity.cv())))
+            connection.b(ClientboundPlayerInfoRemovePacket(listOf(entity.cv())))
             super.remove()
         }
     }

@@ -363,7 +363,7 @@ object FunctionBuilder {
     }
 
 
-    inline fun <reified T, reified R> addFunction(
+    inline fun <reified T : Any, reified R : Any> addFunction(
         name: String,
         args: List<Class<*>> = emptyList(),
         noinline function: (t: T, Array<Any>) -> R?
@@ -371,7 +371,7 @@ object FunctionBuilder {
         addFunction(name, T::class.java, R::class.java, args, function)
     }
 
-    fun <T, R> addFunction(
+    fun <T : Any, R: Any> addFunction(
         name: String,
         clazzType: Class<T>,
         returnType: Class<R>,

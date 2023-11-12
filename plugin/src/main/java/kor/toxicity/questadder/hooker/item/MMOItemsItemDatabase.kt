@@ -1,5 +1,6 @@
 package kor.toxicity.questadder.hooker.item
 
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import kor.toxicity.questadder.api.item.ItemPair
 import kor.toxicity.questadder.api.item.ItemSupplier
@@ -41,16 +42,15 @@ class MMOItemsItemDatabase: JsonItemDatabase {
         return "MMOItems"
     }
 
-    override fun getItemSupplier(name: String, jsonObject: String): ItemSupplier {
-        val json = JsonParser.parseString(jsonObject).asJsonObject
-        val type = json.getAsJsonPrimitive("type")?.let {
+    override fun getItemSupplier(name: String, jsonObject: JsonObject): ItemSupplier {
+        val type = jsonObject.getAsJsonPrimitive("type")?.let {
             MMOItems.plugin.types.get(it.asString)
         } ?: throw RuntimeException("type value not found!")
         val temp = MMOItems.plugin.templates.getTemplate(type, name) ?: throw RuntimeException("template value not found!")
         return ItemSupplier {
             temp.newBuilder(
-                json.getAsJsonPrimitive("level")?.asInt ?: 0,
-                json.getAsJsonPrimitive("tier")?.let {
+                jsonObject.getAsJsonPrimitive("level")?.asInt ?: 0,
+                jsonObject.getAsJsonPrimitive("tier")?.let {
                     MMOItems.plugin.tiers.get(it.asString)
                 }
             ).build().newBuilder().build() ?: throw RuntimeException("item value not found!")

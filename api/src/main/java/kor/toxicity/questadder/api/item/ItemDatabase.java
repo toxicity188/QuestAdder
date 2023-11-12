@@ -8,7 +8,7 @@ import java.util.Collection;
 
 public interface ItemDatabase {
 
-    Collection<@NotNull String> getKeys();
+    @NotNull Collection<@NotNull String> getKeys();
     @Nullable
     ItemStack getItem(@NotNull String name);
     @NotNull

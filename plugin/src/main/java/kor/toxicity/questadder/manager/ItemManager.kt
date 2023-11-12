@@ -1,5 +1,6 @@
 package kor.toxicity.questadder.manager
 
+import com.google.gson.JsonParser
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.item.ItemDatabase
 import kor.toxicity.questadder.api.item.ItemSupplier
@@ -35,12 +36,15 @@ object ItemManager: QuestAdderManager {
                 it.getItem(name)
             } else {
                 val n = matcher.group("name")
-                val a = matcher.group("argument") ?: "{}"
-                return itemMap[n]?.get() ?: itemDatabaseList.firstNotNullOfOrNull {
+                val j = JsonParser.parseString(matcher.group("argument") ?: "{}").asJsonObject
+                val a = j.getAsJsonPrimitive("amount")?.asInt?.coerceAtLeast(1) ?: 1
+                return (itemMap[n]?.get() ?: itemDatabaseList.firstNotNullOfOrNull {
                     when (it) {
-                        is JsonItemDatabase -> it.getItemStack(n, a)
+                        is JsonItemDatabase -> it.getItemStack(n, j)
                         else -> it.getItem(n)
                     }
+                })?.apply {
+                    amount = a
                 }
             }
         } catch (ex: Exception) {
@@ -57,10 +61,19 @@ object ItemManager: QuestAdderManager {
                 null
             } else {
                 val n = matcher.group("name")
-                val a = matcher.group("argument") ?: "{}"
+                val j = JsonParser.parseString(matcher.group("argument") ?: "{}").asJsonObject
+                val a = j.getAsJsonPrimitive("amount")?.asInt?.coerceAtLeast(1) ?: 1
                 return itemMap[n] ?: itemDatabaseList.firstNotNullOfOrNull {
                     when (it) {
-                        is JsonItemDatabase -> it.getItemSupplier(n, a)
+                        is JsonItemDatabase -> if (a > 1) {
+                            it.getItemSupplier(n, j)?.let {
+                                ItemSupplier {
+                                    it.get().apply {
+                                        amount = a
+                                    }
+                                }
+                            }
+                        } else it.getItemSupplier(n, j)
                         else -> null
                     }
                 }
@@ -132,7 +145,7 @@ object ItemManager: QuestAdderManager {
                     meta.persistentDataContainer.set(QUEST_ADDER_ITEM_KEY, PersistentDataType.STRING, it)
                 }?.let { i ->
                     itemMap.putIfAbsent(it, ItemSupplier {
-                        i
+                        i.clone()
                     })
                     Unit
                 } ?: run {
