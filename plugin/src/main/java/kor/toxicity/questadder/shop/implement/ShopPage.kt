@@ -26,4 +26,10 @@ class ShopPage(val blueprint: ShopPageBlueprint, jsonObject: JsonObject) {
             }
         })
     }
+
+    fun cancel() {
+        shopItem.values.forEach {
+            it.cancel()
+        }
+    }
 }

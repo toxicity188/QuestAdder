@@ -18,11 +18,13 @@ import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
+import java.text.DecimalFormat
 
 class Shop(private val blueprint: ShopBlueprint, jsonObject: JsonObject): IShop {
     companion object {
         private val emptyArray = JsonArray()
         private val emptyObject = JsonObject()
+        private val format = DecimalFormat("#,###")
     }
 
     private val shopPage: List<ShopPage> = try {
@@ -46,6 +48,12 @@ class Shop(private val blueprint: ShopBlueprint, jsonObject: JsonObject): IShop 
         })
     }
 
+    fun cancel() {
+        shopPage.forEach {
+            it.cancel()
+        }
+    }
+
     override fun open(player: Player, sender: DialogSender) {
         createInventory(blueprint.name.createComponent(player) ?: Component.text("error"), blueprint.size).open(player, object : GuiExecutor {
 
@@ -58,22 +66,29 @@ class Shop(private val blueprint: ShopBlueprint, jsonObject: JsonObject): IShop 
                 for (i in 0 until size) {
                     inv.setItem(i, null)
                 }
-                currentShopPage.blueprint.map.forEach {
+                currentShopPage.shopItem.forEach {
                     if (it.key >= size - 9) return@forEach
-                    inv.setItem(it.key,it.value.builder().apply {
+                    inv.setItem(it.key,it.value.blueprint.builder().apply {
                         itemMeta = itemMeta?.apply {
                             QuestAdderBukkit.platform.setLore(this, QuestAdderBukkit.platform.getLore(this).toMutableList().apply {
-                                val canBuy = it.value.buyPrice.price > 0
-                                val canSell = it.value.sellPrice.price > 0
+
+
+                                val buyPrice = it.value.blueprint.buyPrice.equation.buyEvaluate(it.value, player)
+                                val sellPrice = it.value.blueprint.sellPrice.equation.sellEvaluate(it.value, player)
+
+                                val stock = it.value.getStock(player)
+
+                                val canBuy = it.value.blueprint.buyPrice.price > 0
+                                val canSell = it.value.blueprint.sellPrice.price > 0
 
                                 if (canBuy) addAll(ShopManager.loreBuyPrice.mapNotNull { reader ->
-                                    reader.createComponent(player, mapOf("\$price" to listOf(Component.text(it.value.buyPrice.price))))
+                                    reader.createComponent(player, mapOf("\$price" to listOf(Component.text(format.format(buyPrice)))))
                                 })
                                 if (canSell) addAll(ShopManager.loreSellPrice.mapNotNull { reader ->
-                                    reader.createComponent(player, mapOf("\$price" to listOf(Component.text(it.value.sellPrice.price))))
+                                    reader.createComponent(player, mapOf("\$price" to listOf(Component.text(format.format(sellPrice)))))
                                 })
-                                if (it.value.stock > 0) addAll(ShopManager.loreRemainStock.mapNotNull { reader ->
-                                    reader.createComponent(player, mapOf("\$stock" to listOf(Component.text(it.value.stock))))
+                                if (it.value.blueprint.stock > 0) addAll(ShopManager.loreRemainStock.mapNotNull { reader ->
+                                    reader.createComponent(player, mapOf("\$stock" to listOf(Component.text(format.format(stock)))))
                                 })
 
                                 if (canBuy && canSell) {
@@ -138,12 +153,20 @@ class Shop(private val blueprint: ShopBlueprint, jsonObject: JsonObject): IShop 
                 } else {
                     currentShopPage.shopItem[clickedSlot]?.let {
                         when (button) {
-                            MouseButton.LEFT,MouseButton.SHIFT_LEFT -> {
+                            MouseButton.LEFT -> {
                                 if (it.buy(player, sender, this@Shop)) initialize(data)
                                 Unit
                             }
-                            MouseButton.RIGHT,MouseButton.SHIFT_RIGHT -> {
+                            MouseButton.SHIFT_LEFT -> {
+                                if (it.buy(player, sender, this@Shop, 64)) initialize(data)
+                                Unit
+                            }
+                            MouseButton.RIGHT -> {
                                 if (it.sell(player, sender, this@Shop)) initialize(data)
+                                Unit
+                            }
+                            MouseButton.SHIFT_RIGHT -> {
+                                if (it.sell(player, sender, this@Shop, 64)) initialize(data)
                                 Unit
                             }
                             else -> {}

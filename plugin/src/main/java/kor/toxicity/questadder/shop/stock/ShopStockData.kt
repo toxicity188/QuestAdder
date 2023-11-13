@@ -9,4 +9,5 @@ interface ShopStockData {
     fun subtractStock(player: Player, stock: Long)
 
     fun serialize(): JsonElement
+    fun cancel()
 }

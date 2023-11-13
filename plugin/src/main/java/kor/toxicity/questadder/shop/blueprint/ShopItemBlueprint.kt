@@ -5,19 +5,23 @@ import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.manager.ItemManager
 import kor.toxicity.questadder.mechanic.dialog.Dialog
+import kor.toxicity.questadder.shop.equation.ShopEquation
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.inventory.ItemStack
 
 data class ShopItemBlueprint(
     val stock: Long,
     val global: Boolean,
+    val regenTime: Long,
+    val tick: Long,
+    val tickChance: Double,
     val builder: () -> ItemStack,
 
     val buyPrice: ShopPrice,
     val sellPrice: ShopPrice
 ) {
     companion object {
-        private val emptyPrice = ShopPrice(-1, emptyList())
+        private val emptyPrice = ShopPrice(-1, ShopEquation.defaultEquation, emptyList())
         private fun buildItem(section: ConfigurationSection) = (section.findString("Item","item") ?: throw RuntimeException("item value not found!")).let {
             ItemManager.getItemSupplier(it)?.let { supplier ->
                 val i = supplier.get()
@@ -41,6 +45,9 @@ data class ShopItemBlueprint(
     constructor(adder: QuestAdderBukkit, section: ConfigurationSection): this(
         section.findLong(-1,"stock"),
         section.findBoolean("Global","global"),
+        section.findLong(-1, "regen-time"),
+        section.findLong(-1, "tick"),
+        section.findDouble(100.0, "tick-chance"),
         buildItem(section),
         section.findConfig("Buy","buy")?.let {
             ShopPrice(adder, it)
@@ -52,12 +59,20 @@ data class ShopItemBlueprint(
 
     data class ShopPrice(
         val price: Int,
+        val equation: ShopEquation,
         val item: List<ShopItemPrice>,
     ) {
         var dialog: Dialog? = null
             private set
         constructor(adder: QuestAdderBukkit, section: ConfigurationSection): this(
             section.findInt(-1,"Price","price"),
+            section.getString("equation", "Equation")?.let {
+                try {
+                    ShopEquation(it)
+                } catch (ex: Exception) {
+                    null
+                }
+            } ?: ShopEquation.defaultEquation,
             section.findConfig("Items","item","Item","items")?.let {
                 it.getKeys(false).mapNotNull { s ->
                     it.getConfigurationSection(s)?.let { config ->

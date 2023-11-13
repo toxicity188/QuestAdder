@@ -586,6 +586,7 @@ object DialogManager: QuestAdderManager {
             }
         }
 
+
         exampleMap.forEach {
             val file = File(File(adder.dataFolder, it.key).apply {
                 mkdir()
@@ -611,6 +612,9 @@ object DialogManager: QuestAdderManager {
         }
         actionMap.values.forEach {
             it.unregister()
+        }
+        shopMap.values.forEach {
+            it.cancel()
         }
 
         qnaMap.clear()
@@ -664,6 +668,7 @@ object DialogManager: QuestAdderManager {
             send("${qnaMap.size} of QnAs has successfully loaded.")
             send("${questNpcMap.size} of NPCs has successfully loaded.")
             send("${senderMap.size} of senders has successfully loaded.")
+            send("${shopMap.size} of shops has successfully loaded.")
         }
         val iterator = selectedQuestMap.iterator()
         while (iterator.hasNext()) {
