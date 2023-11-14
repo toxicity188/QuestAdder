@@ -47,6 +47,7 @@ import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractAtEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
@@ -173,6 +174,12 @@ object DialogManager: QuestAdderManager {
                         else -> {}
                     }
                 }
+            }
+            @EventHandler
+            fun swap(e: PlayerSwapHandItemsEvent) {
+                val player = e.player
+                if (!player.isSneaking) e.isCancelled = Dialog.skip(player)
+                else e.isCancelled = Dialog.end(player)
             }
         },adder)
         adder.command.addCommandAPI("sender", arrayOf("s"), "sender-related command.", true, CommandAPI("qa s")

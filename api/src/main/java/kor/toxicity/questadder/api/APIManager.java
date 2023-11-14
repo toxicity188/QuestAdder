@@ -5,6 +5,8 @@ import kor.toxicity.questadder.api.mechanic.*;
 import kor.toxicity.questadder.api.registry.IBlockRegistry;
 import kor.toxicity.questadder.api.shop.IShop;
 import kor.toxicity.questadder.api.util.INamedLocation;
+import kor.toxicity.questadder.api.util.IPlayerData;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -208,4 +210,12 @@ public interface APIManager {
     @NotNull List<String> getShopKey();
 
     @Nullable ItemStack getItem(@NotNull String format);
+    /**
+     * Generate new player data from given config.
+     * @param section An original data of player data.
+     * @return A player data
+     * @throws Exception A runtime exception if config format is invalid.
+     * @since 1.1.8
+     */
+    @NotNull IPlayerData createPlayerData(@NotNull ConfigurationSection section) throws Exception;
 }

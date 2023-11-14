@@ -66,7 +66,7 @@ class CommandAPI(prefix: String) {
     }
 
     fun addCommand(name: String, apply: CommandAPI.CommandBuilder.() -> Unit) = create(name).apply(apply).done()
-    fun addCommandAPI(name: String, commandAliases: Array<String>, commandDescription: String, commandOpOnly: Boolean, api: CommandAPI) {
+    fun addCommandAPI(name: String, commandAliases: Array<String>, commandDescription: String, commandOpOnly: Boolean, api: CommandAPI): CommandAPI {
         addCommand(name) {
             aliases = commandAliases
             description = commandDescription
@@ -83,6 +83,7 @@ class CommandAPI(prefix: String) {
                 }.toTypedArray())
             }
         }
+        return this
     }
     fun createTabExecutor() = object : TabExecutor {
         override fun onTabComplete(

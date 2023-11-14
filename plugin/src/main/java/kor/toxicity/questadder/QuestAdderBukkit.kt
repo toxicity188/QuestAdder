@@ -425,7 +425,76 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
                 if (args.size == 3) DialogManager.getQuestNPCKeys() else null
             }
         }
-
+        .addCommandAPI("savepoint", arrayOf("sp"), "savepoint-related command.", true, CommandAPI("qa sp")
+            .addCommand("save") {
+                aliases = arrayOf("s", "저장")
+                description = "save current player data to save point."
+                usage = "save <name>"
+                opOnly = true
+                allowedSender = arrayOf(SenderType.PLAYER)
+                length = 1
+                executor = { sender, args ->
+                    playerThreadMap[(sender as Player).uniqueId]?.let {
+                        asyncTask {
+                            val name = args.toList().subList(1, args.size).joinToString(" ")
+                            try {
+                                (it.data.serialize() as YamlConfiguration).run {
+                                    save(File(getSavePointFolder(), "$name.yml").apply {
+                                        if (!exists()) createNewFile()
+                                    })
+                                }
+                                sender.info("successfully make a savepoint: $name")
+                            } catch (ex: Exception) {
+                                sender.warn("unable to make a savepoint: $name")
+                            }
+                        }
+                    } ?: sender.warn("your thread doesn't exist.")
+                }
+            }
+            .addCommand("load") {
+                aliases = arrayOf("l", "불러오기")
+                description = "load specific savepoint to some player."
+                usage = "load <player> <name> "
+                opOnly = true
+                length = 1
+                executor = { sender, args ->
+                    Bukkit.getPlayer(args[1])?.let {
+                        playerThreadMap[it.uniqueId]?.let { thread ->
+                            asyncTask {
+                                val name = args.toList().subList(2, args.size).joinToString(" ")
+                                try {
+                                    val file = File(getSavePointFolder(), "$name.yml")
+                                    if (!file.exists()) {
+                                        sender.warn("this savepoint doesn't exist: $name")
+                                    } else {
+                                        thread.data = PlayerData.deserialize(YamlConfiguration().apply {
+                                            load(file)
+                                        })
+                                        sender.info("successfully loaded: $name")
+                                    }
+                                } catch (ex: Exception) {
+                                    sender.warn("unable to load a savepoint: $name")
+                                }
+                            }
+                        } ?: sender.warn("${it.name}'s thread doesn't exist.")
+                    } ?: sender.warn("this player does not exist: ${args[2]}")
+                }
+                tabComplete = { _, args ->
+                    if (args.size == 3) getSavePointFolder().listFiles()?.map {
+                        it.nameWithoutExtension
+                    }?.filter {
+                        it.startsWith(args[2])
+                    } else null
+                }
+            }
+        )
+    private fun getSavePointFolder() = File(File(dataFolder.apply {
+        if (!exists()) mkdir()
+    }, ".data").apply {
+        if (!exists()) mkdir()
+    },".savepoint").apply {
+        if (!exists()) mkdir()
+    }
 
     override fun onEnable() {
         plugin = this
@@ -639,7 +708,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
     }
 
     private inner class PlayerThread(val player: Player) {
-        val data = DB.using.load(this@QuestAdderBukkit,player)
+        var data = DB.using.load(this@QuestAdderBukkit,player)
         private val task = asyncTaskTimer(Config.autoSaveTime,Config.autoSaveTime) {
             save()
             task {

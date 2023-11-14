@@ -8,9 +8,12 @@ import kor.toxicity.questadder.api.mechanic.DialogSender
 import kor.toxicity.questadder.api.registry.IBlockRegistry
 import kor.toxicity.questadder.api.shop.IShop
 import kor.toxicity.questadder.api.util.INamedLocation
+import kor.toxicity.questadder.api.util.IPlayerData
+import kor.toxicity.questadder.data.PlayerData
 import kor.toxicity.questadder.manager.*
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
+import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import java.util.*
@@ -213,5 +216,9 @@ object QuestAdderAPIBukkit: APIManager {
 
     override fun getItem(format: String): ItemStack? {
         return ItemManager.getItem(format)
+    }
+
+    override fun createPlayerData(section: ConfigurationSection): IPlayerData {
+        return PlayerData.deserialize(section)
     }
 }

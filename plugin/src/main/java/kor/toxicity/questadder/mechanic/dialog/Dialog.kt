@@ -207,6 +207,10 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
         private val talkPattern = Pattern.compile("^((?<talker>(\\w|\\W)+)::)?(\\s+)?(?<talk>(\\w|\\W)+)$")
         private val typingManagerPattern = Pattern.compile("^(?<name>(([a-zA-Z])+))(?<argument>\\{[\\w|\\W]*})?$")
         private val playerTask = ConcurrentHashMap<UUID, DialogRun>()
+
+        fun skip(player: Player) = playerTask[player.uniqueId]?.current?.run?.start() != null
+        fun end(player: Player) = playerTask[player.uniqueId]?.current?.run?.end() != null
+
         private val defaultExecutor = object : TypingManager {
             override fun create(current: DialogCurrent, jsonObject: JsonObject): TypingExecutor {
                 val jsonGuiName = try {
