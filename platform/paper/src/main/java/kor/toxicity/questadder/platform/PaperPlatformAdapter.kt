@@ -44,7 +44,7 @@ class PaperPlatformAdapter: PlatformAdapter {
         player.kick(message)
     }
 
-    override fun getTargetPlatFormName(): String {
+    override fun getTargetPlatformName(): String {
         return "Paper"
     }
 }

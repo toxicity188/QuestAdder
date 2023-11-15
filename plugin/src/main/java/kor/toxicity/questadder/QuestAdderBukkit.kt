@@ -98,7 +98,7 @@ import java.util.concurrent.ThreadLocalRandom
 class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
     companion object: QuestAdder {
 
-        const val VERSION = "1.1.7"
+        const val VERSION = "1.1.8"
 
         private val listener = object : Listener {
         }
@@ -597,7 +597,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             load()
             PluginLoadEndEvent().call()
             send("plugin enabled.")
-            send("current platform: ${platform.getTargetPlatFormName()}")
+            send("current platform: ${platform.getTargetPlatformName()}")
             try {
                 val get = HttpClient.newHttpClient().send(
                     HttpRequest.newBuilder()

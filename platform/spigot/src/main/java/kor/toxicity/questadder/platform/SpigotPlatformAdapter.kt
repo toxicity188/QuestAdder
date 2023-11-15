@@ -49,7 +49,7 @@ class SpigotPlatformAdapter: PlatformAdapter {
         player.kickPlayer(legacy.serialize(message))
     }
 
-    override fun getTargetPlatFormName(): String {
+    override fun getTargetPlatformName(): String {
         return "Spigot"
     }
 }

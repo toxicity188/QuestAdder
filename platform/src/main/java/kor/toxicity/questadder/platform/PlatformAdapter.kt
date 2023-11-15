@@ -17,5 +17,5 @@ interface PlatformAdapter {
     fun getLore(itemMeta: ItemMeta): List<Component>
     fun kick(player: Player, message: Component)
 
-    fun getTargetPlatFormName(): String
+    fun getTargetPlatformName(): String
 }
