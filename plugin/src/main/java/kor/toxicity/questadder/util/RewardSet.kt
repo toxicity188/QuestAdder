@@ -4,19 +4,16 @@ import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.GiveRewardEvent
 import kor.toxicity.questadder.api.util.IRewardSet
 import kor.toxicity.questadder.api.util.IRewardSetContent
-import kor.toxicity.questadder.extension.addMoney
-import kor.toxicity.questadder.extension.call
-import kor.toxicity.questadder.extension.give
-import kor.toxicity.questadder.extension.storage
+import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.ItemManager
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
 class RewardSet(section: ConfigurationSection): IRewardSet {
-    val rewardSetMoney = section.getDouble("money").coerceAtLeast(0.0)
-    val rewardSetExp = section.getDouble("exp").coerceAtLeast(0.0)
-    val rewardSetItems = section.getConfigurationSection("items")?.run {
+    val rewardSetMoney = section.findDouble(0.0,"Money","money")
+    val rewardSetExp = section.findDouble(0.0,"Exp","exp")
+    val rewardSetItems = section.findConfig("Items","items","Item","item")?.run {
         getKeys(false).mapNotNull {
             getConfigurationSection(it)?.let { config ->
                 try {
@@ -29,6 +26,9 @@ class RewardSet(section: ConfigurationSection): IRewardSet {
             }
         }
     }?.toTypedArray() ?: emptyArray()
+
+    val hideMoney = section.findBoolean("hide-money","HideMoney")
+    val hideExp = section.findBoolean("hide-exp","HideExp")
 
     private val itemAmount = HashMap<ItemStack,Int>().apply {
         for (item in rewardSetItems) {

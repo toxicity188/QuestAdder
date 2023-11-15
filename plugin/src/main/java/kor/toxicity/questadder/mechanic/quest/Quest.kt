@@ -258,15 +258,20 @@ class Quest(adder: QuestAdder, val file: File, val questKey: String, section: Co
                         }
                     }
                     reward?.let {
-                        add(Component.empty())
-                        add(QuestAdderBukkit.Prefix.reward)
-                        add(QuestAdderBukkit.Prefix.rewardLore.append(it.rewardSetMoney.withComma().asClearComponent().color(WHITE).append(QuestAdderBukkit.Suffix.money)))
-                        add(QuestAdderBukkit.Prefix.rewardLore.append(it.rewardSetExp.withComma().asClearComponent().color(WHITE).append(QuestAdderBukkit.Suffix.exp)))
-                        it.rewardSetItems.forEach { i ->
-                            var comp = i.contentItem.getNameComponent()
-                            if (i.contentChance < 100.0) comp = comp.append(" (${i.contentChance.withComma()}%)".asClearComponent().color(
-                                GRAY))
-                            add(QuestAdderBukkit.Prefix.rewardLore.append(comp))
+                        val hasMoney = it.rewardSetMoney >= 0 && !it.hideMoney
+                        val hasExp = it.rewardSetExp >= 0  && !it.hideExp
+                        val hasItem = it.rewardSetItems.isNotEmpty()
+                        if (hasMoney || hasExp || hasItem) {
+                            add(Component.empty())
+                            add(QuestAdderBukkit.Prefix.reward)
+                            if (hasMoney) add(QuestAdderBukkit.Prefix.rewardLore.append(it.rewardSetMoney.withComma().asClearComponent().color(WHITE).append(QuestAdderBukkit.Suffix.money)))
+                            if (hasExp) add(QuestAdderBukkit.Prefix.rewardLore.append(it.rewardSetExp.withComma().asClearComponent().color(WHITE).append(QuestAdderBukkit.Suffix.exp)))
+                            if (hasItem)  it.rewardSetItems.forEach { i ->
+                                var comp = i.contentItem.getNameComponent()
+                                if (i.contentChance < 100.0) comp = comp.append(" (${i.contentChance.withComma()}%)".asClearComponent().color(
+                                    GRAY))
+                                add(QuestAdderBukkit.Prefix.rewardLore.append(comp))
+                            }
                         }
                     }
                     if (left > 0 && data != null) {
@@ -297,6 +302,10 @@ class Quest(adder: QuestAdder, val file: File, val questKey: String, section: Co
 
     override fun getTypes(): SortedSet<String> {
         return TreeSet(type)
+    }
+
+    override fun getTime(player: Player): LocalDateTime? {
+        return QuestAdderBukkit.getPlayerData(player)?.questVariables?.get(questKey)?.time
     }
 
     override fun equals(other: Any?): Boolean {

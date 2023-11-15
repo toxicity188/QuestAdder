@@ -20,8 +20,8 @@ public class GiveRewardEvent extends QuestAdderPlayerEvent implements Cancellabl
     private final List<ItemStack> itemStacks;
     public GiveRewardEvent(@NotNull Player who, IRewardSet rewardSet) {
         super(who);
-        exp = rewardSet.getExp();
-        money = rewardSet.getMoney();
+        exp = Math.max(rewardSet.getExp(), 0);
+        money = Math.max(rewardSet.getMoney(), 0);
         itemStacks = Arrays.stream(rewardSet.getItems()).filter(r -> ThreadLocalRandom.current().nextDouble(0,100) <= r.getChance()).map(IRewardSetContent::getItem).collect(Collectors.toList());
     }
 

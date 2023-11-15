@@ -9,6 +9,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
+import java.text.DecimalFormat
 
 class SpigotPlatformAdapter: PlatformAdapter {
     private val legacy = LegacyComponentSerializer.builder().hexColors().useUnusualXRepeatedCharacterHexFormat().build()
@@ -35,7 +36,7 @@ class SpigotPlatformAdapter: PlatformAdapter {
     }
 
     override fun getItemName(itemStack: ItemStack): Component {
-        return Component.text("${itemStack.itemMeta?.displayName ?: itemStack.type.toString().lowercase()} x$itemStack.amount")
+        return Component.text("${itemStack.itemMeta?.displayName ?: itemStack.type.toString().lowercase()} x${DecimalFormat.getInstance().format(itemStack.amount)}")
     }
 
     override fun getLore(itemMeta: ItemMeta): List<Component> {

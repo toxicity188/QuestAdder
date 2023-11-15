@@ -4,7 +4,9 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.SortedSet;
 
@@ -22,4 +24,5 @@ public interface IQuest {
     @NotNull String getName();
     @NotNull String getKey();
     @NotNull SortedSet<@NotNull String> getTypes();
+    @Nullable LocalDateTime getTime(@NotNull Player player);
 }

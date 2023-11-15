@@ -62,7 +62,7 @@ object WorldGuardManager: QuestAdderManager {
                     if (!newSet.contains(it)) add(it)
                 }
             }
-            if (enterSet.isNotEmpty() && exitSet.isNotEmpty()) QuestAdderBukkit.task {
+            if (enterSet.isNotEmpty() || exitSet.isNotEmpty()) QuestAdderBukkit.task {
                 enterSet.forEach {
                     RegionEnterEvent(player, it).call()
                 }

@@ -10,6 +10,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
+import java.text.DecimalFormat
 
 class PaperPlatformAdapter: PlatformAdapter {
     override fun setDisplay(itemMeta: ItemMeta, component: Component?) {
@@ -30,7 +31,7 @@ class PaperPlatformAdapter: PlatformAdapter {
 
     override fun getItemName(itemStack: ItemStack): Component {
         return (itemStack.itemMeta?.displayName() ?: Component.text(itemStack.type.toString().lowercase())).append(
-            Component.space()).append(Component.text("x${itemStack.amount}").color(NamedTextColor.GREEN).decorate(
+            Component.space()).append(Component.text("x${DecimalFormat.getInstance().format(itemStack.amount)}").color(NamedTextColor.GREEN).decorate(
             TextDecoration.BOLD,
             TextDecoration.ITALIC)).hoverEvent(itemStack)
     }
