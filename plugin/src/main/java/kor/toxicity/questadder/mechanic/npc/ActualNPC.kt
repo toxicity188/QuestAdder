@@ -4,14 +4,13 @@ import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.gui.IGui
 import kor.toxicity.questadder.api.mechanic.IActualNPC
 import kor.toxicity.questadder.api.mechanic.IQuestNPC
+import kor.toxicity.questadder.api.mechanic.QuestRecord
 import kor.toxicity.questadder.api.util.SoundData
 import kor.toxicity.questadder.data.PlayerData
-import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.nms.VirtualEntity
 import net.citizensnpcs.api.npc.NPC
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
-import org.bukkit.Location
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack

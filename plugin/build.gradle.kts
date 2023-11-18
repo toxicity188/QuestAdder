@@ -16,10 +16,11 @@ dependencies {
     compileOnly("io.lumine:MythicCrucible:1.5.0")
     compileOnly("com.github.PlaceholderAPI:PlaceholderAPI:master-SNAPSHOT")
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.ticxo.playeranimator:PlayerAnimator:R1.2.7")
     implementation("net.objecthunter:exp4j:0.4.8")
-    implementation("org.zeroturnaround:zt-zip:1.16")
+    implementation("org.zeroturnaround:zt-zip:1.16") {
+        exclude("org.slf4j")
+    }
     implementation("org.bstats:bstats-bukkit:3.0.2")
     implementation(project(":api"))
     implementation(project(":platform"))

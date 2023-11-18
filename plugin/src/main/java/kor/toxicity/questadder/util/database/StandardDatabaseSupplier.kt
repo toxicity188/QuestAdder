@@ -6,10 +6,10 @@ import com.google.gson.JsonParser
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import kor.toxicity.questadder.QuestAdderBukkit
+import kor.toxicity.questadder.api.mechanic.QuestRecord
 import kor.toxicity.questadder.data.PlayerData
 import kor.toxicity.questadder.data.QuestData
 import kor.toxicity.questadder.extension.getAsStringList
-import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.shop.blueprint.ShopBlueprint
 import kor.toxicity.questadder.shop.implement.Shop
 import org.bukkit.OfflinePlayer

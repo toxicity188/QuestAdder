@@ -6,6 +6,7 @@ dependencies {
 tasks {
     shadowJar {
         exclude(".classpath")
+        exclude("plugin.yml")
         relocate("eu.endercentral.crazy_advancements","kor.toxicity.questadder.nms.v1_18_R1.crazy_advancements")
     }
 }

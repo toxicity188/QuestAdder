@@ -1,9 +1,10 @@
 package kor.toxicity.questadder.data
 
 import kor.toxicity.questadder.QuestAdderBukkit
+import kor.toxicity.questadder.api.mechanic.IQuestData
+import kor.toxicity.questadder.api.mechanic.QuestRecord
 import kor.toxicity.questadder.api.util.IPlayerData
 import kor.toxicity.questadder.extension.getAsStringList
-import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.util.Null
 import kor.toxicity.questadder.util.variable.SerializeManager
 import org.bukkit.configuration.ConfigurationSection
@@ -83,6 +84,7 @@ class PlayerData: IPlayerData {
     val questVariables: MutableMap<String,QuestData> = ConcurrentHashMap()
     val npcIndexes = HashMap<String,Int>()
 
+
     fun saveVariables() = ArrayList<Triple<String,String,String>>().apply {
         variables.forEach {
             if (!it.key.startsWith('_')) SerializeManager.trySerialize(it.value)?.let { str ->
@@ -100,6 +102,10 @@ class PlayerData: IPlayerData {
                 QuestAdderBukkit.warn("unable to load player data named \"${it.first}\"")
             }
         }
+    }
+
+    override fun getQuestDataMap(): MutableMap<String, out IQuestData> {
+        return questVariables
     }
 
     fun get(name: String) = variables[name] ?: Null

@@ -319,6 +319,9 @@ object FunctionBuilder {
         addFunction("region") { e: RegionEvent, _ ->
             e.region.id
         }
+        addFunction("world", listOf(Player::class.java)) { _: Null, args ->
+            (args[0] as Player).world.name
+        }
         addFunction("papiStrOf", listOf(Player::class.java, String::class.java)) { _: Null, args ->
             try {
                 PlaceholderAPI.setPlaceholders(args[0] as Player, args[1] as String)

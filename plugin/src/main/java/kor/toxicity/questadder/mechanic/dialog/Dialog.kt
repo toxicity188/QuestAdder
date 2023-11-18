@@ -15,10 +15,7 @@ import kor.toxicity.questadder.api.mechanic.IDialog
 import kor.toxicity.questadder.api.mechanic.MechanicBlueprint
 import kor.toxicity.questadder.api.util.SoundData
 import kor.toxicity.questadder.extension.*
-import kor.toxicity.questadder.manager.DialogManager
-import kor.toxicity.questadder.manager.GestureManager
-import kor.toxicity.questadder.manager.ResourcePackManager
-import kor.toxicity.questadder.manager.SlateManager
+import kor.toxicity.questadder.manager.*
 import kor.toxicity.questadder.mechanic.qna.QnA
 import kor.toxicity.questadder.nms.VirtualArmorStand
 import kor.toxicity.questadder.shop.implement.Shop
@@ -473,6 +470,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
     private var predicate: (DialogCurrent) -> Boolean = {
         true
     }
+    private var initialTask: (DialogCurrent) -> Unit = {}
     private var lastAction: (DialogCurrent) -> Unit = {}
     private var talkTask = HashMap<Int,(DialogCurrent) -> Unit>()
     private val typingSound = HashMap<String,SoundData>().apply {
@@ -530,6 +528,13 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
     private fun addLastAction(action: (DialogCurrent) -> Unit) {
         val before = lastAction
         lastAction = {
+            before(it)
+            action(it)
+        }
+    }
+    private fun addInitialTask(action: (DialogCurrent) -> Unit) {
+        val before = initialTask
+        initialTask = {
             before(it)
             action(it)
         }
@@ -962,7 +967,24 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 } ?: error("not found error: the shop named $it doesn't exist.")
             }
         }
-
+        bluePrint.takeItem?.forEach {
+            ItemManager.getItemSupplier(it)?.let { supplier ->
+                addInitialTask { current ->
+                    current.state.addEndTask {
+                        current.player.take(supplier.get())
+                    }
+                }
+            }
+        }
+        bluePrint.giveItem?.forEach {
+            ItemManager.getItemSupplier(it)?.let { supplier ->
+                addInitialTask { current ->
+                    current.state.addEndTask {
+                        current.player.give(supplier.get())
+                    }
+                }
+            }
+        }
     }
 
     override fun start(player: Player, sender: DialogSender): DialogState? {
@@ -994,6 +1016,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
         }
         if (playerTask.containsKey(uuid)) return null
         playerTask[uuid] = run.apply {
+            initialTask(current)
             start()
         }
         return run.current.state

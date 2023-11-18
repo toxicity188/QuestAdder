@@ -11,6 +11,7 @@ import kor.toxicity.questadder.util.ItemWriter
 import kor.toxicity.questadder.util.RewardSet
 import kor.toxicity.questadder.api.mechanic.AbstractAction
 import kor.toxicity.questadder.api.mechanic.ActionResult
+import kor.toxicity.questadder.api.mechanic.QuestRecord
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.util.function.WrappedFunction

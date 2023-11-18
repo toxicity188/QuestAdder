@@ -26,6 +26,8 @@ class DialogBlueprint(
     var checkQuest: Array<String>?,
     var qna: Array<String>?,
     var shops: Array<String>?,
+    var takeItem: Array<String>?,
+    val giveItem: Array<String>?
 ): MechanicBlueprint {
     constructor(section: ConfigurationSection): this(
         section.findConfig("TypingSound","typing-sound"),
@@ -46,6 +48,8 @@ class DialogBlueprint(
         section.findStringList("Check","check","CheckQuest","check-quest")?.toTypedArray(),
         section.findStringList("QnA","QnAs","qna","qnas")?.toTypedArray(),
         section.findStringList("Shop","Shops","shop","shops")?.toTypedArray(),
+        section.findStringList("take-item", "TakeItem")?.toTypedArray(),
+        section.findStringList("give-item", "GiveItem")?.toTypedArray()
     )
 
     fun copy() = DialogBlueprint(
@@ -66,7 +70,9 @@ class DialogBlueprint(
         setQuest?.copyOf(),
         checkQuest?.copyOf(),
         qna?.copyOf(),
-        shops?.copyOf()
+        shops?.copyOf(),
+        takeItem?.copyOf(),
+        giveItem?.copyOf()
     )
     override fun getConfig() = MemoryConfiguration().apply {
         set("talk", talk)
@@ -87,5 +93,7 @@ class DialogBlueprint(
         set("check", checkQuest)
         set("qna", qna)
         set("shop", shops)
+        set("take-item", takeItem)
+        set("give-item", giveItem)
     }
 }

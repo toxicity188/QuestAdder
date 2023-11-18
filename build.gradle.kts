@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-    id("org.jetbrains.kotlin.jvm") version("1.9.10")
+    kotlin("jvm") version "1.9.20"
     id("com.github.johnrengelman.shadow") version("8.1.1")
     id("maven-publish")
     id("org.jetbrains.dokka") version("1.9.0")
@@ -14,7 +14,7 @@ val platformVersion = "4.3.1"
 
 allprojects {
     apply(plugin = "java")
-    apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "kotlin")
     apply(plugin = "com.github.johnrengelman.shadow")
     apply(plugin = "maven-publish")
 
@@ -75,7 +75,7 @@ subprojects {
 }
 
 dependencies {
-    runtimeOnly(project(":expansion"))
+    runtimeOnly(project(path = ":expansion"))
     implementation(project(path = ":nms:v1_17_R1", configuration = "shadow"))
     implementation(project(path = ":nms:v1_18_R1", configuration = "shadow"))
     implementation(project(path = ":nms:v1_18_R2", configuration = "shadow"))
@@ -124,13 +124,16 @@ tasks {
     }
     shadowJar {
         finalizedBy(dokkaHtmlMultiModule)
+        fun prefix(pattern: String) {
+            relocate(pattern, "kor.toxicity.questadder.shaded.$pattern")
+        }
         archiveFileName.set("QuestAdder.jar")
-        relocate("kotlin","kor.toxicity.questadder.shaded.kotlin")
-        relocate("com.ticxo.playeranimator","kor.toxicity.questadder.shaded.com.ticxo.playeranimator")
-        relocate("org.apache.commons.io","kor.toxicity.questadder.shaded.org.apache.commons.io")
-        relocate("net.objecthunter","kor.toxicity.questadder.shaded.net.objecthunter")
-        relocate("org.zeroturnaround","kor.toxicity.questadder.shaded.org.zeroturnaround")
-        relocate("org.bstats","kor.toxicity.questadder.shaded.org.bstats")
+        prefix("kotlin")
+        prefix("com.ticxo.playeranimator")
+        prefix("org.apache.commons.io")
+        prefix("net.objecthunter")
+        prefix("org.zeroturnaround")
+        prefix("org.bstats")
         dependencies {
             exclude(dependency("org.jetbrains:annotations:13.0"))
         }

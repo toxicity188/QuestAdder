@@ -14,7 +14,6 @@ import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.data.PlayerData
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.*
-import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.nms.NMS
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.TimeFormat
@@ -23,6 +22,7 @@ import kor.toxicity.questadder.util.action.ActSkill
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.database.StandardDatabaseSupplier
 import kor.toxicity.questadder.api.mechanic.AbstractEvent
+import kor.toxicity.questadder.api.mechanic.QuestRecord
 import kor.toxicity.questadder.api.util.SoundData
 import kor.toxicity.questadder.platform.PaperPlatformAdapter
 import kor.toxicity.questadder.platform.PlatformAdapter
@@ -155,6 +155,8 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         fun taskLater(delay: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskLater(plugin,action,delay)
         @Internal
         fun taskTimer(delay: Long, period: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskTimer(plugin,action,delay,period)
+        @Internal
+        fun asyncTaskLater(delay: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskLaterAsynchronously(plugin,action,delay)
         @Internal
         fun asyncTaskTimer(delay: Long, period: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin,action,delay,period)
 

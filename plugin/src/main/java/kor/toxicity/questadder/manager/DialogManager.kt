@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.event.*
 import kor.toxicity.questadder.api.gui.GuiData
 import kor.toxicity.questadder.api.gui.MouseButton
 import kor.toxicity.questadder.api.mechanic.DialogSender
+import kor.toxicity.questadder.api.mechanic.QuestRecord
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.extension.*
@@ -14,7 +15,6 @@ import kor.toxicity.questadder.mechanic.qna.QnA
 import kor.toxicity.questadder.mechanic.npc.ActualNPC
 import kor.toxicity.questadder.mechanic.npc.QuestNPC
 import kor.toxicity.questadder.mechanic.quest.Quest
-import kor.toxicity.questadder.mechanic.quest.QuestRecord
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.api.mechanic.RegistrableAction
 import kor.toxicity.questadder.mechanic.sender.DialogSenderType

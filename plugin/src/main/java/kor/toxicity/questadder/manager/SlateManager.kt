@@ -13,6 +13,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryOpenEvent
+import org.bukkit.event.player.PlayerChangedWorldEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerGameModeChangeEvent
 import org.bukkit.event.player.PlayerInteractEvent
@@ -81,22 +82,39 @@ object SlateManager: QuestAdderManager {
             }
             @EventHandler
             fun itemSwap(e: PlayerSwapHandItemsEvent) {
-                if (slateMap.contains(e.player.uniqueId)) e.isCancelled = true
+                if (slateMap.containsKey(e.player.uniqueId)) e.isCancelled = true
             }
             @EventHandler
             fun drop(e: PlayerDropItemEvent) {
-                if (slateMap.contains(e.player.uniqueId)) e.isCancelled = true
+                if (slateMap.containsKey(e.player.uniqueId)) e.isCancelled = true
+            }
+            @EventHandler
+            fun worldChange(e: PlayerChangedWorldEvent) {
+                val player = e.player
+                if (slateMap.containsKey(player.uniqueId)) QuestAdderBukkit.nms.changeFakeItemInHand(player, air, Bukkit.getOnlinePlayers())
             }
         },adder)
         ProtocolLibrary.getProtocolManager().run {
             addPacketListener(object : PacketAdapter(adder,PacketType.Play.Client.HELD_ITEM_SLOT) {
                 override fun onPacketReceiving(event: PacketEvent) {
-                    if (slateMap.contains(event.player.uniqueId)) event.isCancelled = true
+                    val player = event.player
+                    if (slateMap.containsKey(player.uniqueId)) {
+                        event.isCancelled = true
+                        val held = player.inventory.heldItemSlot
+                        QuestAdderBukkit.asyncTaskLater(1) {
+                            player.inventory.heldItemSlot = held
+                        }
+                    }
                 }
             })
             addPacketListener(object : PacketAdapter(adder,PacketType.Play.Client.ENTITY_ACTION) {
                 override fun onPacketReceiving(event: PacketEvent) {
-                    if (slateMap.contains(event.player.uniqueId)) event.isCancelled = true
+                    if (slateMap.containsKey(event.player.uniqueId)) event.isCancelled = true
+                }
+            })
+            addPacketListener(object : PacketAdapter(adder,PacketType.Play.Server.ENTITY_EQUIPMENT) {
+                override fun onPacketSending(event: PacketEvent) {
+                    if (slateMap.containsKey(event.player.uniqueId)) event.isCancelled = true
                 }
             })
         }
@@ -136,14 +154,14 @@ object SlateManager: QuestAdderManager {
         private val mainHandItem = player.inventory.itemInMainHand
         init {
             player.isInvisible = true
-            player.allowFlight = true
+            if (!player.isOp) player.allowFlight = true
             QuestAdderBukkit.nms.changeFakeItemInHand(player, air, Bukkit.getOnlinePlayers())
         }
 
         fun cancel(back: Boolean = true) {
             if (back) player.teleport(location)
             player.isInvisible = false
-            player.allowFlight = false
+            if (!player.isOp) player.allowFlight = false
             QuestAdderBukkit.nms.changeFakeItemInHand(player, mainHandItem, Bukkit.getOnlinePlayers())
         }
     }
