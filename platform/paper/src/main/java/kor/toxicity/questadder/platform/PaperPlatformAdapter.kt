@@ -30,10 +30,9 @@ class PaperPlatformAdapter: PlatformAdapter {
     }
 
     override fun getItemName(itemStack: ItemStack): Component {
-        return (itemStack.itemMeta?.displayName() ?: Component.text(itemStack.type.toString().lowercase())).append(
-            Component.space()).append(Component.text("x${DecimalFormat.getInstance().format(itemStack.amount)}").color(NamedTextColor.GREEN).decorate(
-            TextDecoration.BOLD,
-            TextDecoration.ITALIC)).hoverEvent(itemStack)
+        return (itemStack.itemMeta?.displayName() ?: Component.text(itemStack.type.toString().lowercase()))
+            .append(Component.space())
+            .append(Component.text("x${DecimalFormat.getInstance().format(itemStack.amount)}").color(NamedTextColor.GREEN).decorate(TextDecoration.BOLD, TextDecoration.ITALIC)).hoverEvent(itemStack)
     }
 
     override fun getLore(itemMeta: ItemMeta): List<Component> {

@@ -1,6 +1,8 @@
 package kor.toxicity.questadder.platform
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -36,7 +38,9 @@ class SpigotPlatformAdapter: PlatformAdapter {
     }
 
     override fun getItemName(itemStack: ItemStack): Component {
-        return Component.text("${itemStack.itemMeta?.displayName ?: itemStack.type.toString().lowercase()} x${DecimalFormat.getInstance().format(itemStack.amount)}")
+        return Component.text(itemStack.itemMeta?.displayName ?: itemStack.type.toString().lowercase())
+            .append(Component.space())
+            .append(Component.text("x${DecimalFormat.getInstance().format(itemStack.amount)}").color(NamedTextColor.GREEN).decorate(TextDecoration.BOLD, TextDecoration.ITALIC))
     }
 
     override fun getLore(itemMeta: ItemMeta): List<Component> {

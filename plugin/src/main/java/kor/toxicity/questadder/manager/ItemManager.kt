@@ -8,10 +8,7 @@ import kor.toxicity.questadder.api.item.JsonItemDatabase
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.extension.*
-import kor.toxicity.questadder.hooker.item.ItemsAdderItemDatabase
-import kor.toxicity.questadder.hooker.item.MMOItemsItemDatabase
-import kor.toxicity.questadder.hooker.item.MythicCrucibleItemDatabase
-import kor.toxicity.questadder.hooker.item.OraxenItemDatabase
+import kor.toxicity.questadder.hooker.item.*
 import kor.toxicity.questadder.mechanic.sender.ItemDialogSender
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -38,11 +35,19 @@ object ItemManager: QuestAdderManager {
                 val n = matcher.group("name")
                 val j = JsonParser.parseString(matcher.group("argument") ?: "{}").asJsonObject
                 val a = j.getAsJsonPrimitive("amount")?.asInt?.coerceAtLeast(1) ?: 1
-                return (itemMap[n]?.get() ?: itemDatabaseList.firstNotNullOfOrNull {
-                    when (it) {
-                        is JsonItemDatabase -> it.getItemStack(n, j)
-                        else -> it.getItem(n)
+                val p = j.getAsJsonPrimitive("plugin")?.asString
+                fun parse(target: ItemDatabase): ItemStack? {
+                    return when (target) {
+                        is JsonItemDatabase -> target.getItemStack(n, j)
+                        else -> target.getItem(n)
                     }
+                }
+                return (itemMap[n]?.get() ?: if (p != null) itemDatabaseList.firstOrNull {
+                    it.requiredPlugin() == p
+                }?.let {
+                    parse(it)
+                } else itemDatabaseList.firstNotNullOfOrNull {
+                    parse(it)
                 })?.apply {
                     amount = a
                 }
@@ -63,19 +68,27 @@ object ItemManager: QuestAdderManager {
                 val n = matcher.group("name")
                 val j = JsonParser.parseString(matcher.group("argument") ?: "{}").asJsonObject
                 val a = j.getAsJsonPrimitive("amount")?.asInt?.coerceAtLeast(1) ?: 1
-                return itemMap[n] ?: itemDatabaseList.firstNotNullOfOrNull {
-                    when (it) {
+                val p = j.getAsJsonPrimitive("plugin")?.asString
+                fun parse(target: ItemDatabase): ItemSupplier? {
+                    return when (target) {
                         is JsonItemDatabase -> if (a > 1) {
-                            it.getItemSupplier(n, j)?.let {
+                            target.getItemSupplier(n, j)?.let {
                                 ItemSupplier {
                                     it.get().apply {
                                         amount = a
                                     }
                                 }
                             }
-                        } else it.getItemSupplier(n, j)
+                        } else target.getItemSupplier(n, j)
                         else -> null
                     }
+                }
+                return itemMap[n] ?: if (p != null) itemDatabaseList.firstOrNull {
+                    it.requiredPlugin() == p
+                }?.let {
+                    parse(it)
+                } else itemDatabaseList.firstNotNullOfOrNull {
+                    parse(it)
                 }
             }
         } catch (ex: Exception) {
@@ -90,6 +103,7 @@ object ItemManager: QuestAdderManager {
             if (isPluginEnabled("ItemsAdder")) itemDatabaseList.add(ItemsAdderItemDatabase())
             if (isPluginEnabled("Oraxen")) itemDatabaseList.add(OraxenItemDatabase())
             if (isPluginEnabled("MMOItems")) itemDatabaseList.add(MMOItemsItemDatabase())
+            if (isPluginEnabled("MythicMobs")) itemDatabaseList.add(MythicMobsItemDatabase())
             if (isPluginEnabled("MythicCrucible")) itemDatabaseList.add(MythicCrucibleItemDatabase())
             registerEvents(object : Listener {
                 @EventHandler
