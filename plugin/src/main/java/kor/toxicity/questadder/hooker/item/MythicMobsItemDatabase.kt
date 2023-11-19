@@ -8,7 +8,7 @@ import org.bukkit.inventory.ItemStack
 
 class MythicMobsItemDatabase: ItemDatabase {
     override fun getKeys(): Collection<String> {
-        return MythicBukkit.inst().itemManager.itemGroupNames
+        return MythicBukkit.inst().itemManager.itemNames
     }
 
     override fun getItem(name: String): ItemStack? {

@@ -25,29 +25,24 @@ data class ShopItemBlueprint(
         private fun buildItem(section: ConfigurationSection) = (section.findString("Item","item") ?: throw RuntimeException("item value not found!")).let {
             ItemManager.getItemSupplier(it)?.let { supplier ->
                 val i = supplier.get()
-                val a = section.findInt(1,"Amount","amount").coerceAtLeast(1).coerceAtMost(i.maxStackSize)
                 if (section.findBoolean("AlwaysRebuild","always-rebuild")) {
                     {
-                        supplier.get().apply {
-                            amount = a
-                        }
+                        supplier.get()
                     }
                 } else {
                     {
-                        i.clone().apply {
-                            amount = a
-                        }
+                        i.clone()
                     }
                 }
             } ?: throw RuntimeException("unable to get this item: $it")
         }
     }
     constructor(adder: QuestAdderBukkit, section: ConfigurationSection): this(
-        section.findLong(-1,"stock"),
+        section.findLong(-1,"Stock", "stock"),
         section.findBoolean("Global","global"),
-        section.findLong(-1, "regen-time"),
-        section.findLong(-1, "tick"),
-        section.findDouble(100.0, "tick-chance"),
+        section.findLong(-1, "RegenTime", "regen-time"),
+        section.findLong(-1, "Tick", "tick"),
+        section.findDouble(100.0, "TickChance", "tick-chance"),
         buildItem(section),
         section.findConfig("Buy","buy")?.let {
             ShopPrice(adder, it)

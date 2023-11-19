@@ -80,7 +80,13 @@ object ItemManager: QuestAdderManager {
                                 }
                             }
                         } else target.getItemSupplier(n, j)
-                        else -> null
+                        else -> target.getItem(n)?.let {
+                            ItemSupplier {
+                                it.clone().apply {
+                                    amount = a
+                                }
+                            }
+                        }
                     }
                 }
                 return itemMap[n] ?: if (p != null) itemDatabaseList.firstOrNull {
