@@ -189,6 +189,7 @@ class NMSImpl: NMS {
     private class FakeItemImpl(itemStack: ItemStack, location: Location): FakeItem {
         val world: WorldServer = (location.world as CraftWorld).handle
         val handle = CraftItem(Bukkit.getServer() as CraftServer, EntityItem(EntityTypes.Q, world).apply {
+            ap = 10
             a(location.x, location.y, location.z, location.yaw, location.pitch)
             a(CraftItemStack.asNMSCopy(itemStack))
         })
