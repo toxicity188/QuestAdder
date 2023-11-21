@@ -28,7 +28,9 @@ enum class StandardDatabaseSupplier: DatabaseSupplier {
                     mkdir()
                 },"users").apply {
                     mkdir()
-                },"${player.uniqueId}.yml")
+                },"${player.uniqueId}.yml").apply {
+                    if (!exists()) createNewFile()
+                }
 
                 override fun close() {
                 }

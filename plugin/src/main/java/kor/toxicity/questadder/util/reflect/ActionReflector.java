@@ -17,7 +17,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
 
-public class ActionReflector<T extends DataObject> {
+public final class ActionReflector<T extends DataObject> {
 
     private final T object;
 

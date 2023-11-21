@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.util.event.mythicmobs;
 
 import io.lumine.mythic.bukkit.events.MythicDamageEvent;
+import io.lumine.mythic.core.mobs.ActiveMob;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.mechanic.AbstractEvent;
@@ -13,6 +14,8 @@ public class EventMythicDamage extends AbstractEvent<MythicDamageEvent> {
 
     @DataField(aliases = "t")
     public EntityType type;
+    @DataField(aliases = "i")
+    public String id;
 
     public EventMythicDamage(QuestAdder adder, AbstractAction action) {
         super(adder, action, MythicDamageEvent.class);
@@ -20,7 +23,9 @@ public class EventMythicDamage extends AbstractEvent<MythicDamageEvent> {
 
     @Override
     public void invoke(@NotNull MythicDamageEvent event) {
-        if (type != null && event.getDamageMetadata().getDamager().getEntity().getBukkitEntity().getType() != type) return;
+        var caster = event.getCaster();
+        if (type != null && caster.getEntity().getBukkitEntity().getType() != type) return;
+        if (id != null && caster instanceof ActiveMob mob && !mob.getMobType().equals(id)) return;
         if (event.getCaster().getEntity().getBukkitEntity() instanceof Player player) apply(player);
     }
 }
