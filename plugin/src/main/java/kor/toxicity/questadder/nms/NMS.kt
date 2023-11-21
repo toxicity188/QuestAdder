@@ -23,4 +23,5 @@ interface NMS {
     fun getGameProfile(player: Player): GameProfile
     fun getProperties(gameProfile: GameProfile): PropertyMap
 
+    fun createFakeItem(itemStack: ItemStack, location: Location): FakeItem
 }

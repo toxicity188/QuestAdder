@@ -17,22 +17,42 @@ import net.minecraft.network.protocol.game.*
 import net.minecraft.network.syncher.DataWatcherObject
 import net.minecraft.network.syncher.DataWatcherRegistry
 import net.minecraft.server.level.EntityPlayer
+import net.minecraft.server.level.WorldServer
 import net.minecraft.server.network.PlayerConnection
 import net.minecraft.world.entity.*
+import net.minecraft.world.entity.Display
+import net.minecraft.world.entity.Display.*
+import net.minecraft.world.entity.Display.ItemDisplay
+import net.minecraft.world.entity.Display.TextDisplay
+import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.decoration.EntityArmorStand
-import org.bukkit.Bukkit
-import org.bukkit.Location
+import net.minecraft.world.entity.item.EntityItem
+import org.bukkit.*
+import org.bukkit.block.BlockFace
+import org.bukkit.block.PistonMoveReaction
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.SimpleCommandMap
 import org.bukkit.craftbukkit.v1_20_R2.CraftServer
 import org.bukkit.craftbukkit.v1_20_R2.CraftWorld
+import org.bukkit.craftbukkit.v1_20_R2.entity.CraftItem
 import org.bukkit.craftbukkit.v1_20_R2.entity.CraftPlayer
 import org.bukkit.craftbukkit.v1_20_R2.inventory.CraftItemStack
 import org.bukkit.craftbukkit.v1_20_R2.util.CraftChatMessage
-import org.bukkit.entity.Player
+import org.bukkit.entity.*
+import org.bukkit.event.entity.CreatureSpawnEvent
+import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.player.PlayerTeleportEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.metadata.MetadataValue
+import org.bukkit.permissions.Permission
+import org.bukkit.permissions.PermissionAttachment
+import org.bukkit.permissions.PermissionAttachmentInfo
+import org.bukkit.persistence.PersistentDataContainer
+import org.bukkit.plugin.Plugin
+import org.bukkit.util.BoundingBox
+import org.bukkit.util.Vector
 import org.joml.Vector3f
 import java.util.*
 
@@ -204,5 +224,24 @@ class NMSImpl: NMS {
 
     override fun getProperties(gameProfile: GameProfile): PropertyMap {
         return gameProfile.properties
+    }
+
+    override fun createFakeItem(itemStack: ItemStack, location: Location): FakeItem {
+        return FakeItemImpl(itemStack, location)
+    }
+    private class FakeItemImpl(itemStack: ItemStack, location: Location): FakeItem {
+        val world: WorldServer = (location.world as CraftWorld).handle
+        val handle = CraftItem(Bukkit.getServer() as CraftServer, EntityItem(EntityTypes.ad, world).apply {
+            a(location.x, location.y, location.z, location.yaw, location.pitch)
+            a(CraftItemStack.asNMSCopy(itemStack))
+        })
+
+        override fun getItem(): Item {
+            return handle
+        }
+
+        override fun spawn() {
+            world.addFreshEntity(handle.handle, CreatureSpawnEvent.SpawnReason.CUSTOM)
+        }
     }
 }

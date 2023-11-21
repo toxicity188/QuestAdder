@@ -6,6 +6,7 @@ import kor.toxicity.questadder.api.registry.IBlockRegistry;
 import kor.toxicity.questadder.api.shop.IShop;
 import kor.toxicity.questadder.api.util.INamedLocation;
 import kor.toxicity.questadder.api.util.IPlayerData;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -21,6 +22,7 @@ import java.util.function.Consumer;
 /**
  * @author toxicity
  */
+@SuppressWarnings("unused")
 public interface APIManager {
     /**
      * Adds the item database of QuestAdder.
@@ -118,13 +120,13 @@ public interface APIManager {
      * @param clazz The class of action
      * @since 1.0.2
      */
-    void addAction(@NotNull String name, @NotNull Class<? extends AbstractAction> clazz);
+    void addAction(@NotNull String name, @NotNull Class<? extends @NotNull AbstractAction> clazz);
     /**
      * Adds event in QuestAdder.
      * @param clazz The class of action
      * @since 1.0.2
      */
-    void addEvent(@NotNull String name, @NotNull Class<? extends AbstractEvent<?>> clazz);
+    void addEvent(@NotNull String name, @NotNull Class<? extends @NotNull AbstractEvent<?>> clazz);
 
     /**
      * Starts navigate to specific location.
@@ -207,15 +209,40 @@ public interface APIManager {
      * @return A keys of all of loaded shops.
      * @since 1.1.4
      */
-    @NotNull List<String> getShopKey();
+    @NotNull List<@NotNull String> getShopKey();
+
+    /**
+     * Gets an item from QuestAdder's item database.
+     * @param format a string format of item
+     * @return A copy of item or null if given format is invalid or id doesn't exist.
+     * @since 1.1.7
+     */
 
     @Nullable ItemStack getItem(@NotNull String format);
     /**
      * Generate new player data from given config.
      * @param section An original data of player data.
      * @return A player data
-     * @throws Exception A runtime exception if config format is invalid.
+     * @throws Exception A runtime exception if config format is invalid
      * @since 1.1.8
      */
     @NotNull IPlayerData createPlayerData(@NotNull ConfigurationSection section) throws Exception;
+
+    /**
+     * Gets a player data from online player's instance.
+     * @param player target player
+     * @return A data of given player or null if target player is offline
+     * @since 1.1.9
+     * @see IPlayerData
+     */
+    @Nullable IPlayerData getPlayerData(@NotNull Player player);
+
+    /**
+     * Gets or loads the player data from offline player's instance.
+     * @param player target player
+     * @param playerDataConsumer a player data consumer
+     * @since 1.19.
+     * @see IPlayerData
+     */
+    void getPlayerDataAsync(@NotNull OfflinePlayer player, @NotNull Consumer<@NotNull IPlayerData> playerDataConsumer);
 }

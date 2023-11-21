@@ -15,6 +15,7 @@ dependencies {
     compileOnly("com.github.BeYkeRYkt.LightAPI:lightapi-bukkit-common:5.3.0-Bukkit")
     compileOnly("io.lumine:MythicCrucible:1.5.0")
     compileOnly("com.github.PlaceholderAPI:PlaceholderAPI:master-SNAPSHOT")
+    compileOnly("com.github.Ssomar-Developement:SCore:4.23.10.8")
 
     implementation("com.ticxo.playeranimator:PlayerAnimator:R1.2.7")
     implementation("net.objecthunter:exp4j:0.4.8")

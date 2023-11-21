@@ -11,9 +11,11 @@ import net.minecraft.network.protocol.game.*
 import net.minecraft.network.syncher.DataWatcherObject
 import net.minecraft.network.syncher.DataWatcherRegistry
 import net.minecraft.server.level.EntityPlayer
+import net.minecraft.server.level.WorldServer
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.EnumItemSlot
 import net.minecraft.world.entity.decoration.EntityArmorStand
+import net.minecraft.world.entity.item.EntityItem
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.command.Command
@@ -22,10 +24,13 @@ import org.bukkit.command.CommandSender
 import org.bukkit.command.SimpleCommandMap
 import org.bukkit.craftbukkit.v1_17_R1.CraftServer
 import org.bukkit.craftbukkit.v1_17_R1.CraftWorld
+import org.bukkit.craftbukkit.v1_17_R1.entity.CraftItem
 import org.bukkit.craftbukkit.v1_17_R1.entity.CraftPlayer
 import org.bukkit.craftbukkit.v1_17_R1.inventory.CraftItemStack
 import org.bukkit.craftbukkit.v1_17_R1.util.CraftChatMessage
+import org.bukkit.entity.Item
 import org.bukkit.entity.Player
+import org.bukkit.event.entity.CreatureSpawnEvent
 import org.bukkit.inventory.ItemStack
 
 class NMSImpl: NMS {
@@ -161,5 +166,23 @@ class NMSImpl: NMS {
     }
     override fun getProperties(gameProfile: GameProfile): PropertyMap {
         return gameProfile.properties
+    }
+    override fun createFakeItem(itemStack: ItemStack, location: Location): FakeItem {
+        return FakeItemImpl(itemStack, location)
+    }
+    private class FakeItemImpl(itemStack: ItemStack, location: Location): FakeItem {
+        val world: WorldServer = (location.world as CraftWorld).handle
+        val handle = CraftItem(Bukkit.getServer() as CraftServer, EntityItem(EntityTypes.Q, world).apply {
+            setLocation(location.x, location.y, location.z, location.yaw, location.pitch)
+            setItemStack(CraftItemStack.asNMSCopy(itemStack))
+        })
+
+        override fun getItem(): Item {
+            return handle
+        }
+
+        override fun spawn() {
+            world.addEntity(handle.handle, CreatureSpawnEvent.SpawnReason.CUSTOM)
+        }
     }
 }

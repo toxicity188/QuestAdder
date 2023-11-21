@@ -111,6 +111,7 @@ object ItemManager: QuestAdderManager {
             if (isPluginEnabled("MMOItems")) itemDatabaseList.add(MMOItemsItemDatabase())
             if (isPluginEnabled("MythicMobs")) itemDatabaseList.add(MythicMobsItemDatabase())
             if (isPluginEnabled("MythicCrucible")) itemDatabaseList.add(MythicCrucibleItemDatabase())
+            if (isPluginEnabled("ExecutableItems")) itemDatabaseList.add(ExecutableItemsItemDatabase())
             registerEvents(object : Listener {
                 @EventHandler
                 fun join(e: PlayerJoinEvent) {

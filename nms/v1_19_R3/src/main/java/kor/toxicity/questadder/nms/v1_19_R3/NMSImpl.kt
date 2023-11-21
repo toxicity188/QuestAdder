@@ -17,9 +17,11 @@ import net.minecraft.network.protocol.game.*
 import net.minecraft.network.syncher.DataWatcherObject
 import net.minecraft.network.syncher.DataWatcherRegistry
 import net.minecraft.server.level.EntityPlayer
+import net.minecraft.server.level.WorldServer
 import net.minecraft.server.network.PlayerConnection
 import net.minecraft.world.entity.*
 import net.minecraft.world.entity.decoration.EntityArmorStand
+import net.minecraft.world.entity.item.EntityItem
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.command.Command
@@ -28,12 +30,15 @@ import org.bukkit.command.CommandSender
 import org.bukkit.command.SimpleCommandMap
 import org.bukkit.craftbukkit.v1_19_R3.CraftServer
 import org.bukkit.craftbukkit.v1_19_R3.CraftWorld
+import org.bukkit.craftbukkit.v1_19_R3.entity.CraftItem
 import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer
 import org.bukkit.craftbukkit.v1_19_R3.entity.CraftTextDisplay
 import org.bukkit.craftbukkit.v1_19_R3.inventory.CraftItemStack
 import org.bukkit.craftbukkit.v1_19_R3.util.CraftChatMessage
+import org.bukkit.entity.Item
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
+import org.bukkit.event.entity.CreatureSpawnEvent
 import org.bukkit.inventory.ItemStack
 import org.joml.Vector3f
 import java.util.*
@@ -204,5 +209,23 @@ class NMSImpl: NMS {
     }
     override fun getProperties(gameProfile: GameProfile): PropertyMap {
         return gameProfile.properties
+    }
+    override fun createFakeItem(itemStack: ItemStack, location: Location): FakeItem {
+        return FakeItemImpl(itemStack, location)
+    }
+    private class FakeItemImpl(itemStack: ItemStack, location: Location): FakeItem {
+        val world: WorldServer = (location.world as CraftWorld).handle
+        val handle = CraftItem(Bukkit.getServer() as CraftServer, EntityItem(EntityTypes.ad, world).apply {
+            a(location.x, location.y, location.z, location.yaw, location.pitch)
+            a(CraftItemStack.asNMSCopy(itemStack))
+        })
+
+        override fun getItem(): Item {
+            return handle
+        }
+
+        override fun spawn() {
+            world.addFreshEntity(handle.handle, CreatureSpawnEvent.SpawnReason.CUSTOM)
+        }
     }
 }

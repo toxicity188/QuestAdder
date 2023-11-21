@@ -8,6 +8,7 @@ import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
+import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import java.text.DecimalFormat
@@ -53,7 +54,10 @@ fun OfflinePlayer.removeMoney(money: Double) = Money.removeMoney(this,money)
 fun Player.give(vararg items: ItemStack) {
     items.forEach {
         if (storage(it) >= it.amount) inventory.addItem(it)
-        else world.dropItem(location,it)
+        else {
+            val fakeItem = QuestAdderBukkit.nms.createFakeItem(it, location)
+            if (PlayerDropItemEvent(this, fakeItem.getItem()).call()) fakeItem.spawn()
+        }
     }
 }
 fun Player.take(vararg items: ItemStack) {

@@ -29,6 +29,8 @@ softdepend:
   - MMOItems
   - LightAPI
   - MythicCrucible
+  - ExecutableItems
+  - SCore
 commands:
   questadder:
     aliases:

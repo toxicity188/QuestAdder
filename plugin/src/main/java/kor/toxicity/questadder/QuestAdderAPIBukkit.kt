@@ -13,6 +13,7 @@ import kor.toxicity.questadder.data.PlayerData
 import kor.toxicity.questadder.manager.*
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
+import org.bukkit.OfflinePlayer
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -220,5 +221,15 @@ object QuestAdderAPIBukkit: APIManager {
 
     override fun createPlayerData(section: ConfigurationSection): IPlayerData {
         return PlayerData.deserialize(section)
+    }
+
+    override fun getPlayerData(player: Player): IPlayerData? {
+        return QuestAdderBukkit.getPlayerData(player)
+    }
+
+    override fun getPlayerDataAsync(player: OfflinePlayer, playerDataConsumer: Consumer<IPlayerData>) {
+        QuestAdderBukkit.getPlayerData(player) {
+            playerDataConsumer.accept(it)
+        }
     }
 }
