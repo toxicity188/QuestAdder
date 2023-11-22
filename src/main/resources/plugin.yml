@@ -5,6 +5,7 @@ author: toxicity
 description: Make a various quest in your server!
 load: POSTWORLD
 api-version: 1.17
+website: https://github.com/toxicity188/QuestAdder
 depend:
   - Citizens
   - ProtocolLib

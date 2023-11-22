@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.extension
 
 import kor.toxicity.questadder.QuestAdderBukkit
+import kor.toxicity.questadder.api.event.PlayerDropQuestItemEvent
 import net.kyori.adventure.text.Component
 import net.milkbowl.vault.economy.Economy
 import org.bukkit.Bukkit
@@ -56,7 +57,7 @@ fun Player.give(vararg items: ItemStack) {
         if (storage(it) >= it.amount) inventory.addItem(it)
         else {
             val fakeItem = QuestAdderBukkit.nms.createFakeItem(it, location)
-            if (PlayerDropItemEvent(this, fakeItem.getItem()).call()) fakeItem.spawn()
+            if (PlayerDropQuestItemEvent(this, fakeItem.getItem()).call()) fakeItem.spawn()
         }
     }
 }

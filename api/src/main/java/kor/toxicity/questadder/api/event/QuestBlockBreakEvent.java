@@ -6,11 +6,12 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.jetbrains.annotations.NotNull;
 
-public class QuestBlockBreakEvent extends QuestAdderEvent implements Cancellable, BlockEvent {
+public class QuestBlockBreakEvent extends QuestAdderPlayerEvent implements Cancellable, BlockEvent {
     private boolean cancelled;
     private final IQuestBlock block;
     private final BlockBreakEvent event;
     public QuestBlockBreakEvent(IQuestBlock block, BlockBreakEvent event) {
+        super(event.getPlayer());
         this.block = block;
         this.event = event;
     }
