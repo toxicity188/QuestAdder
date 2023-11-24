@@ -72,14 +72,17 @@ class Shop(private val blueprint: ShopBlueprint, jsonObject: JsonObject): IShop 
                         itemMeta = itemMeta?.apply {
                             QuestAdderBukkit.platform.setLore(this, QuestAdderBukkit.platform.getLore(this).toMutableList().apply {
 
+                                val buyPriceInstance = it.value.blueprint.buyPrice
+                                val sellPriceInstance = it.value.blueprint.sellPrice
 
-                                val buyPrice = it.value.blueprint.buyPrice.equation.buyEvaluate(it.value, player)
-                                val sellPrice = it.value.blueprint.sellPrice.equation.sellEvaluate(it.value, player)
+
+                                val buyPrice = buyPriceInstance.equation.buyEvaluate(it.value, player)
+                                val sellPrice = sellPriceInstance.equation.sellEvaluate(it.value, player)
 
                                 val stock = it.value.getStock(player)
 
-                                val canBuy = it.value.blueprint.buyPrice.price > 0
-                                val canSell = it.value.blueprint.sellPrice.price > 0
+                                val canBuy = buyPriceInstance.price > 0 || buyPriceInstance.item.isNotEmpty()
+                                val canSell = sellPriceInstance.price > 0 || sellPriceInstance.item.isNotEmpty()
 
                                 if (canBuy) addAll(ShopManager.loreBuyPrice.mapNotNull { reader ->
                                     reader.createComponent(player, mapOf("\$price" to listOf(Component.text(format.format(buyPrice)))))

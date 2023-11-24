@@ -7,7 +7,4 @@ import org.jetbrains.annotations.NotNull;
 public interface NPCEvent {
     @NotNull
     IActualNPC getNpc();
-    static HandlerList getHandlerList() {
-        return QuestAdderEvent.HANDLER_LIST;
-    }
 }

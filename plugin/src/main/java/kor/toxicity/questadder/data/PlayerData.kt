@@ -125,7 +125,10 @@ class PlayerData: IPlayerData {
     fun hasQuest(quest: String) = questVariables[quest]?.state == QuestRecord.HAS
     fun removeQuest(quest: String) = questVariables.remove(quest)
     fun completeQuest(quest: String) {
-        questVariables[quest]?.state = QuestRecord.COMPLETE
+        questVariables[quest]?.let {
+            it.state = QuestRecord.COMPLETE
+            it.time = LocalDateTime.now()
+        }
     }
 
     fun getQuestKey() = questVariables.keys

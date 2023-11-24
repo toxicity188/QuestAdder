@@ -27,7 +27,7 @@ class Gui(private val rawSize: Int, val name: Component, private val items: Map<
     val size = rawSize.coerceAtLeast(1).coerceAtMost(6) * 9
 
     override fun copy(): IGui {
-        return Gui(rawSize, name, items)
+        return Gui(rawSize, name, HashMap(items))
     }
 
     override fun setName(component: Component): IGui {

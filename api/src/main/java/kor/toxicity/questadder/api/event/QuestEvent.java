@@ -6,7 +6,4 @@ import org.jetbrains.annotations.NotNull;
 
 public interface QuestEvent {
     @NotNull IQuest getQuest();
-    static HandlerList getHandlerList() {
-        return QuestAdderEvent.HANDLER_LIST;
-    }
 }

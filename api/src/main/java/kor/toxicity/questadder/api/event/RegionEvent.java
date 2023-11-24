@@ -5,7 +5,4 @@ import org.bukkit.event.HandlerList;
 
 public interface RegionEvent {
     ProtectedRegion getRegion();
-    static HandlerList getHandlerList() {
-        return QuestAdderEvent.HANDLER_LIST;
-    }
 }

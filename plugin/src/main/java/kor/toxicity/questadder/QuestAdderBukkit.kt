@@ -217,7 +217,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             private set
         var timeFormat = TimeFormat(MemoryConfiguration())
             private set
-        var questSuffix = listOf<Component>()
+        var questSuffix = emptyList<Component>()
             private set
         var zipResourcePack = true
             private set

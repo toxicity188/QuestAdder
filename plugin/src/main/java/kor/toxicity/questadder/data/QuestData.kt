@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 import java.util.Base64
 
 class QuestData (
-    val time: LocalDateTime,
+    var time: LocalDateTime,
     var state: QuestRecord,
     val variable: MutableMap<String,Long>
 ): IQuestData {

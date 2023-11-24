@@ -6,7 +6,4 @@ import org.jetbrains.annotations.NotNull;
 
 public interface DialogEvent {
     @NotNull IDialog getDialog();
-    static HandlerList getHandlerList() {
-        return QuestAdderEvent.HANDLER_LIST;
-    }
 }

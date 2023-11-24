@@ -1,6 +1,8 @@
 package kor.toxicity.questadder.api.registry;
 
 import kor.toxicity.questadder.api.block.IQuestBlock;
+import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,7 +33,7 @@ public interface IBlockRegistry {
      * @since 1.0.10
      * @return all object of registered block
      */
-    @NotNull Collection<IQuestBlock> getAllBlock();
+    @NotNull Collection<@NotNull IQuestBlock> getAllBlock();
 
     /**
      * @since 1.0.10
@@ -39,4 +41,11 @@ public interface IBlockRegistry {
      */
     @NotNull
     Set<String> getAllKeys();
+
+    default @Nullable IQuestBlock findByBlock(@NotNull Block block) {
+        return findByBlock(block.getBlockData());
+    }
+    default @Nullable IQuestBlock findByBlock(@NotNull Location location) {
+        return findByBlock(location.getBlock());
+    }
 }

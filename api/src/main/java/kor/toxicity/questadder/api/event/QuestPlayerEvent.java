@@ -6,7 +6,4 @@ import org.jetbrains.annotations.NotNull;
 
 public interface QuestPlayerEvent extends QuestEvent {
     @NotNull Player getPlayer();
-    static HandlerList getHandlerList() {
-        return QuestAdderEvent.HANDLER_LIST;
-    }
 }
