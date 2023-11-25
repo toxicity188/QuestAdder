@@ -5,7 +5,6 @@
 QuestAdder is a minecraft plugin that help you to make a various quest.
 
 ## Dependency
-ProtocolLib  
 Citizens
 
 ## Link
