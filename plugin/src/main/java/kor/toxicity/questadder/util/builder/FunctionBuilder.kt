@@ -345,42 +345,42 @@ object FunctionBuilder {
                 false
             }
         }
-        addFunction("day", listOf(Player::class.java, Quest::class.java)) { _: Null, args ->
+        addFunction("day", listOf(Player::class.java, String::class.java)) { _: Null, args ->
             QuestAdderBukkit.getPlayerData(args[0] as Player)?.let {
                 it.questVariables[args[1] as String]?.let { t ->
                     ChronoUnit.DAYS.between(t.time, LocalDateTime.now())
                 }
             } ?: -1L
         }
-        addFunction("second", listOf(Player::class.java, Quest::class.java)) { _: Null, args ->
+        addFunction("second", listOf(Player::class.java, String::class.java)) { _: Null, args ->
             QuestAdderBukkit.getPlayerData(args[0] as Player)?.let {
                 it.questVariables[args[1] as String]?.let { t ->
                     ChronoUnit.SECONDS.between(t.time, LocalDateTime.now())
                 }
             } ?: -1L
         }
-        addFunction("minute", listOf(Player::class.java, Quest::class.java)) { _: Null, args ->
+        addFunction("minute", listOf(Player::class.java, String::class.java)) { _: Null, args ->
             QuestAdderBukkit.getPlayerData(args[0] as Player)?.let {
                 it.questVariables[args[1] as String]?.let { t ->
                     ChronoUnit.MINUTES.between(t.time, LocalDateTime.now())
                 }
             } ?: -1L
         }
-        addFunction("month", listOf(Player::class.java, Quest::class.java)) { _: Null, args ->
+        addFunction("month", listOf(Player::class.java, String::class.java)) { _: Null, args ->
             QuestAdderBukkit.getPlayerData(args[0] as Player)?.let {
                 it.questVariables[args[1] as String]?.let { t ->
                     ChronoUnit.MONTHS.between(t.time, LocalDateTime.now())
                 }
             } ?: -1L
         }
-        addFunction("year", listOf(Player::class.java, Quest::class.java)) { _: Null, args ->
+        addFunction("year", listOf(Player::class.java, String::class.java)) { _: Null, args ->
             QuestAdderBukkit.getPlayerData(args[0] as Player)?.let {
                 it.questVariables[args[1] as String]?.let { t ->
                     ChronoUnit.YEARS.between(t.time, LocalDateTime.now())
                 }
             } ?: -1L
         }
-        addFunction("hour", listOf(Player::class.java, Quest::class.java)) { _: Null, args ->
+        addFunction("hour", listOf(Player::class.java, String::class.java)) { _: Null, args ->
             QuestAdderBukkit.getPlayerData(args[0] as Player)?.let {
                 it.questVariables[args[1] as String]?.let { t ->
                     ChronoUnit.HOURS.between(t.time, LocalDateTime.now())
@@ -389,6 +389,10 @@ object FunctionBuilder {
         }
         addFunction("timeformat", listOf(Number::class.java)) { _: Null, args ->
             QuestAdderBukkit.Config.timeFormat.format((args[0] as Number).toLong())
+        }
+        addFunction("between", listOf(Number::class.java, Number::class.java, Number::class.java)) { _: Null, args ->
+            val num = (args[0] as Number).toDouble()
+            num >= (args[1] as Number).toDouble() && num <= (args[2] as Number).toDouble()
         }
     }
     inline fun <reified T, reified R : Any> addOperation(name: String, priority: Int, noinline operate: (T, T) -> R) {

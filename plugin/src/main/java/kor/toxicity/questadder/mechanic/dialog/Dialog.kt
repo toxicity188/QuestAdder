@@ -810,6 +810,60 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 }
             }
         }
+        bluePrint.checkQuest?.forEach {
+            val split = it.split(' ')
+            if (split.size > 1) {
+                adder.addLazyTask {
+                    val quest = DialogManager.getQuest(split[0]) ?: run {
+                        error("not found error: the quest named \"${split[0]}\" doesn't exist.")
+                        return@addLazyTask
+                    }
+                    when (split[1].lowercase()) {
+                        "has" -> { current: DialogCurrent ->
+                            quest.has(current.player)
+                        }
+                        "complete" -> { current: DialogCurrent ->
+                            quest.isCompleted(current.player)
+                        }
+                        "ready" -> { current: DialogCurrent ->
+                            quest.isReady(current.player)
+                        }
+                        "clear" -> { current: DialogCurrent ->
+                            quest.isCleared(current.player)
+                        }
+                        "!has" -> { current: DialogCurrent ->
+                            !quest.has(current.player)
+                        }
+                        "!complete" -> { current: DialogCurrent ->
+                            !quest.isCompleted(current.player)
+                        }
+                        "!ready" -> { current: DialogCurrent ->
+                            !quest.isReady(current.player)
+                        }
+                        "!clear" -> { current: DialogCurrent ->
+                            !quest.isCleared(current.player)
+                        }
+                        else -> {
+                            error("not found error: the quest predicate \"${split[1]}\" doesn't exist.")
+                            null
+                        }
+                    }?.let { pre ->
+                        if (split.size > 2) {
+                            val dialog = DialogManager.getDialog(split[2])
+                            if (dialog == null) error("not found error: the dialog named ${split[2]} doesn't exist.")
+                            else addPredicate { current ->
+                                if (pre(current)) {
+                                    dialog.start(current)
+                                    false
+                                } else true
+                            }
+                        } else {
+                            addPredicate(pre)
+                        }
+                    }
+                }
+            }
+        }
         bluePrint.condition?.let { cond ->
             adder.addLazyTask {
                 fun throwRuntimeError(result: Any?) {
@@ -887,60 +941,6 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                             quest.complete(current.player)
                         }
                         else -> error("not found error: the quest action \"${split[1]}\" doesn't exist.")
-                    }
-                }
-            }
-        }
-        bluePrint.checkQuest?.forEach {
-            val split = it.split(' ')
-            if (split.size > 1) {
-                adder.addLazyTask {
-                    val quest = DialogManager.getQuest(split[0]) ?: run {
-                        error("not found error: the quest named \"${split[0]}\" doesn't exist.")
-                        return@addLazyTask
-                    }
-                    when (split[1].lowercase()) {
-                        "has" -> { current: DialogCurrent ->
-                            quest.has(current.player)
-                        }
-                        "complete" -> { current: DialogCurrent ->
-                            quest.isCompleted(current.player)
-                        }
-                        "ready" -> { current: DialogCurrent ->
-                            quest.isReady(current.player)
-                        }
-                        "clear" -> { current: DialogCurrent ->
-                            quest.isCleared(current.player)
-                        }
-                        "!has" -> { current: DialogCurrent ->
-                            !quest.has(current.player)
-                        }
-                        "!complete" -> { current: DialogCurrent ->
-                            !quest.isCompleted(current.player)
-                        }
-                        "!ready" -> { current: DialogCurrent ->
-                            !quest.isReady(current.player)
-                        }
-                        "!clear" -> { current: DialogCurrent ->
-                            !quest.isCleared(current.player)
-                        }
-                        else -> {
-                            error("not found error: the quest predicate \"${split[1]}\" doesn't exist.")
-                            null
-                        }
-                    }?.let { pre ->
-                        if (split.size > 2) {
-                            val dialog = DialogManager.getDialog(split[2])
-                            if (dialog == null) error("not found error: the dialog named ${split[2]} doesn't exist.")
-                            else addPredicate { current ->
-                                if (pre(current)) {
-                                    dialog.start(current)
-                                    false
-                                } else true
-                            }
-                        } else {
-                            addPredicate(pre)
-                        }
                     }
                 }
             }
