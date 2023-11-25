@@ -1,3 +1,7 @@
+plugins {
+    id("com.github.johnrengelman.shadow") version("8.1.1")
+}
+
 dependencies {
     compileOnly("org.spigotmc:spigot-api:1.19.4-R0.1-SNAPSHOT")
     compileOnly("com.mojang:authlib:5.0.47")
@@ -5,7 +9,6 @@ dependencies {
     compileOnly("com.github.oraxen:oraxen:1.163.0")
     compileOnly("com.github.LoneDev6:api-itemsadder:3.6.1")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7")
-    compileOnly("com.comphenix.protocol:ProtocolLib:5.1.0")
     compileOnly(fileTree("libs"))
     compileOnly("io.lumine:Mythic-Dist:5.4.1")
     compileOnly("com.bgsoftware:SuperiorSkyblockAPI:2023.3")

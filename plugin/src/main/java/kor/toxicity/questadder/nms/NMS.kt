@@ -10,6 +10,7 @@ import org.bukkit.inventory.ItemStack
 
 interface NMS {
     fun removePlayer(player: Player, target: Player)
+    fun spawnPlayer(player: Player, target: Player)
     fun createArmorStand(player: Player, location: Location): VirtualArmorStand
     fun createItemDisplay(player: Player, location: Location): VirtualItemDisplay
     fun createTextDisplay(player: Player, location: Location): VirtualTextDisplay
@@ -24,4 +25,6 @@ interface NMS {
     fun getProperties(gameProfile: GameProfile): PropertyMap
 
     fun createFakeItem(itemStack: ItemStack, location: Location): FakeItem
+
+    fun getChannel(): NMSChannel
 }

@@ -1,6 +1,5 @@
 package kor.toxicity.questadder.manager
 
-import com.comphenix.protocol.ProtocolLibrary
 import com.ticxo.playeranimator.api.model.player.PlayerModel
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.extension.send
@@ -41,14 +40,12 @@ object GestureManager: QuestAdderManager {
             gestureMap.put(player.uniqueId, object : QuestPlayerModel(entity) {
                 override fun spawn() {
                     spawn(player)
-                    QuestAdderBukkit.nms.removePlayer(player,entity)
+                    QuestAdderBukkit.nms.removePlayer(player, entity)
                 }
 
                 override fun despawn() {
                     despawn(player)
-                    QuestAdderBukkit.task {
-                        ProtocolLibrary.getProtocolManager().updateEntity(entity, listOf(player))
-                    }
+                    QuestAdderBukkit.nms.spawnPlayer(player, entity)
                     gestureMap.remove(player.uniqueId)
                 }
 

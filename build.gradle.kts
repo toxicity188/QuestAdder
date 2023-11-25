@@ -15,7 +15,6 @@ val platformVersion = "4.3.1"
 allprojects {
     apply(plugin = "java")
     apply(plugin = "kotlin")
-    apply(plugin = "com.github.johnrengelman.shadow")
     apply(plugin = "maven-publish")
 
     group = questAdderGroup
@@ -27,7 +26,6 @@ allprojects {
             name = "papermc-repo"
             url = uri("https://repo.papermc.io/repository/maven-public/")
         }
-        maven(url = "https://repo.dmulloy2.net/repository/public/")
         maven {
             name = "sonatype"
             url = uri("https://oss.sonatype.org/content/groups/public/")
@@ -76,14 +74,14 @@ subprojects {
 
 dependencies {
     runtimeOnly(project(path = ":expansion"))
-    implementation(project(path = ":nms:v1_17_R1", configuration = "shadow"))
-    implementation(project(path = ":nms:v1_18_R1", configuration = "shadow"))
-    implementation(project(path = ":nms:v1_18_R2", configuration = "shadow"))
-    implementation(project(path = ":nms:v1_19_R1", configuration = "shadow"))
-    implementation(project(path = ":nms:v1_19_R2", configuration = "shadow"))
-    implementation(project(path = ":nms:v1_19_R3", configuration = "shadow"))
-    implementation(project(path = ":nms:v1_20_R1", configuration = "shadow"))
-    implementation(project(path = ":nms:v1_20_R2", configuration = "shadow"))
+    implementation(project(path = ":nms:v1_17_R1", configuration = "reobf"))
+    implementation(project(path = ":nms:v1_18_R1", configuration = "reobf"))
+    implementation(project(path = ":nms:v1_18_R2", configuration = "reobf"))
+    implementation(project(path = ":nms:v1_19_R1", configuration = "reobf"))
+    implementation(project(path = ":nms:v1_19_R2", configuration = "reobf"))
+    implementation(project(path = ":nms:v1_19_R3", configuration = "reobf"))
+    implementation(project(path = ":nms:v1_20_R1", configuration = "reobf"))
+    implementation(project(path = ":nms:v1_20_R2", configuration = "reobf"))
     implementation(project(path = ":plugin", configuration = "shadow"))
 }
 

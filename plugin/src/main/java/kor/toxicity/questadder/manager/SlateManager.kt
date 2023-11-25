@@ -1,9 +1,5 @@
 package kor.toxicity.questadder.manager
 
-import com.comphenix.protocol.PacketType
-import com.comphenix.protocol.ProtocolLibrary
-import com.comphenix.protocol.events.PacketAdapter
-import com.comphenix.protocol.events.PacketEvent
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.TalkStartEvent
 import org.bukkit.Bukkit
@@ -78,7 +74,14 @@ object SlateManager: QuestAdderManager {
             }
             @EventHandler
             fun changeHeldItem(e: PlayerItemHeldEvent) {
-                if (slateMap.containsKey(e.player.uniqueId)) e.isCancelled = true
+                val player = e.player
+                if (slateMap.containsKey(player.uniqueId)) {
+                    e.isCancelled = true
+                    val held = player.inventory.heldItemSlot
+                    QuestAdderBukkit.asyncTaskLater(1) {
+                        player.inventory.heldItemSlot = held
+                    }
+                }
             }
             @EventHandler
             fun itemSwap(e: PlayerSwapHandItemsEvent) {
@@ -94,30 +97,6 @@ object SlateManager: QuestAdderManager {
                 if (slateMap.containsKey(player.uniqueId)) QuestAdderBukkit.nms.changeFakeItemInHand(player, air, Bukkit.getOnlinePlayers())
             }
         },adder)
-        ProtocolLibrary.getProtocolManager().run {
-            addPacketListener(object : PacketAdapter(adder,PacketType.Play.Client.HELD_ITEM_SLOT) {
-                override fun onPacketReceiving(event: PacketEvent) {
-                    val player = event.player
-                    if (slateMap.containsKey(player.uniqueId)) {
-                        event.isCancelled = true
-                        val held = player.inventory.heldItemSlot
-                        QuestAdderBukkit.asyncTaskLater(1) {
-                            player.inventory.heldItemSlot = held
-                        }
-                    }
-                }
-            })
-            addPacketListener(object : PacketAdapter(adder,PacketType.Play.Client.ENTITY_ACTION) {
-                override fun onPacketReceiving(event: PacketEvent) {
-                    if (slateMap.containsKey(event.player.uniqueId)) event.isCancelled = true
-                }
-            })
-            addPacketListener(object : PacketAdapter(adder,PacketType.Play.Server.ENTITY_EQUIPMENT) {
-                override fun onPacketSending(event: PacketEvent) {
-                    if (slateMap.containsKey(event.player.uniqueId)) event.isCancelled = true
-                }
-            })
-        }
     }
 
     override fun reload(adder: QuestAdderBukkit) {
@@ -146,7 +125,8 @@ object SlateManager: QuestAdderManager {
         slateMap.remove(player.uniqueId)?.cancel(back)
     }
 
-    fun isSlated(player: Player) = slateMap.containsKey(player.uniqueId)
+    fun isSlated(player: Player) = isSlated(player.uniqueId)
+    fun isSlated(uuid: UUID) = slateMap.containsKey(uuid)
 
     private val air = ItemStack(Material.AIR)
     private class SlateData(val player: Player) {

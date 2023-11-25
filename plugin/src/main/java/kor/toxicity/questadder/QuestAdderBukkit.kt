@@ -514,12 +514,8 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             animator = PlayerAnimatorImpl.initialize(this).apply {
                 modelManager = object : ModelManager() {
                     private val playerMap = ConcurrentHashMap<UUID, PlayerModel>()
-
-                    private var task: BukkitTask? = null
-
-                    override fun activate() {
-                        task?.cancel()
-                        task = asyncTaskTimer(1,1) {
+                    init {
+                        asyncTaskTimer(1,1) {
                             val iterator = playerMap.values.iterator()
                             while (iterator.hasNext()) {
                                 val next = iterator.next()
@@ -530,7 +526,6 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
                             }
                         }
                     }
-
                     override fun getPlayerModel(entity: Entity): PlayerModel? {
                         return playerMap[entity.uniqueId]
                     }
@@ -578,6 +573,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             @EventHandler
             fun join(e: PlayerJoinEvent) {
                 val player = e.player
+                nms.getChannel().inject(player)
                 asyncTask {
                     playerThreadMap[player.uniqueId] = PlayerThread(player)
                 }
@@ -585,6 +581,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             @EventHandler
             fun quit(e: PlayerQuitEvent) {
                 val player = e.player
+                nms.getChannel().uninject(player)
                 asyncTask {
                     playerThreadMap.remove(player.uniqueId)?.let {
                         it.save()

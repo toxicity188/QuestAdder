@@ -8,7 +8,6 @@ api-version: 1.17
 website: https://github.com/toxicity188/QuestAdder
 depend:
   - Citizens
-  - ProtocolLib
 libraries:
   - "net.kyori:adventure-api:${adventureVersion}"
   - "net.kyori:adventure-text-serializer-legacy:${adventureVersion}"

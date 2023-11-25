@@ -3,26 +3,22 @@ package kor.toxicity.questadder.nms.v1_18_R2
 import com.mojang.authlib.GameProfile
 import com.mojang.authlib.properties.PropertyMap
 import com.mojang.datafixers.util.Pair
-import eu.endercentral.crazy_advancements.JSONMessage
-import eu.endercentral.crazy_advancements.advancement.AdvancementDisplay
-import eu.endercentral.crazy_advancements.advancement.ToastNotification
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.nms.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
-import net.minecraft.network.chat.IChatBaseComponent
+import net.minecraft.advancements.*
+import net.minecraft.network.chat.TextComponent
 import net.minecraft.network.protocol.game.*
-import net.minecraft.network.syncher.DataWatcherObject
-import net.minecraft.network.syncher.DataWatcherRegistry
-import net.minecraft.server.level.EntityPlayer
-import net.minecraft.server.level.WorldServer
-import net.minecraft.server.network.PlayerConnection
+import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.server.network.ServerGamePacketListenerImpl
 import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.EntityTypes
-import net.minecraft.world.entity.EnumItemSlot
-import net.minecraft.world.entity.decoration.EntityArmorStand
-import net.minecraft.world.entity.item.EntityItem
+import net.minecraft.world.entity.EntityType
+import net.minecraft.world.entity.EquipmentSlot
+import net.minecraft.world.entity.decoration.ArmorStand
+import net.minecraft.world.entity.item.ItemEntity
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.command.Command
@@ -33,43 +29,64 @@ import org.bukkit.craftbukkit.v1_18_R2.CraftServer
 import org.bukkit.craftbukkit.v1_18_R2.CraftWorld
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftItem
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer
+import org.bukkit.craftbukkit.v1_18_R2.help.SimpleHelpMap
 import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack
 import org.bukkit.craftbukkit.v1_18_R2.util.CraftChatMessage
 import org.bukkit.entity.Item
 import org.bukkit.entity.Player
-import org.bukkit.event.entity.CreatureSpawnEvent
 import org.bukkit.inventory.ItemStack
 
+@Suppress("unused")
 class NMSImpl: NMS {
 
+    private val criterionMap = mapOf(
+        "all" to Criterion()
+    )
+    private val advancementRequirement = arrayOf(arrayOf("all"))
+    private val resourceLocation = ResourceLocation("questadder", "notification")
+    private val progressMap = mapOf(resourceLocation to AdvancementProgress().apply {
+        update(criterionMap, advancementRequirement)
+        getCriterion("all")?.grant()
+    })
+    private val nmsChannel = NMSChannelImpl()
+
     override fun removePlayer(player: Player, target: Player) {
-        (player as CraftPlayer).handle.b.run {
-            a(PacketPlayOutEntityDestroy(target.entityId))
-            a(PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.e, (target as CraftPlayer).handle))
+        (player as CraftPlayer).handle.connection.run {
+            send(ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, (target as CraftPlayer).handle))
+            send(ClientboundRemoveEntitiesPacket(target.entityId))
         }
     }
 
-    override fun sendAdvancementMessage(player: Player, itemStack: ItemStack, component: Component) {
-        ToastNotification(
-            itemStack,
-            object : JSONMessage(null) {
-                override fun getBaseComponent(): IChatBaseComponent {
-                    return CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(component))
-                }
+    override fun spawnPlayer(player: Player, target: Player) {
+        (player as CraftPlayer).handle.connection.run {
+            val handle = (target as CraftPlayer).handle
+            send(ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.ADD_PLAYER, handle))
+            send(ClientboundAddPlayerPacket(handle))
+            send(ClientboundSetEntityDataPacket(handle.id, handle.entityData, true))
+        }
+    }
 
-                override fun toString(): String {
-                    return PlainTextComponentSerializer.plainText().serialize(component)
-                }
-            },
-            AdvancementDisplay.AdvancementFrame.GOAL
-        ).send(player)
+    override fun createArmorStand(player: Player, location: Location): VirtualArmorStand {
+        return VirtualArmorStandImpl(player, location)
+    }
+
+    override fun createItemDisplay(player: Player, location: Location): VirtualItemDisplay {
+        throw UnsupportedOperationException("Unsupported version.")
+    }
+
+    override fun createTextDisplay(player: Player, location: Location): VirtualTextDisplay {
+        throw UnsupportedOperationException("Unsupported version.")
+    }
+
+    override fun createFakePlayer(player: Player, location: Location, skin: GameProfile): VirtualPlayer {
+        return VirtualPlayerImpl(player, location, skin)
     }
 
     override fun createCommand(name: String, executor: CommandExecutor): RuntimeCommand {
         val map = (Bukkit.getServer() as CraftServer).commandMap
         val obj = object : Command(name) {
-            override fun execute(sender: CommandSender, commandLabel: String, args: Array<String>): Boolean {
-                return executor.onCommand(sender,this,commandLabel,args)
+            override fun execute(sender: CommandSender, commandLabel: String, args: Array<out String>?): Boolean {
+                return executor.onCommand(sender, this, commandLabel, args)
             }
         }
         if (!map.register("questadder",obj)) QuestAdderBukkit.warn("unable to register command: $name")
@@ -84,122 +101,166 @@ class NMSImpl: NMS {
             }
         }
     }
-    override fun updateCommand() {
-        (Bukkit.getServer() as CraftServer).run {
-            syncCommands()
-            val dispatcher = server.aA()
-            val minecraft = server.vanillaCommandDispatcher
-            for (child in minecraft.a().root.children) {
-                dispatcher.a().root.addChild(child)
-            }
-        }
-    }
-    override fun createArmorStand(player: Player, location: Location): VirtualArmorStand {
-        return VirtualArmorStandImpl(player, location)
-    }
-    private class VirtualArmorStandImpl(player: Player, location: Location): VirtualEntityImpl<EntityArmorStand>(player,EntityArmorStand(EntityTypes.c,(location.world as CraftWorld).handle).apply {
-        a(location.x,location.y,location.z,location.yaw,location.pitch)
-        j(true)
-        n(true)
-    }), VirtualArmorStand {
-        init {
-            connection.a(PacketPlayOutEntityMetadata(entity.ae(),entity.ai(),true))
-        }
-        override fun setText(text: Component) {
-            entity.a(CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(text)))
-            connection.a(PacketPlayOutEntityMetadata(entity.ae(),entity.ai(),true))
-        }
-        override fun setItem(itemStack: ItemStack) {
-            val item = CraftItemStack.asNMSCopy(itemStack)
-            entity.setItemSlot(EnumItemSlot.f, item,true)
-            connection.a(PacketPlayOutEntityEquipment(entity.ae(), listOf(Pair(EnumItemSlot.f,item))))
-        }
-    }
-    override fun createItemDisplay(player: Player, location: Location): VirtualItemDisplay {
-        throw UnsupportedOperationException("unsupported minecraft version.")
-    }
-    override fun createTextDisplay(player: Player, location: Location): VirtualTextDisplay {
-        throw UnsupportedOperationException("unsupported minecraft version.")
+
+    override fun sendAdvancementMessage(player: Player, itemStack: ItemStack, component: Component) {
+        (player as CraftPlayer).handle.connection.send(ClientboundUpdateAdvancementsPacket(
+            false,
+            listOf(Advancement(
+                resourceLocation,
+                null,
+                DisplayInfo(
+                    CraftItemStack.asNMSCopy(itemStack),
+                    CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(component)),
+                    TextComponent.EMPTY,
+                    null,
+                    FrameType.GOAL,
+                    true,
+                    false,
+                    true
+                ),
+                AdvancementRewards.EMPTY,
+                criterionMap,
+                advancementRequirement
+            )),
+            emptySet(),
+            progressMap
+        ))
     }
 
     override fun getVersion(): NMSVersion {
         return NMSVersion.V1_18_R2
     }
-    override fun changeFakeItemInHand(player: Player, itemStack: ItemStack, targetPlayer: Collection<Player>) {
-        val packet = PacketPlayOutEntityEquipment(player.entityId, listOf(Pair(EnumItemSlot.a,CraftItemStack.asNMSCopy(itemStack))))
-        targetPlayer.forEach {
-            (it as CraftPlayer).handle.b.a(packet)
+
+    override fun updateCommand() {
+        (Bukkit.getServer() as CraftServer).run {
+            commandMap.registerServerAliases()
+            (helpMap as SimpleHelpMap).initializeCommands()
+            syncCommands()
         }
     }
+
+    override fun changeFakeItemInHand(player: Player, itemStack: ItemStack, targetPlayer: Collection<Player>) {
+        val packet = ClientboundSetEquipmentPacket(player.entityId, listOf(Pair.of(EquipmentSlot.MAINHAND, CraftItemStack.asNMSCopy(itemStack))))
+        targetPlayer.forEach {
+            (it as CraftPlayer).handle.connection.send(packet)
+        }
+    }
+
     override fun changePosition(player: Player, location: Location) {
-        (player as CraftPlayer).handle.b.a(PacketPlayOutPosition(
+        (player as CraftPlayer).handle.connection.send(ClientboundPlayerPositionPacket(
             location.x,
             location.y,
             location.z,
             location.yaw,
             location.pitch,
-            PacketPlayOutPosition.EnumPlayerTeleportFlags.entries.toSet(),
+            RelativeArgument.entries.toSet(),
             player.entityId,
             true
         ))
     }
 
-    override fun createFakePlayer(player: Player, location: Location, skin: GameProfile): VirtualPlayer {
-        return VirtualPlayerImpl(player, location, skin)
-    }
-
-    private abstract class VirtualEntityImpl<T: Entity>(player: Player, protected val entity: T): VirtualEntity {
-        protected val connection: PlayerConnection = (player as CraftPlayer).handle.b.apply {
-            a(PacketPlayOutSpawnEntity(entity))
-        }
-        override fun teleport(location: Location) {
-            entity.a(location.x,location.y,location.z,location.yaw,location.pitch)
-            connection.a(PacketPlayOutEntityTeleport(entity))
-        }
-
-        override fun remove() {
-            connection.a(PacketPlayOutEntityDestroy(entity.ae()))
-        }
-    }
-    private class VirtualPlayerImpl(player: Player, location: Location, skin: GameProfile): VirtualEntityImpl<EntityPlayer>(player,
-        EntityPlayer((Bukkit.getServer() as CraftServer).server,(location.world as CraftWorld).handle,skin).apply {
-            a(location.x,location.y,location.z,location.yaw,location.pitch)
-        }), VirtualPlayer {
-        init {
-            connection.a(PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.a, entity))
-            connection.a(PacketPlayOutNamedEntitySpawn(entity))
-            val watcher = entity.ai()
-            watcher.b(DataWatcherObject(17, DataWatcherRegistry.a), 127)
-            connection.a(PacketPlayOutEntityMetadata(entity.ae(),watcher, true))
-        }
-        override fun remove() {
-            connection.a(PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.e, entity))
-            super.remove()
-        }
-    }
     override fun getGameProfile(player: Player): GameProfile {
-        return (player as CraftPlayer).handle.fq()
+        return (player as CraftPlayer).handle.gameProfile
     }
+
     override fun getProperties(gameProfile: GameProfile): PropertyMap {
         return gameProfile.properties
     }
+
     override fun createFakeItem(itemStack: ItemStack, location: Location): FakeItem {
         return FakeItemImpl(itemStack, location)
     }
-    private class FakeItemImpl(itemStack: ItemStack, location: Location): FakeItem {
-        val world: WorldServer = (location.world as CraftWorld).handle
-        val handle = CraftItem(Bukkit.getServer() as CraftServer, EntityItem(EntityTypes.Q, world).apply {
-            ap = 10
-            a(location.x, location.y, location.z, location.yaw, location.pitch)
-            a(CraftItemStack.asNMSCopy(itemStack))
-        })
 
+    override fun getChannel(): NMSChannel {
+        return nmsChannel
+    }
+    private class FakeItemImpl(itemStack: ItemStack, location: Location): FakeItem {
+        private val world = (location.world as CraftWorld).handle
+        private val craftItem = CraftItem(Bukkit.getServer() as CraftServer, ItemEntity(EntityType.ITEM, world).apply {
+            item = CraftItemStack.asNMSCopy(itemStack)
+            moveTo(
+                location.x,
+                location.y,
+                location.z,
+                location.pitch,
+                location.yaw
+            )
+        })
         override fun getItem(): Item {
-            return handle
+            return craftItem
         }
 
         override fun spawn() {
-            world.addFreshEntity(handle.handle, CreatureSpawnEvent.SpawnReason.CUSTOM)
+            world.addFreshEntity(craftItem.handle)
         }
+    }
+    private abstract class VirtualEntityImpl<T: Entity>(
+        protected val t: T,
+        player: Player,
+        location: Location
+    ): VirtualEntity {
+        protected val connection: ServerGamePacketListenerImpl = (player as CraftPlayer).handle.connection
+        init {
+            t.moveTo(
+                location.x,
+                location.y,
+                location.z,
+                location.yaw,
+                location.pitch
+            )
+            connection.send(ClientboundAddEntityPacket(t))
+        }
+        override fun remove() {
+            connection.send(ClientboundRemoveEntitiesPacket(t.id))
+        }
+
+        override fun teleport(location: Location) {
+            t.moveTo(
+                location.x,
+                location.y,
+                location.z,
+                location.yaw,
+                location.pitch
+            )
+            connection.send(ClientboundTeleportEntityPacket(t))
+        }
+
+        protected fun sendEntityDataPacket() {
+            connection.send(ClientboundSetEntityDataPacket(t.id, t.entityData, true))
+        }
+    }
+    private class VirtualPlayerImpl(player: Player, location: Location, gameProfile: GameProfile): VirtualEntityImpl<ServerPlayer>(
+        ServerPlayer((Bukkit.getServer() as CraftServer).server, (location.world as CraftWorld).handle.level, gameProfile).apply {
+            entityData.set(ServerPlayer.DATA_PLAYER_MODE_CUSTOMISATION, 127)
+        },
+        player,
+        location
+    ), VirtualPlayer {
+        init {
+            connection.send(ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.ADD_PLAYER, t))
+            connection.send(ClientboundAddPlayerPacket(t))
+            sendEntityDataPacket()
+        }
+
+        override fun remove() {
+            connection.send(ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, t))
+            super.remove()
+        }
+    }
+    private class VirtualArmorStandImpl(player: Player, location: Location): VirtualEntityImpl<ArmorStand>(ArmorStand(EntityType.ARMOR_STAND, (location.world as CraftWorld).handle).apply {
+        isInvisible = true
+        isCustomNameVisible = true
+    }, player, location), VirtualArmorStand {
+        override fun setItem(itemStack: ItemStack) {
+            val i = CraftItemStack.asNMSCopy(itemStack)
+            t.setItemSlot(EquipmentSlot.HEAD, i)
+            connection.send(ClientboundSetEquipmentPacket(t.id, listOf(Pair.of(EquipmentSlot.HEAD, i))))
+        }
+
+        override fun setText(text: Component) {
+            t.customName = CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(text))
+            sendEntityDataPacket()
+        }
+
     }
 }
