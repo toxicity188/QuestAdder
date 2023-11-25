@@ -45,9 +45,9 @@ class NMSChannelImpl: NMSChannel {
             QuestAdderBukkit.platform.changeSign(player, originalLocation, array)
             connection.send(ClientboundOpenSignEditorPacket(blockPos))
             it.signCallback = { arr ->
-                callback(arr)
+                connection.send(ClientboundBlockUpdatePacket(blockPos, air))
                 QuestAdderBukkit.task {
-                    connection.send(ClientboundBlockUpdatePacket(blockPos, air))
+                    callback(arr)
                 }
             }
         }

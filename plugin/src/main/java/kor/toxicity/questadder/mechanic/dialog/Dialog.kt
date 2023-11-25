@@ -1010,19 +1010,26 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
         }))
     }
     private fun start(run: DialogRun): DialogState?  {
-        val uuid = run.current.player.uniqueId
-        if (!predicate(run.current)) {
-            subDialog?.let { l ->
-                if (l.isNotEmpty() && !playerTask.containsKey(uuid)) l.random().start(run.current)
+        try {
+            val uuid = run.current.player.uniqueId
+            if (!predicate(run.current)) {
+                subDialog?.let { l ->
+                    if (l.isNotEmpty() && !playerTask.containsKey(uuid)) l.random().start(run.current)
+                }
+                return null
             }
-            return null
+            if (playerTask.containsKey(uuid)) return null
+            playerTask[uuid] = run.apply {
+                initialTask(current)
+                start()
+            }
+            return run.current.state
+        } catch (ex: Exception) {
+            QuestAdderBukkit.warn("runtime error: ${ex.message}")
+        } catch (ex: StackOverflowError) {
+            QuestAdderBukkit.warn("infinite loop error: dialog loops infinitely!")
         }
-        if (playerTask.containsKey(uuid)) return null
-        playerTask[uuid] = run.apply {
-            initialTask(current)
-            start()
-        }
-        return run.current.state
+        return null
     }
 
     override fun getKey(): String {

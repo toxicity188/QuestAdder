@@ -7,7 +7,7 @@ plugins {
 }
 
 val questAdderGroup = "kor.toxicity.questadder"
-val questAdderVersion = "1.1.8"
+val questAdderVersion = "1.1.9"
 
 val adventureVersion = "4.14.0"
 val platformVersion = "4.3.1"
