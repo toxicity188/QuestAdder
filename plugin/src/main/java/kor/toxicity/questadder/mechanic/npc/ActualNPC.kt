@@ -101,6 +101,7 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
             questNPC.indicate[it]?.let { quest ->
                 data.questVariables[quest.questKey]?.state?.let { state ->
                     when (state) {
+                        QuestRecord.READY_TO_REQUEST -> State.READY_TO_REQUEST
                         QuestRecord.HAS ->  if (quest.isCompleted(player)) State.COMPLETE else State.HAS
                         QuestRecord.COMPLETE -> State.ALREADY_COMPLETED
                     }

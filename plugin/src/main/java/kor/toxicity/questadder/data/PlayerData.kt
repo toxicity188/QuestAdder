@@ -130,6 +130,12 @@ class PlayerData: IPlayerData {
             it.time = LocalDateTime.now()
         }
     }
+    fun requestQuest(quest: String) {
+        questVariables[quest]?.let {
+            it.state = QuestRecord.READY_TO_REQUEST
+            it.time = LocalDateTime.now()
+        }
+    }
 
     fun getQuestKey() = questVariables.keys
 

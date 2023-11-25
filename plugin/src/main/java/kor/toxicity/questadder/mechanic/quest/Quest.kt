@@ -192,6 +192,9 @@ class Quest(adder: QuestAdder, val file: File, val questKey: String, section: Co
             call()
         })
     }
+    fun request(player: Player) {
+        QuestAdderBukkit.getPlayerData(player)?.requestQuest(questKey)
+    }
     override fun complete(player: Player) {
         val reward = reward?.give(player)
         QuestAdderBukkit.getPlayerData(player)?.completeQuest(questKey)

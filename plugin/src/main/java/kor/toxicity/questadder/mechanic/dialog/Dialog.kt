@@ -940,6 +940,9 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                         "complete" -> addLastAction { current ->
                             quest.complete(current.player)
                         }
+                        "request" -> addLastAction { current ->
+                            quest.request(current.player)
+                        }
                         else -> error("not found error: the quest action \"${split[1]}\" doesn't exist.")
                     }
                 }
