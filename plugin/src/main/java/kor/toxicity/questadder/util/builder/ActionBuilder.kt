@@ -80,6 +80,8 @@ object ActionBuilder {
 
         put("clone", ActClone::class.java)
         put("removeentity", ActRemoveEntity::class.java)
+
+        put("toast", ActToast::class.java)
     }
     private val eventMap = HashMap<String,Class<out AbstractEvent<*>>>().apply {
         put("join", EventJoin::class.java)

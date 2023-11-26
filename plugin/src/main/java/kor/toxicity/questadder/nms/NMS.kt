@@ -16,7 +16,7 @@ interface NMS {
     fun createTextDisplay(player: Player, location: Location): VirtualTextDisplay
     fun createFakePlayer(player: Player, location: Location, skin: GameProfile): VirtualPlayer
     fun createCommand(name: String, executor: CommandExecutor): RuntimeCommand
-    fun sendAdvancementMessage(player: Player, itemStack: ItemStack, component: Component)
+    fun sendAdvancementMessage(player: Player, itemStack: ItemStack, type: ToastType, component: Component)
     fun getVersion(): NMSVersion
     fun updateCommand()
     fun changeFakeItemInHand(player: Player, itemStack: ItemStack, targetPlayer: Collection<Player>)

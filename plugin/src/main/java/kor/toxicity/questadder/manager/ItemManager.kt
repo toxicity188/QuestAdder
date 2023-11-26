@@ -115,7 +115,7 @@ object ItemManager: QuestAdderManager {
             registerEvents(object : Listener {
                 @EventHandler
                 fun join(e: PlayerJoinEvent) {
-                    reloadPlayerInventory(e.player)
+                    if (QuestAdderBukkit.Config.reloadPlayerInventory) reloadPlayerInventory(e.player)
                 }
             },adder)
         }
@@ -175,7 +175,7 @@ object ItemManager: QuestAdderManager {
             }
         }
         adder.addLazyTask {
-            Bukkit.getOnlinePlayers().forEach {
+            if (QuestAdderBukkit.Config.reloadPlayerInventory) Bukkit.getOnlinePlayers().forEach {
                 reloadPlayerInventory(it)
             }
         }

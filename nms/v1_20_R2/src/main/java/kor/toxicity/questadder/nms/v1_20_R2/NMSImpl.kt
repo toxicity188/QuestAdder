@@ -117,7 +117,7 @@ class NMSImpl: NMS {
         }
     }
 
-    override fun sendAdvancementMessage(player: Player, itemStack: ItemStack, component: Component) {
+    override fun sendAdvancementMessage(player: Player, itemStack: ItemStack, type: ToastType, component: Component) {
         (player as CraftPlayer).handle.connection.send(ClientboundUpdateAdvancementsPacket(
             false,
             listOf(AdvancementHolder(
@@ -129,7 +129,11 @@ class NMSImpl: NMS {
                         CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(component)),
                         net.minecraft.network.chat.Component.empty(),
                         null,
-                        FrameType.GOAL,
+                        when (type) {
+                            ToastType.GOAL -> FrameType.GOAL
+                            ToastType.TASK -> FrameType.TASK
+                            ToastType.CHALLENGE -> FrameType.CHALLENGE
+                        },
                         true,
                         false,
                         true

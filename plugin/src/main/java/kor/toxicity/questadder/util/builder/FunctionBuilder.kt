@@ -2,8 +2,10 @@ package kor.toxicity.questadder.util.builder
 
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.event.*
+import kor.toxicity.questadder.api.mechanic.QuestRecord
 import kor.toxicity.questadder.extension.storage
 import kor.toxicity.questadder.extension.totalAmount
+import kor.toxicity.questadder.manager.ConstantManager
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.manager.ItemManager
 import kor.toxicity.questadder.mechanic.npc.QuestNPC
@@ -393,6 +395,20 @@ object FunctionBuilder {
         addFunction("between", listOf(Number::class.java, Number::class.java, Number::class.java)) { _: Null, args ->
             val num = (args[0] as Number).toDouble()
             num >= (args[1] as Number).toDouble() && num <= (args[2] as Number).toDouble()
+        }
+        addFunction("constNumOf", listOf(String::class.java)) { _: Null, args ->
+            (ConstantManager.getConstant(args[0] as String) as? Number)?.toDouble() ?: 0.0
+        }
+        addFunction("constStrOf", listOf(String::class.java)) { _: Null, args ->
+            ConstantManager.getConstant(args[0] as String) as? String ?: "<none>"
+        }
+        addFunction("constBoolOf", listOf(String::class.java)) { _: Null, args ->
+            ConstantManager.getConstant(args[0] as String) as? Boolean ?: false
+        }
+        addFunction("givenQuestOf", listOf(Player::class.java)) { _: Null, args ->
+            QuestAdderBukkit.getPlayerData(args[0] as Player)?.questVariables?.values?.count {
+                it.state == QuestRecord.HAS
+            } ?: -1
         }
     }
     inline fun <reified T, reified R : Any> addOperation(name: String, priority: Int, noinline operate: (T, T) -> R) {

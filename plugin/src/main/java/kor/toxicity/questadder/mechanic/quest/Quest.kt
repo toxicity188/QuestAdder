@@ -12,6 +12,7 @@ import kor.toxicity.questadder.util.RewardSet
 import kor.toxicity.questadder.api.mechanic.AbstractAction
 import kor.toxicity.questadder.api.mechanic.ActionResult
 import kor.toxicity.questadder.api.mechanic.QuestRecord
+import kor.toxicity.questadder.nms.ToastType
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.util.function.WrappedFunction
@@ -163,7 +164,7 @@ class Quest(adder: QuestAdder, val file: File, val questKey: String, section: Co
                                 val newValue = (data.getQuestVariable(questKey,name) ?: 0)
                                 if (newValue + 1 == max) {
                                     lore?.createComponent(questEvent)?.let { component ->
-                                        QuestAdderBukkit.nms.sendAdvancementMessage(player,toast ?: item.write(questEvent),component)
+                                        QuestAdderBukkit.nms.sendAdvancementMessage(player,toast ?: item.write(questEvent),ToastType.GOAL,component)
                                     }
                                     action?.invoke(player,questEvent)
                                 }

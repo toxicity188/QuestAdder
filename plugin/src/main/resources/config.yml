@@ -2,6 +2,7 @@ default-typing-speed: 1
 auto-save-time: 300
 default-dialog-item: ENCHANTED_BOOK
 default-resource-pack-item: ENDER_EYE
+reload-player-inventory: true
 
 player-gui:
   size: 4

@@ -178,6 +178,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         private val managerList = mutableListOf(
             ResourcePackManager,
             UUIDManager,
+            ConstantManager,
             HookerManager,
             CallbackManager,
             NavigationManager,
@@ -222,6 +223,8 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         var zipResourcePack = true
             private set
         var importOtherResourcePack = emptyList<String>()
+            private set
+        var reloadPlayerInventory = true
             private set
         fun getPlayerGuiButton(type: PlayerGuiButtonType) = playerGuiButton[type]
         internal fun reload(section: ConfigurationSection) {
@@ -288,6 +291,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             section.getAsStringList("import-other-resource-pack")?.let {
                 importOtherResourcePack = it
             }
+            reloadPlayerInventory = section.getBoolean("reload-player-inventory", true)
         }
     }
     object Prefix {
