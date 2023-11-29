@@ -193,7 +193,7 @@ object ResourcePackManager: QuestAdderManager {
     private val blockEditorKey = NamespacedKey.fromString("questadder.block.editor")!!
     private val guiMap = HashMap<String, GuiFontData>()
 
-    override fun reload(adder: QuestAdderBukkit) {
+    override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
         val resource = File(adder.dataFolder, "resources").apply {
             mkdir()
         }
@@ -265,6 +265,7 @@ object ResourcePackManager: QuestAdderManager {
         }
 
         //font
+        checker(0.0, "initializing font resource pack...")
         val fontPngMap = LinkedHashMap<String,File>()
         val fontYmlMap = LinkedHashMap<String,File>()
         fonts.listFiles()?.forEach {
@@ -307,6 +308,7 @@ object ResourcePackManager: QuestAdderManager {
         }
 
         //Guis
+        checker(0.25, "initializing gui resource pack...")
         guiMap.clear()
         val guiArray = JsonArray()
         var guiIndex = 0xD0000
@@ -351,6 +353,7 @@ object ResourcePackManager: QuestAdderManager {
         }
 
         //Tooltips
+        checker(0.5, "initializing tooltip resource pack...")
         tooltipMap.clear()
         tooltips.listFiles()?.forEach {
             when (it.extension) {
@@ -420,6 +423,7 @@ object ResourcePackManager: QuestAdderManager {
         }
 
         //block
+        checker(0.75, "initializing block resource pack...")
         blockRegistry.clear()
         val noteBlockMap = HashMap<String,String>()
         val stringBlockMap = HashMap<String,String>()

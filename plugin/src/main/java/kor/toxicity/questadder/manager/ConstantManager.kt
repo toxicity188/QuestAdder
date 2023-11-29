@@ -14,7 +14,8 @@ object ConstantManager: QuestAdderManager {
 
     }
 
-    override fun reload(adder: QuestAdderBukkit) {
+    override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
+        checker(0.0, "start loading constants.")
         try {
             val yaml = YamlConfiguration.loadConfiguration(File(adder.dataFolder.apply {
                 if (!exists()) mkdir()
@@ -44,6 +45,7 @@ object ConstantManager: QuestAdderManager {
             QuestAdderBukkit.warn("unable to load constants.yml")
             QuestAdderBukkit.warn("reason: ${ex.message}")
         }
+        checker(0.0, "constant loading finished.")
     }
     fun getConstant(name: String) = constantMap[name]
 

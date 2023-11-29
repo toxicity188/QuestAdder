@@ -17,6 +17,7 @@ import kor.toxicity.questadder.mechanic.npc.QuestNPC
 import kor.toxicity.questadder.mechanic.quest.Quest
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.api.mechanic.RegistrableAction
+import kor.toxicity.questadder.data.QuestData
 import kor.toxicity.questadder.mechanic.sender.DialogSenderType
 import kor.toxicity.questadder.mechanic.sender.ItemDialogSender
 import kor.toxicity.questadder.shop.blueprint.ShopBlueprint
@@ -52,6 +53,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import java.io.File
+import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.HashMap
@@ -232,24 +234,61 @@ object DialogManager: QuestAdderManager {
                 }
             }
         )
-        adder.command.addCommand("parse") {
-            aliases = arrayOf("p")
-            description = "parse result from given arguments."
-            length = 1
-            usage = "parse <text>"
-            allowedSender = arrayOf(SenderType.PLAYER)
-            executor = { sender, args ->
-                val str = args.toMutableList().apply {
-                    removeAt(0)
-                }.joinToString(" ")
-                ComponentReader<PlayerParseEvent>(str).createComponent(
-                    PlayerParseEvent(sender as Player).apply {
-                    call()
-                })?.let { component ->
-                    sender.info(component)
-                } ?: sender.info("cannot parse this text argument.")
+        adder.command
+            .addCommand("parse") {
+                aliases = arrayOf("p")
+                description = "parse result from given arguments."
+                length = 1
+                usage = "parse <text>"
+                allowedSender = arrayOf(SenderType.PLAYER)
+                executor = { sender, args ->
+                    val str = args.toList().subList(1, args.size).joinToString(" ")
+                    ComponentReader<PlayerParseEvent>(str).createComponent(
+                        PlayerParseEvent(sender as Player).apply {
+                            call()
+                        })?.let { component ->
+                        sender.info(component)
+                    } ?: sender.info("cannot parse this text argument.")
+                }
             }
-        }
+            .addCommand("state") {
+                aliases = arrayOf("st")
+                description = "sets some quest's state"
+                length = 3
+                usage = "state <player> <quest> <state>"
+                executor = { sender, args ->
+                    Bukkit.getPlayer(args[1])?.let {
+                        QuestAdderBukkit.getPlayerData(it)?.let { data ->
+                            if (questMap.containsKey(args[2])) {
+                                try {
+                                    val record = QuestRecord.valueOf(args[3].uppercase())
+                                    data.questVariables.getOrPut(args[2]) {
+                                        QuestData(LocalDateTime.now(), record, hashMapOf())
+                                    }.state = record
+                                    sender.send("successfully changed.")
+                                } catch (ex: Exception) {
+                                    sender.warn("unable to find that state: ${args[3]}")
+                                }
+                            } else {
+                                sender.warn("this quest doesn't exist: ${args[2]}")
+                            }
+                        } ?: sender.warn("unable to load ${it.name}'s player data.")
+                    } ?: sender.warn("the player \"${args[1]}\" is not online")
+                }
+                tabComplete = { _, args ->
+                    when (args.size) {
+                        3 -> questMap.keys.filter {
+                            it.startsWith(args[2])
+                        }
+                        4 -> QuestRecord.entries.map {
+                            it.name.lowercase()
+                        }.filter {
+                            it.startsWith(args[3])
+                        }
+                        else -> null
+                    }
+                }
+            }
         adder.command.addCommandAPI("var", arrayOf("v","변수"),"variable-related command.", true, CommandAPI("qa v")
             .addCommand("set") {
                 aliases = arrayOf("s","설정")
@@ -258,11 +297,7 @@ object DialogManager: QuestAdderManager {
                 length = 3
                 executor = { sender, args ->
                     Bukkit.getPlayer(args[1])?.let { player ->
-                        FunctionBuilder.evaluate(args.toMutableList().apply {
-                            removeAt(0)
-                            removeAt(0)
-                            removeAt(0)
-                        }.joinToString(" ")).apply(
+                        FunctionBuilder.evaluate(args.toList().subList(3, args.size).joinToString(" ")).apply(
                             PlayerParseEvent(
                                 player
                             ).apply {
@@ -490,8 +525,8 @@ object DialogManager: QuestAdderManager {
     }
 
 
-    override fun reload(adder: QuestAdderBukkit) {
-        dialogReload(adder)
+    override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
+        dialogReload(adder, checker)
     }
 
     fun getDialog(name: String) = dialogMap[name]
@@ -518,7 +553,8 @@ object DialogManager: QuestAdderManager {
     fun getQuestNPC(name: String) = questNpcMap[name]
     fun getAllNPC(): Set<ActualNPC> = HashSet(actualNPCMap.values)
 
-    private fun dialogReload(adder: QuestAdderBukkit) {
+    private fun dialogReload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit = { _, _ -> }) {
+        checker(0.0, "initializing dialog load...")
         val actionReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
             ActionBuilder.build(QuestAdderBukkit.Companion,c)?.let { build ->
                 actionMap.put(key,build)?.let {
@@ -655,12 +691,19 @@ object DialogManager: QuestAdderManager {
             }
         }
 
+        checker(0.5 / 7.0, "loading actions folder...")
         loadConfig("actions", actionReader)
+        checker(1.5 / 7.0, "loading dialogs folder...")
         loadConfig("dialogs", dialogReader)
+        checker(2.5 / 7.0, "loading qnas folder...")
         loadConfig("qnas", qnaReader)
+        checker(3.5 / 7.0, "loading quests folder...")
         loadConfig("quests", questReader)
+        checker(4.5 / 7.0, "loading npcs folder...")
         loadConfig("npcs", npcReader)
+        checker(5.5 / 7.0, "loading senders folder...")
         loadConfig("senders", senderReader)
+        checker(6.5 / 7.0, "loading senders folder...")
         loadConfig("shops", shopReader)
 
         CitizensAPI.getNPCRegistries().forEach {
@@ -684,6 +727,7 @@ object DialogManager: QuestAdderManager {
             if (quest == null) iterator.remove()
             else entry.setValue(quest)
         }
+        checker(1.0, "finalizing dialog loading...")
         QuestAdderBukkit.task {
             QuestAdderBukkit.nms.updateCommand()
         }

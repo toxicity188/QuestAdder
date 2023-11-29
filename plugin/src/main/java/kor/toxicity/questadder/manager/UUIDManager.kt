@@ -10,7 +10,7 @@ object UUIDManager: QuestAdderManager {
     override fun start(adder: QuestAdderBukkit) {
     }
 
-    override fun reload(adder: QuestAdderBukkit) {
+    override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
         uuidRegistry.clear()
     }
 

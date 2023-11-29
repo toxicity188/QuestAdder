@@ -16,7 +16,8 @@ object SkinManager: QuestAdderManager {
 
     }
 
-    override fun reload(adder: QuestAdderBukkit) {
+    override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
+        checker(0.0, "initializing player skin...")
         profileMap.clear()
         adder.loadFolder("skins") { file, config ->
             config.getKeys(false).forEach {
@@ -36,6 +37,7 @@ object SkinManager: QuestAdderManager {
             }
         }
         Bukkit.getConsoleSender().send("${profileMap.size} of skins has successfully loaded.")
+        checker(0.0, "finializing player skin...")
     }
 
     fun getProfile(name: String) = profileMap[name]

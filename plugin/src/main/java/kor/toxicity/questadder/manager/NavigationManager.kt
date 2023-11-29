@@ -154,7 +154,7 @@ object NavigationManager: QuestAdderManager {
         },adder)
     }
 
-    override fun reload(adder: QuestAdderBukkit) {
+    override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
     }
 
     override fun end(adder: QuestAdderBukkit) {

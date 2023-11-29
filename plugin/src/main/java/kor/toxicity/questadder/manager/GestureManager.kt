@@ -15,8 +15,9 @@ object GestureManager: QuestAdderManager {
 
     }
 
-    override fun reload(adder: QuestAdderBukkit) {
+    override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
         QuestAdderBukkit.animator?.let { animator ->
+            checker(0.0, "initializing gestures...")
             File(adder.dataFolder.apply {
                 mkdir()
             },"gestures").run {
@@ -28,6 +29,7 @@ object GestureManager: QuestAdderManager {
                 }
             }
             Bukkit.getConsoleSender().send("${animator.animationManager.registry.size} of gestures has successfully loaded.")
+            checker(0.0, "finalizing gestures...")
         }
     }
 

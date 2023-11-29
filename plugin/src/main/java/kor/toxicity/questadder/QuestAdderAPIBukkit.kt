@@ -18,6 +18,7 @@ import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import java.util.*
+import java.util.function.BiConsumer
 import java.util.function.BiFunction
 import java.util.function.Consumer
 
@@ -42,6 +43,12 @@ object QuestAdderAPIBukkit: APIManager {
      */
     override fun reloadPlugin(callback: Consumer<Long>) {
         QuestAdderBukkit.reload {
+            callback.accept(it)
+        }
+    }
+
+    override fun reloadPlugin(player: Player, callback: Consumer<Long>) {
+        QuestAdderBukkit.reload(player) {
             callback.accept(it)
         }
     }

@@ -38,9 +38,9 @@ object CallbackManager: QuestAdderManager {
         QuestAdderBukkit.nms.getChannel().openSign(player, array, callback)
     }
 
-    override fun reload(adder: QuestAdderBukkit) {
-    }
+    override fun reload(adder: QuestAdderBukkit, consumer: (Double, String) -> Unit) {
 
+    }
     override fun end(adder: QuestAdderBukkit) {
     }
 }

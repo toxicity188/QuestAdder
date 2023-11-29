@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -36,7 +37,15 @@ public interface APIManager {
      * @param callback the function that will be called when reload task is end
      * @since 1.0
      */
-    void reloadPlugin(@NotNull Consumer<@NotNull Long> callback);
+    void reloadPlugin(@NotNull Consumer<Long> callback);
+
+    /**
+     * Reloads this plugin asynchronously.
+     * @param player the player that calls reload.
+     * @param callback the function that will be called when reload task is end
+     * @since 1.1.9
+     */
+    void reloadPlugin(@NotNull Player player, @NotNull Consumer<Long> callback);
     /**
      * Reloads this plugin synchronously.
      * This method doesn't call both ReloadStartEvent and ReloadEndEvent.

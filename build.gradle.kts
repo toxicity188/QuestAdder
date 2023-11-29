@@ -1,9 +1,9 @@
 plugins {
     `java-library`
-    kotlin("jvm") version "1.9.20"
+    kotlin("jvm") version "1.9.21"
     id("com.github.johnrengelman.shadow") version("8.1.1")
     id("maven-publish")
-    id("org.jetbrains.dokka") version("1.9.0")
+    id("org.jetbrains.dokka") version("1.9.10")
 }
 
 val questAdderGroup = "kor.toxicity.questadder"

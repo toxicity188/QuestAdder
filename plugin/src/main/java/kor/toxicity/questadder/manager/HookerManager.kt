@@ -32,7 +32,8 @@ object HookerManager: QuestAdderManager {
         },adder)
     }
 
-    override fun reload(adder: QuestAdderBukkit) {
+    override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
+        checker(0.0, "loading exp hooker...")
         expHandler.clear()
         adder.loadFile("exp")?.let {
             it.getAsStringList("exp-hooker")?.forEach { str ->
@@ -43,6 +44,7 @@ object HookerManager: QuestAdderManager {
                 }
             }
         }
+        checker(1.0, "finalizing exp hooker...")
     }
 
     override fun end(adder: QuestAdderBukkit) {

@@ -9,43 +9,30 @@ import kor.toxicity.questadder.api.QuestAdder
 import kor.toxicity.questadder.api.QuestAdderAPI
 import kor.toxicity.questadder.api.QuestAdderPlugin
 import kor.toxicity.questadder.api.event.*
+import kor.toxicity.questadder.api.mechanic.AbstractEvent
+import kor.toxicity.questadder.api.mechanic.QuestRecord
+import kor.toxicity.questadder.api.util.SoundData
 import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.data.PlayerData
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.*
 import kor.toxicity.questadder.nms.NMS
+import kor.toxicity.questadder.platform.PaperPlatformAdapter
+import kor.toxicity.questadder.platform.PlatformAdapter
+import kor.toxicity.questadder.platform.SpigotPlatformAdapter
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.TimeFormat
 import kor.toxicity.questadder.util.action.ActCast
 import kor.toxicity.questadder.util.action.ActSkill
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.database.StandardDatabaseSupplier
-import kor.toxicity.questadder.api.mechanic.AbstractEvent
-import kor.toxicity.questadder.api.mechanic.QuestRecord
-import kor.toxicity.questadder.api.util.SoundData
-import kor.toxicity.questadder.platform.PaperPlatformAdapter
-import kor.toxicity.questadder.platform.PlatformAdapter
-import kor.toxicity.questadder.platform.SpigotPlatformAdapter
 import kor.toxicity.questadder.util.event.itemsadder.EventCustomBlockBreak
 import kor.toxicity.questadder.util.event.itemsadder.EventCustomBlockClick
 import kor.toxicity.questadder.util.event.itemsadder.EventCustomBlockPlace
 import kor.toxicity.questadder.util.event.magicspells.*
-import kor.toxicity.questadder.util.event.mmocore.EventMMOAttributeUse
-import kor.toxicity.questadder.util.event.mmocore.EventMMOChangeClass
-import kor.toxicity.questadder.util.event.mmocore.EventMMOCombat
-import kor.toxicity.questadder.util.event.mmocore.EventMMOExpGain
-import kor.toxicity.questadder.util.event.mmocore.EventMMOGuildChat
-import kor.toxicity.questadder.util.event.mmocore.EventMMOItemLock
-import kor.toxicity.questadder.util.event.mmocore.EventMMOItemUnlock
-import kor.toxicity.questadder.util.event.mmocore.EventMMOLevelUp
-import kor.toxicity.questadder.util.event.mmocore.EventMMOPartyChat
-import kor.toxicity.questadder.util.event.mmoitems.EventMMOApplyGemStone
-import kor.toxicity.questadder.util.event.mmoitems.EventMMOApplySoulbound
-import kor.toxicity.questadder.util.event.mmoitems.EventMMOBreakSoulbound
-import kor.toxicity.questadder.util.event.mmoitems.EventMMOConsume
-import kor.toxicity.questadder.util.event.mmoitems.EventMMOReforge
-import kor.toxicity.questadder.util.event.mmoitems.EventMMOUnsocketGemStone
+import kor.toxicity.questadder.util.event.mmocore.*
+import kor.toxicity.questadder.util.event.mmoitems.*
 import kor.toxicity.questadder.util.event.mythiclib.EventMMOBlock
 import kor.toxicity.questadder.util.event.mythiclib.EventMMOCastSkill
 import kor.toxicity.questadder.util.event.mythiclib.EventMMODodge
@@ -68,20 +55,17 @@ import org.bstats.bukkit.Metrics
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
+import org.bukkit.boss.BarColor
+import org.bukkit.boss.BarStyle
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.MemoryConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
-import org.bukkit.event.Event
-import org.bukkit.event.EventHandler
-import org.bukkit.event.EventPriority
-import org.bukkit.event.HandlerList
-import org.bukkit.event.Listener
+import org.bukkit.event.*
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.java.JavaPlugin
-import org.bukkit.scheduler.BukkitTask
 import org.jetbrains.annotations.ApiStatus.Internal
 import java.io.File
 import java.net.URI
@@ -173,6 +157,8 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         @Internal
         fun reload(callback: (Long) -> Unit) = plugin.reload(callback)
         @Internal
+        fun reload(player: Player, callback: (Long) -> Unit) = plugin.reload(player, callback)
+        @Internal
         fun reloadSync() = plugin.reloadSync()
 
         private val managerList = mutableListOf(
@@ -194,6 +180,8 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         )
     }
     object Config {
+        var debug = false
+            private set
         var defaultTypingSpeed = 1L
             private set
         var autoSaveTime = 6000L
@@ -228,6 +216,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             private set
         fun getPlayerGuiButton(type: PlayerGuiButtonType) = playerGuiButton[type]
         internal fun reload(section: ConfigurationSection) {
+            debug = section.getBoolean("debug")
             defaultTypingSpeed = section.getLong("default-typing-speed",1L)
             autoSaveTime = section.getLong("auto-save-time",300L) * 20
             section.getString("default-dialog-item")?.let {
@@ -383,9 +372,10 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             usage = "reload"
             opOnly = true
             executor = { sender, _ ->
-                reload {
-                    sender.info("reload completed. ($it ms)")
+                val consumer = { l: Long ->
+                    sender.info("reload completed. ($l ms)")
                 }
+                if (sender is Player) reload(sender, consumer) else reload(consumer)
             }
         }
         .addCommand("run") {
@@ -397,11 +387,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             length = 2
             executor = { sender, args ->
                 Bukkit.getPlayer(args[1])?.let { player ->
-                    val arg = args.toMutableList().apply {
-                        removeAt(0)
-                        removeAt(0)
-                        removeAt(0)
-                    }.toTypedArray()
+                    val arg = args.toList().subList(3, args.size).toTypedArray()
                     DialogManager.getAction(args[2])?.apply(player, *arg) ?: sender.warn("unable to find the action: ${args[2]}")
                 } ?: sender.warn("unable to find that player: ${args[1]}")
             }
@@ -643,7 +629,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
     fun addLazyTask(action: () -> Unit) {
         lazyTaskCache.add(action)
     }
-    private fun load() {
+    private fun load(checker: (Double, String) -> Unit = { _,_ -> }) {
         loadFile("prefix")?.let { prefix ->
             Prefix.reload(prefix)
         }
@@ -653,24 +639,30 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         loadFile("config")?.let { config ->
             Config.reload(config)
         }
-        managerList.forEach {
-            it.reload(this)
+        val size = managerList.count().toDouble()
+        managerList.forEachIndexed { index, questAdderManager ->
+            questAdderManager.reload(this) { d, s ->
+                checker((d + index.toDouble()) / size, s)
+            }
         }
+        val lazyTaskSize = lazyTaskCache.size.toDouble()
         var task: (() -> Unit)?
+        var i = 0.0
         do {
             task = lazyTaskCache.poll()?.apply {
                 invoke()
             }
+            checker((i++) / lazyTaskSize, "finalizing...")
         } while (task != null)
     }
-    private fun reloadSync() {
+    private fun reloadSync(checker: (Double,String) -> Unit = { _, _ -> }) {
         if (reloaded) {
             warn("plugin is still on reload.")
             return
         }
         reloaded = true
         loadDatabase()
-        load()
+        load(checker)
         reloaded = false
     }
     private fun loadDatabase() {
@@ -684,6 +676,32 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             var time = System.currentTimeMillis()
             reloadSync()
             time = System.currentTimeMillis() - time
+            task {
+                callback(time)
+                ReloadEndEvent().call()
+            }
+        }
+    }
+    private fun reload(player: Player, callback: (Long) -> Unit) {
+        val bossBar = Bukkit.createBossBar(null, BarColor.WHITE, BarStyle.SOLID)
+        bossBar.addPlayer(player)
+        ReloadStartEvent().call()
+        asyncTask {
+            var time = System.currentTimeMillis()
+            var debug = ""
+            reloadSync { d, s ->
+                if (Config.debug && s != debug) {
+                    debug = s
+                    Bukkit.getConsoleSender().send(s)
+                }
+                bossBar.progress = d
+                bossBar.setTitle(s)
+            }
+            time = System.currentTimeMillis() - time
+            bossBar.setTitle("finished.")
+            asyncTaskLater(60) {
+                bossBar.removeAll()
+            }
             task {
                 callback(time)
                 ReloadEndEvent().call()

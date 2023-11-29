@@ -150,7 +150,8 @@ object ItemManager: QuestAdderManager {
         itemDatabaseList.add(database)
     }
 
-    override fun reload(adder: QuestAdderBukkit) {
+    override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
+        checker(0.0, "initializing items...")
         itemMap.clear()
         val iterator = itemDatabaseList.iterator()
         while (iterator.hasNext()) {
@@ -174,11 +175,13 @@ object ItemManager: QuestAdderManager {
                 }
             }
         }
-        adder.addLazyTask {
-            if (QuestAdderBukkit.Config.reloadPlayerInventory) Bukkit.getOnlinePlayers().forEach {
+        Bukkit.getConsoleSender().send("${itemMap.size} of items has successfully loaded.")
+        if (QuestAdderBukkit.Config.reloadPlayerInventory) adder.addLazyTask {
+            Bukkit.getOnlinePlayers().forEach {
                 reloadPlayerInventory(it)
             }
         }
+        checker(0.0, "finalizing items...")
     }
 
     override fun end(adder: QuestAdderBukkit) {

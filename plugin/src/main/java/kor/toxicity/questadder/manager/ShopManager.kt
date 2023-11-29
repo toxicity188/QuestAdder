@@ -95,7 +95,8 @@ object ShopManager: QuestAdderManager {
     override fun start(adder: QuestAdderBukkit) {
     }
 
-    override fun reload(adder: QuestAdderBukkit) {
+    override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
+        checker(0.0, "initializing shop config...")
         adder.loadFile("shop")?.let {
             it.getAsStringList("lore-buy")?.let { lore ->
                 loreBuy = lore.map { s ->
@@ -156,6 +157,7 @@ object ShopManager: QuestAdderManager {
             pageAfter = ItemWriter(it.getConfigurationSection("button-page-after") ?: pageAfterConfig)
             playerStatus = ItemWriter(it.getConfigurationSection("button-player-status") ?: playerStatusConfig)
         }
+        checker(1.0, "finalizing shop config...")
     }
 
     override fun end(adder: QuestAdderBukkit) {

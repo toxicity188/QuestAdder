@@ -99,7 +99,7 @@ object SlateManager: QuestAdderManager {
         },adder)
     }
 
-    override fun reload(adder: QuestAdderBukkit) {
+    override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
         QuestAdderBukkit.task {
             for (mutableEntry in slateMap) {
                 mutableEntry.value.cancel()

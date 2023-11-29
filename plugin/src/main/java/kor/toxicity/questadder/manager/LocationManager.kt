@@ -104,7 +104,8 @@ object LocationManager: QuestAdderManager {
             })
     }
 
-    override fun reload(adder: QuestAdderBukkit) {
+    override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
+        checker(0.0, "initializing locations...")
         locationMap.clear()
         adder.loadFolder("locations") { file, section ->
             section.getKeys(false).forEach {
@@ -116,6 +117,7 @@ object LocationManager: QuestAdderManager {
             }
         }
         Bukkit.getConsoleSender().send("${locationMap.size} of locations has successfully loaded.")
+        checker(0.0, "finalizing locations...")
     }
     fun getLocation(name: String) = locationMap[name]
 
