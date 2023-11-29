@@ -7,7 +7,6 @@ import kor.toxicity.questadder.api.gui.GuiData
 import kor.toxicity.questadder.api.gui.MouseButton
 import kor.toxicity.questadder.api.mechanic.DialogSender
 import kor.toxicity.questadder.api.mechanic.QuestRecord
-import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.mechanic.dialog.Dialog
@@ -34,6 +33,7 @@ import net.citizensnpcs.api.event.NPCDespawnEvent
 import net.citizensnpcs.api.event.NPCSpawnEvent
 import net.citizensnpcs.api.npc.NPC
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.configuration.ConfigurationSection
@@ -184,131 +184,139 @@ object DialogManager: QuestAdderManager {
                 else e.isCancelled = Dialog.end(player)
             }
         },adder)
-        adder.command.addCommandAPI("sender", arrayOf("s"), "sender-related command.", true, CommandAPI("qa s")
-            .addCommand("give") {
+        adder.command.addApiCommand("sender", {
+            aliases = arrayOf("s")
+            permissions = arrayOf("questadder.sender")
+        }, {
+            addCommand("give") {
                 aliases = arrayOf("g")
-                description = "give item sender to player."
+                description = "give item sender to player.".asComponent()
                 length = 2
-                usage = "give <player> <sender>"
-                executor = { sender, args ->
-                    Bukkit.getPlayer(args[1])?.let {
-                        senderMap[args[2]]?.let { s ->
+                permissions = arrayOf("questadder.sender.give")
+                usage = "give ".asClearComponent().append("<player> <sender>".asComponent(NamedTextColor.AQUA))
+                executor = { _, sender, args ->
+                    Bukkit.getPlayer(args[0])?.let {
+                        senderMap[args[1]]?.let { s ->
                             if (s is ItemDialogSender) {
                                 s.give(it)
                             } else sender.warn("this sender is not item sender.")
                         } ?: sender.warn("sender not found.")
-                    } ?: sender.warn("the player \"${args[1]}\" is not online.")
+                    } ?: sender.warn("the player \"${args[0]}\" is not online.")
                 }
-                tabComplete = { _, args ->
-                    if (args.size == 3) senderMap.entries.filter {
-                        it.value is ItemDialogSender && it.key.startsWith(args[2])
+                tabCompleter = { _, _, args ->
+                    if (args.size == 2) senderMap.entries.filter {
+                        it.value is ItemDialogSender && it.key.contains(args[1])
                     }.map {
                         it.key
                     } else null
                 }
             }
-            .addCommand("run") {
+            addCommand("run") {
                 aliases = arrayOf("r")
-                description = "run dialog to represented sender."
+                description = "run dialog to represented sender.".asComponent()
                 length = 3
-                usage = "run <player> <dialog> <sender>"
-                executor = { sender, args ->
-                    Bukkit.getPlayer(args[1])?.let {
-                        dialogMap[args[2]]?.let { d ->
-                            senderMap[args[3]]?.let { s ->
+                permissions = arrayOf("questadder.sender.run")
+                usage = "run ".asClearComponent().append("<player> <dialog> <sender>".asComponent(NamedTextColor.AQUA))
+                executor = { _, sender, args ->
+                    Bukkit.getPlayer(args[0])?.let {
+                        dialogMap[args[1]]?.let { d ->
+                            senderMap[args[2]]?.let { s ->
                                 d.start(it,s)
-                            } ?: sender.warn("the sender \"${args[3]}\" not found.")
-                        } ?: sender.warn("the dialog \"${args[2]}\" not found.")
-                    } ?: sender.warn("the player \"${args[1]}\" is not online.")
+                            } ?: sender.warn("the sender \"${args[2]}\" not found.")
+                        } ?: sender.warn("the dialog \"${args[1]}\" not found.")
+                    } ?: sender.warn("the player \"${args[0]}\" is not online.")
                 }
-                tabComplete = { _, args ->
+                tabCompleter = { _, _, args ->
                     when (args.size) {
-                        3 -> dialogMap.keys.filter {
-                            it.startsWith(args[2])
+                        2 -> dialogMap.keys.filter {
+                            it.contains(args[1])
                         }
-                        4 -> senderMap.keys.filter {
-                            it.startsWith(args[3])
+                        3 -> senderMap.keys.filter {
+                            it.contains(args[2])
                         }
                         else -> null
                     }
                 }
             }
-        )
-        adder.command
-            .addCommand("parse") {
-                aliases = arrayOf("p")
-                description = "parse result from given arguments."
-                length = 1
-                usage = "parse <text>"
-                allowedSender = arrayOf(SenderType.PLAYER)
-                executor = { sender, args ->
-                    val str = args.toList().subList(1, args.size).joinToString(" ")
-                    ComponentReader<PlayerParseEvent>(str).createComponent(
-                        PlayerParseEvent(sender as Player).apply {
-                            call()
-                        })?.let { component ->
-                        sender.info(component)
-                    } ?: sender.info("cannot parse this text argument.")
-                }
+        }).addCommand("parse") {
+            aliases = arrayOf("p")
+            description = "parse result from given arguments.".asComponent()
+            length = 1
+            permissions = arrayOf("questadder.parse")
+            usage = "parse ".asClearComponent().append("<text>".asComponent(NamedTextColor.AQUA))
+            allowedSender = arrayOf(SenderType.PLAYER)
+            executor = { _, sender, args ->
+                val str = args.joinToString(" ")
+                ComponentReader<PlayerParseEvent>(str).createComponent(
+                    PlayerParseEvent(sender as Player).apply {
+                        call()
+                    })?.let { component ->
+                    sender.info(component)
+                } ?: sender.info("cannot parse this text argument.")
             }
-            .addCommand("state") {
-                aliases = arrayOf("st")
-                description = "sets some quest's state"
-                length = 3
-                usage = "state <player> <quest> <state>"
-                executor = { sender, args ->
-                    Bukkit.getPlayer(args[1])?.let {
-                        QuestAdderBukkit.getPlayerData(it)?.let { data ->
-                            if (questMap.containsKey(args[2])) {
-                                try {
-                                    val record = QuestRecord.valueOf(args[3].uppercase())
-                                    data.questVariables.getOrPut(args[2]) {
-                                        QuestData(LocalDateTime.now(), record, hashMapOf())
-                                    }.state = record
-                                    sender.send("successfully changed.")
-                                } catch (ex: Exception) {
-                                    sender.warn("unable to find that state: ${args[3]}")
-                                }
-                            } else {
-                                sender.warn("this quest doesn't exist: ${args[2]}")
+        }.addCommand("state") {
+            aliases = arrayOf("st")
+            description = "sets some quest's state".asComponent()
+            length = 3
+            permissions = arrayOf("questadder.state")
+            usage = "state ".asClearComponent().append("<player> <quest> <state>".asComponent(NamedTextColor.AQUA))
+            executor = { _, sender, args ->
+                Bukkit.getPlayer(args[0])?.let {
+                    QuestAdderBukkit.getPlayerData(it)?.let { data ->
+                        if (questMap.containsKey(args[1])) {
+                            try {
+                                val record = QuestRecord.valueOf(args[2].uppercase())
+                                data.questVariables.getOrPut(args[1]) {
+                                    QuestData(LocalDateTime.now(), record, hashMapOf())
+                                }.state = record
+                                sender.send("successfully changed.")
+                            } catch (ex: Exception) {
+                                sender.warn("unable to find that state: ${args[2]}")
                             }
-                        } ?: sender.warn("unable to load ${it.name}'s player data.")
-                    } ?: sender.warn("the player \"${args[1]}\" is not online")
-                }
-                tabComplete = { _, args ->
-                    when (args.size) {
-                        3 -> questMap.keys.filter {
-                            it.startsWith(args[2])
+                        } else {
+                            sender.warn("this quest doesn't exist: ${args[1]}")
                         }
-                        4 -> QuestRecord.entries.map {
-                            it.name.lowercase()
-                        }.filter {
-                            it.startsWith(args[3])
-                        }
-                        else -> null
+                    } ?: sender.warn("unable to load ${it.name}'s player data.")
+                } ?: sender.warn("the player \"${args[0]}\" is not online")
+            }
+            tabCompleter = { _, _, args ->
+                when (args.size) {
+                    2 -> questMap.keys.filter {
+                        it.contains(args[1])
                     }
+                    3 -> QuestRecord.entries.map {
+                        it.name.lowercase()
+                    }.filter {
+                        it.contains(args[2])
+                    }
+                    else -> null
                 }
             }
-        adder.command.addCommandAPI("var", arrayOf("v","변수"),"variable-related command.", true, CommandAPI("qa v")
-            .addCommand("set") {
+        }.addApiCommand("var", {
+            aliases = arrayOf("v","변수")
+            permissions = arrayOf("questadder.var")
+        }, {
+            addCommand("set") {
                 aliases = arrayOf("s","설정")
-                description = "set the variable."
-                usage = "set <player> <name> <value>"
+                description = "set the variable.".asComponent()
+                permissions = arrayOf("questadder.var.set")
+                usage = "set ".asClearComponent().append("<player> <name> <value>".asComponent(NamedTextColor.AQUA))
                 length = 3
-                executor = { sender, args ->
-                    Bukkit.getPlayer(args[1])?.let { player ->
-                        FunctionBuilder.evaluate(args.toList().subList(3, args.size).joinToString(" ")).apply(
+                executor = { _, sender, args ->
+                    Bukkit.getPlayer(args[0])?.let { player ->
+                        FunctionBuilder.evaluate(args.toList().subList(2, args.size).joinToString(" ")).apply(
                             PlayerParseEvent(
                                 player
                             ).apply {
-                            call()
-                        })?.let {
-                            QuestAdderBukkit.getPlayerData(player)?.set(args[2],it)
-                            sender.send("the variable sets: ${args[2]} to $it")
+                                call()
+                            })?.let {
+                            QuestAdderBukkit.getPlayerData(player)?.set(args[1],it)
+                            sender.send("the variable sets: ${args[1]} to $it")
                         } ?: sender.send("set failure!")
                     }
                 }
-            })
+            }
+        })
         adder.getCommand("quest")?.setExecutor { sender, _, _, _ ->
             if (sender !is Player) {
                 sender.send("player only command.")

@@ -1,98 +1,90 @@
 package kor.toxicity.questadder.command
 
+import kor.toxicity.questadder.extension.asClearComponent
+import kor.toxicity.questadder.extension.asComponent
 import kor.toxicity.questadder.extension.send
+import kor.toxicity.questadder.extension.warn
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.Style
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabExecutor
-import java.lang.StringBuilder
+import java.util.TreeMap
 
+class CommandAPI(private val name: String) {
+    private val map = TreeMap<String, CommandAPIExecutor>()
 
-class CommandAPI(prefix: String) {
-    private val commandMap = HashMap<String,CommandData>()
-    init {
-        create("help").apply {
-            aliases = arrayOf("h","도움말")
-            description = "help command."
-            usage = "help"
-            opOnly = false
-            executor = { sender,_ ->
-               commandMap.values.forEach {
-                   if (!it.opOnly || sender.isOp) sender.send("/$prefix ${it.usage} ${
-                       if (it.aliases.isNotEmpty()) StringBuilder().append('(').apply {
-                           it.aliases.forEachIndexed { index, s ->
-                               append(s)
-                               if (index < it.aliases.size - 1) append(",")
-                           }
-                       }.append(')') else ""
-                   }: ${it.description}")
-               }
-            }
-        }.done()
-    }
-
-
-    private fun create(tag: String) = CommandBuilder(tag)
-
-    fun execute(command: String, sender: CommandSender, args: Array<String>) {
-        (commandMap[command] ?: commandMap.values.firstOrNull { it.aliases.contains(command) })?.run {
-            if (opOnly && !sender.isOp) return sender.send("sorry, this command is op-only command.")
-            if (length > args.size - 1) return sender.send("this command requires at least $length of arguments.")
-            if (allowedSender.none { it.accept(sender.javaClass) }) return sender.send("applicable sender list: ${
-                StringBuilder().apply {
-                    allowedSender.forEachIndexed { index, senderType ->
-                        append(senderType.display)
-                        if (index < allowedSender.size - 1) append(", ")
-                    }
-                }
-            }")
-            executor(sender,args)
-        } ?: sender.send("unknown command: $command")
-    }
-    fun tabComplete(command: String, sender: CommandSender, args: Array<String>): List<String>? = (commandMap[command] ?: commandMap.values.firstOrNull { it.aliases.contains(command) })?.run {
-        if (opOnly && !sender.isOp) return null
-        tabComplete(sender,args)
-    }
-    private fun getCommandList(sender: CommandSender) = commandMap.entries.filter {
-        !it.value.opOnly || sender.isOp
-    }.map {
-        it.key
-    }
-    fun searchCommand(prefix: String, sender: CommandSender): List<String> = ArrayList(getCommandList(sender)).apply {
-        commandMap.values.forEach {
-            if (!it.opOnly || sender.isOp) addAll(it.aliases)
-        }
-    }.filter {
-        it.startsWith(prefix)
-    }
-
-    fun addCommand(name: String, apply: CommandAPI.CommandBuilder.() -> Unit) = create(name).apply(apply).done()
-    fun addCommandAPI(name: String, commandAliases: Array<String>, commandDescription: String, commandOpOnly: Boolean, api: CommandAPI): CommandAPI {
-        addCommand(name) {
-            aliases = commandAliases
-            description = commandDescription
-            usage = name
-            opOnly = commandOpOnly
-            executor = { commandSender, strings ->
-                api.execute(if (strings.size > 1) strings[1] else "help",commandSender,if (strings.size > 1) strings.toMutableList().apply {
-                    removeAt(0)
-                }.toTypedArray() else strings)
-            }
-            tabComplete = { sender, args ->
-                if (args.size == 2) api.searchCommand(args[1],sender) else api.tabComplete(args[1],sender,args.toMutableList().apply {
-                    removeAt(0)
-                }.toTypedArray())
-            }
-        }
+    fun addCommand(name: String, apply: Builder.() -> Unit): CommandAPI {
+        map[name] = Builder(name).apply(apply).build()
         return this
     }
+    fun addApiCommand(name: String, apply: ApiBuilder.() -> Unit, commandApiApply: CommandAPI.() -> Unit): CommandAPI {
+        ApiBuilder(name).apply(apply).build().apply(commandApiApply)
+        return this
+    }
+
+    init {
+        addCommand("help") {
+            aliases = arrayOf("h", "도움말")
+            description = "show the list of registered command.".asComponent()
+            usage = "help ".asComponent().append("[page]".asComponent().color(NamedTextColor.DARK_AQUA))
+            permissions = arrayOf("${name.replace(' ','.')}.help")
+            executor = { _, sender, args ->
+                val page = (if (args.isNotEmpty()) try {
+                    (args[0].toInt() - 1)
+                } catch (ex: Exception) {
+                    0
+                } else 0).coerceAtMost((map.size - 1) / 8).coerceAtLeast(0)
+                sender.send("----------< ${page + 1} / ${(map.size - 1) / 8 + 1} >----------".asComponent(NamedTextColor.GOLD))
+                sender.send(Component.empty())
+                map.values.toList().subList(page, (page + 8).coerceAtMost(map.size)).forEach {
+                    sender.send(Component.empty()
+                        .append("/$name ".asClearComponent().style(Style.style(NamedTextColor.YELLOW, TextDecoration.BOLD)))
+                        .append(it.usage())
+                        .append(" (${it.aliases().joinToString(",")}) - ".asComponent().color(NamedTextColor.GRAY))
+                        .append(it.description())
+                    )
+                }
+                sender.send(Component.empty())
+                sender.send("------------------------------".asComponent(NamedTextColor.GOLD))
+            }
+            tabCompleter = { _, _, args ->
+                if (args.size == 1) (1..((map.size - 1) / 8 + 1).coerceAtLeast(1)).map {
+                    it.toString()
+                }.filter {
+                    it.contains(args[0])
+                } else null
+            }
+        }
+    }
+
+    private fun execute(sender: CommandSender, args: Array<String>) {
+        var arr = args
+        var size = args.size - 1
+        val get: String
+        if (args.isEmpty() || args[0].isEmpty()) {
+            size += 1
+            arr = arrayOf("help")
+            get = "help"
+        } else get = args[0]
+        getExecutor(sender, get, size, true)?.execute(this, sender, arr.copyOfRange(1, arr.size))
+    }
+    private fun tabComplete(sender: CommandSender, args: Array<String>): List<String>? {
+        return if (args.size <= 1) map.keys.filter {
+            it.contains(args[0])
+        } else getExecutor(sender, args[0], args.size - 1, false)?.tabComplete(this, sender, args.copyOfRange(1, args.size))
+    }
+
     fun createTabExecutor() = object : TabExecutor {
         override fun onTabComplete(
             sender: CommandSender,
             command: Command,
-            alias: String,
+            label: String,
             args: Array<String>
         ): List<String>? {
-            return if (args.size == 1) searchCommand(args[0],sender) else tabComplete(args[0],sender,args)
+            return tabComplete(sender, args)
         }
 
         override fun onCommand(
@@ -101,48 +93,162 @@ class CommandAPI(prefix: String) {
             label: String,
             args: Array<String>
         ): Boolean {
-            (if (args.isEmpty()) arrayOf("help") else args).run {
-                execute(get(0),sender,this)
-            }
+            execute(sender, args)
             return true
         }
+
     }
 
-    inner class CommandBuilder(private val tag: String) {
-        var aliases: Array<String> = emptyArray()
-        var length = 0
-        var description = "unknown description."
-        var usage = "unknown usage"
-        var opOnly = true
-        var allowedSender: Array<SenderType> = arrayOf(SenderType.CONSOLE,SenderType.PLAYER)
-        var executor: (CommandSender,Array<String>) -> Unit = { _,_ ->
+    private fun getExecutor(sender: CommandSender, select: String, length: Int, info: Boolean, checkLength: Boolean = true): CommandAPIExecutor? {
+        val executor = map[select] ?: map.values.firstOrNull {
+            it.aliases().contains(select)
+        } ?: run {
+            if (info) sender.warn("unknown command: $select")
+            return null
         }
-        var tabComplete: (CommandSender,Array<String>) -> List<String>? = { _,_ ->
+        if (executor.opOnly() && !sender.isOp) {
+            if (info) sender.warn("you are not op!")
+            return null
+        }
+        if (executor.allowedSender().none {
+            it.accept(sender::class.java)
+        }) {
+            if (info) sender.warn("allowed sender: ${executor.allowedSender().joinToString(", ") { 
+                it.name.lowercase()
+            }}")
+            return null
+        }
+        val permission = executor.permissions()
+        if (permission.isNotEmpty() && permission.none {
+            sender.hasPermission(it)
+        }) {
+            if (info) sender.warn("you have to get this permission to execute this command: ${permission.joinToString(", ")}")
+            return null
+        }
+        if (checkLength && length < executor.length()) {
+            if (info) sender.warn("usage: ".asClearComponent().append("/$name ".asComponent().style(Style.style(NamedTextColor.YELLOW))).append(executor.usage()))
+            return null
+        }
+        return executor
+    }
+
+    inner class ApiBuilder(private val subName: String) {
+        private val innerApi = CommandAPI("$name $subName")
+        var aliases = emptyArray<String>()
+        var description: Component = Component.text("$subName-related command.")
+        var usage: Component = Component.text(subName)
+        var opOnly = false
+        var allowedSender = SenderType.entries.toTypedArray()
+        var length = 0
+        var permissions = emptyArray<String>()
+        fun build(): CommandAPI {
+            map[subName] = object : CommandAPIExecutor {
+                override fun name(): String {
+                    return subName
+                }
+
+                override fun aliases(): Array<String> {
+                    return aliases
+                }
+
+                override fun description(): Component {
+                    return description
+                }
+
+                override fun usage(): Component {
+                    return usage
+                }
+
+                override fun opOnly(): Boolean {
+                    return opOnly
+                }
+
+                override fun allowedSender(): Array<SenderType> {
+                    return allowedSender
+                }
+
+                override fun permissions(): Array<String> {
+                    return permissions
+                }
+
+                override fun length(): Int {
+                    return length
+                }
+
+                override fun execute(api: CommandAPI, sender: CommandSender, args: Array<String>) {
+                    innerApi.execute(sender, args)
+                }
+
+                override fun tabComplete(
+                    api: CommandAPI,
+                    sender: CommandSender,
+                    args: Array<String>
+                ): List<String>? {
+                    return innerApi.tabComplete(sender, args)
+                }
+            }
+            return innerApi
+        }
+    }
+    class Builder(private val name: String) {
+        var aliases = emptyArray<String>()
+        var description: Component = Component.empty()
+        var usage: Component = Component.empty()
+        var opOnly = false
+        var allowedSender = SenderType.entries.toTypedArray()
+        var length = 0
+        var permissions = emptyArray<String>()
+        var executor: (CommandAPI, CommandSender, Array<String>) -> Unit = { _, _, _ ->
+        }
+        var tabCompleter: (CommandAPI, CommandSender, Array<String>) -> List<String>? = { _, _, _ ->
             null
         }
+        fun build(): CommandAPIExecutor {
+            return object : CommandAPIExecutor {
+                override fun name(): String {
+                    return name
+                }
+                override fun aliases(): Array<String> {
+                    return aliases
+                }
 
-        fun done(): CommandAPI {
-            commandMap[tag] = CommandData(
-                length = length,
-                aliases = aliases,
-                description = description,
-                usage = usage,
-                opOnly = opOnly,
-                allowedSender = allowedSender,
-                executor = executor,
-                tabComplete = tabComplete,
-            )
-            return this@CommandAPI
+                override fun description(): Component {
+                    return description
+                }
+
+                override fun usage(): Component {
+                    return usage
+                }
+
+                override fun opOnly(): Boolean {
+                    return opOnly
+                }
+
+                override fun allowedSender(): Array<SenderType> {
+                    return allowedSender
+                }
+
+                override fun length(): Int {
+                    return length
+                }
+
+                override fun permissions(): Array<String> {
+                    return permissions
+                }
+
+                override fun execute(api: CommandAPI, sender: CommandSender, args: Array<String>) {
+                    executor(api, sender, args)
+                }
+
+                override fun tabComplete(
+                    api: CommandAPI,
+                    sender: CommandSender,
+                    args: Array<String>
+                ): List<String>? {
+                    return tabCompleter(api, sender, args)
+                }
+
+            }
         }
     }
-    private class CommandData(
-        val aliases: Array<String>,
-        val description: String,
-        val length: Int,
-        val usage: String,
-        val opOnly: Boolean,
-        val allowedSender: Array<SenderType>,
-        val executor: (CommandSender,Array<String>) -> Unit,
-        val tabComplete:  (CommandSender,Array<String>) -> List<String>?
-    )
 }

@@ -10,7 +10,6 @@ import kor.toxicity.questadder.api.event.QuestBlockBreakEvent
 import kor.toxicity.questadder.api.event.QuestBlockInteractEvent
 import kor.toxicity.questadder.api.event.QuestBlockPlaceEvent
 import kor.toxicity.questadder.block.*
-import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.font.GuiFontData
@@ -20,9 +19,7 @@ import kor.toxicity.questadder.font.ToolTipFontData
 import kor.toxicity.questadder.manager.registry.BlockRegistry
 import kor.toxicity.questadder.util.ResourcePackData
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
@@ -71,32 +68,35 @@ object ResourcePackManager: QuestAdderManager {
 
     val blockRegistry = BlockRegistry()
     override fun start(adder: QuestAdderBukkit) {
-        adder.command.addCommandAPI("block", arrayOf("bl","블럭"), "block-related command.", true, CommandAPI("qa bl")
-            .addCommand("get") {
+        adder.command.addApiCommand("block", {
+            aliases = arrayOf("bl", "블럭")
+            permissions = arrayOf("questadder.block")
+        }, {
+            addCommand("get") {
                 aliases = arrayOf("g")
-                description = "get the editor of block."
-                usage = "get <name>"
+                description = "get the editor of block.".asComponent()
+                usage = "get ".asClearComponent().append("<name>".asComponent(NamedTextColor.AQUA))
                 length = 1
                 allowedSender = arrayOf(SenderType.PLAYER)
-                executor = { c, a ->
+                executor = { _, c, a ->
                     (c as Player).give(ItemStack(Material.NOTE_BLOCK).apply {
                         itemMeta = itemMeta?.apply {
-                            QuestAdderBukkit.platform.setDisplay(this, "Block editor - ${a[1]}".asClearComponent().color(NamedTextColor.YELLOW))
+                            QuestAdderBukkit.platform.setDisplay(this, "Block editor - ${a[0]}".asClearComponent().color(NamedTextColor.YELLOW))
                             QuestAdderBukkit.platform.setLore(this, listOf(
                                 "Right click - place".asClearComponent().color(NamedTextColor.GRAY)
                             ))
-                            persistentDataContainer.set(blockEditorKey, PersistentDataType.STRING, a[1])
+                            persistentDataContainer.set(blockEditorKey, PersistentDataType.STRING, a[0])
                         }
                     })
                     c.info("successfully given.")
                 }
-                tabComplete = { _, a ->
-                    if (a.size == 2) blockRegistry.allKeys.filter {
-                        it.startsWith(a[1])
+                tabCompleter = { _, _, a ->
+                    if (a.size == 1) blockRegistry.allKeys.filter {
+                        it.contains(a[0])
                     } else null
                 }
             }
-        )
+        })
         Bukkit.getPluginManager().registerEvents(object : Listener {
             private val vector = arrayOf(
                 Vector(0,1,0),

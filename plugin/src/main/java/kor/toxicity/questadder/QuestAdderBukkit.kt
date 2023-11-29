@@ -51,6 +51,7 @@ import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.platform.bukkit.BukkitAudiences
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bstats.bukkit.Metrics
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -368,10 +369,10 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
     val command = CommandAPI("qa")
         .addCommand("reload") {
             aliases = arrayOf("re","rl","리로드")
-            description = "reload this plugin."
-            usage = "reload"
-            opOnly = true
-            executor = { sender, _ ->
+            description = "reload this plugin.".asComponent()
+            usage = "reload".asComponent()
+            permissions = arrayOf("questadder.reload")
+            executor = { _, sender, _ ->
                 val consumer = { l: Long ->
                     sender.info("reload completed. ($l ms)")
                 }
@@ -380,55 +381,61 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         }
         .addCommand("run") {
             aliases = arrayOf("실행")
-            description = "run the action."
-            usage = "run <player> <action> [args]"
-            opOnly = true
+            description = "run the action.".asComponent()
+            usage = "run ".asComponent().append("<player> <action> ".asComponent().color(NamedTextColor.AQUA)).append("[args]".asComponent().color(NamedTextColor.DARK_AQUA))
+            permissions = arrayOf("questadder.run")
             allowedSender = arrayOf(SenderType.PLAYER)
             length = 2
-            executor = { sender, args ->
-                Bukkit.getPlayer(args[1])?.let { player ->
-                    val arg = args.toList().subList(3, args.size).toTypedArray()
-                    DialogManager.getAction(args[2])?.apply(player, *arg) ?: sender.warn("unable to find the action: ${args[2]}")
-                } ?: sender.warn("unable to find that player: ${args[1]}")
+            executor = { _, sender, args ->
+                Bukkit.getPlayer(args[0])?.let { player ->
+                    val arg = args.toList().subList(2, args.size).toTypedArray()
+                    DialogManager.getAction(args[1])?.apply(player, *arg) ?: sender.warn("unable to find the action: ${args[1]}")
+                } ?: sender.warn("unable to find that player: ${args[0]}")
             }
-            tabComplete = { _, args ->
-                if (args.size == 3) DialogManager.getActionKeys() else null
+            tabCompleter = { _, _, args ->
+                if (args.size == 2) DialogManager.getActionKeys().filter {
+                    it.contains(args[1])
+                } else null
             }
         }
         .addCommand("index") {
             aliases = arrayOf("i","인덱스")
-            description = "set the NPC's index."
-            usage = "index <player> <NPC key> <index>"
-            opOnly = true
+            description = "set the NPC's index.".asComponent()
+            usage = "index ".asClearComponent().append("<player> <NPC key> <index>".asComponent().color(NamedTextColor.AQUA))
+            permissions = arrayOf("questadder.index")
             allowedSender = arrayOf(SenderType.PLAYER)
             length = 3
-            executor = { sender, args ->
-                Bukkit.getPlayer(args[1])?.let { player ->
-                    DialogManager.getQuestNPC(args[2])?.let {
+            executor = { _, sender, args ->
+                Bukkit.getPlayer(args[0])?.let { player ->
+                    DialogManager.getQuestNPC(args[1])?.let {
                         try {
-                            it.setIndex(player, args[3].toInt())
+                            it.setIndex(player, args[2].toInt())
                         } catch (ex: Exception) {
-                            sender.warn("this is not an integer: ${args[3]}")
+                            sender.warn("this is not an integer: ${args[2]}")
                         }
-                    } ?: sender.warn("NPC not found: ${args[2]}")
-                } ?: sender.warn("player not found: ${args[1]}")
+                    } ?: sender.warn("NPC not found: ${args[1]}")
+                } ?: sender.warn("player not found: ${args[0]}")
             }
-            tabComplete = { _, args ->
-                if (args.size == 3) DialogManager.getQuestNPCKeys() else null
+            tabCompleter = { _, _, args ->
+                if (args.size == 2) DialogManager.getQuestNPCKeys().filter {
+                    it.contains(args[1])
+                } else null
             }
         }
-        .addCommandAPI("savepoint", arrayOf("sp"), "savepoint-related command.", true, CommandAPI("qa sp")
-            .addCommand("save") {
+        .addApiCommand("savepoint", {
+            aliases = arrayOf("sp")
+            permissions = arrayOf("questadder.savepoint")
+        }, {
+            addCommand("save") {
                 aliases = arrayOf("s", "저장")
-                description = "save current player data to save point."
-                usage = "save <name>"
-                opOnly = true
+                description = "save current player data to save point.".asComponent()
+                usage = "save ".asClearComponent().append("<name>".asComponent().color(NamedTextColor.AQUA))
+                permissions = arrayOf("questadder.savepoint.save")
                 allowedSender = arrayOf(SenderType.PLAYER)
-                length = 1
-                executor = { sender, args ->
+                executor = { _, sender, args ->
                     playerThreadMap[(sender as Player).uniqueId]?.let {
                         asyncTask {
-                            val name = args.toList().subList(1, args.size).joinToString(" ")
+                            val name = args.joinToString(" ")
                             try {
                                 (it.data.serialize() as YamlConfiguration).run {
                                     save(File(getSavePointFolder(), "$name.yml").apply {
@@ -443,17 +450,17 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
                     } ?: sender.warn("your thread doesn't exist.")
                 }
             }
-            .addCommand("load") {
+            addCommand("load") {
                 aliases = arrayOf("l", "불러오기")
-                description = "load specific savepoint to some player."
-                usage = "load <player> <name> "
-                opOnly = true
+                description = "load specific savepoint to some player.".asComponent()
+                usage = "load ".asClearComponent().append("<player> <name>".asComponent().color(NamedTextColor.AQUA))
+                permissions = arrayOf("questadder.savepoint.load")
                 length = 1
-                executor = { sender, args ->
-                    Bukkit.getPlayer(args[1])?.let {
+                executor = { _, sender, args ->
+                    Bukkit.getPlayer(args[0])?.let {
                         playerThreadMap[it.uniqueId]?.let { thread ->
                             asyncTask {
-                                val name = args.toList().subList(2, args.size).joinToString(" ")
+                                val name = args.toList().subList(1, args.size).joinToString(" ")
                                 try {
                                     val file = File(getSavePointFolder(), "$name.yml")
                                     if (!file.exists()) {
@@ -469,17 +476,18 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
                                 }
                             }
                         } ?: sender.warn("${it.name}'s thread doesn't exist.")
-                    } ?: sender.warn("this player does not exist: ${args[2]}")
+                    } ?: sender.warn("this player does not exist: ${args[0]}")
                 }
-                tabComplete = { _, args ->
-                    if (args.size == 3) getSavePointFolder().listFiles()?.map {
+                tabCompleter = { _, _, args ->
+                    if (args.size == 2) getSavePointFolder().listFiles()?.map {
                         it.nameWithoutExtension
                     }?.filter {
-                        it.startsWith(args[2])
+                        it.contains(args[1])
                     } else null
                 }
             }
-        )
+        })
+
     private fun getSavePointFolder() = File(File(dataFolder.apply {
         if (!exists()) mkdir()
     }, ".data").apply {

@@ -5,11 +5,11 @@ import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.item.ItemDatabase
 import kor.toxicity.questadder.api.item.ItemSupplier
 import kor.toxicity.questadder.api.item.JsonItemDatabase
-import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.hooker.item.*
 import kor.toxicity.questadder.mechanic.sender.ItemDialogSender
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -119,32 +119,37 @@ object ItemManager: QuestAdderManager {
                 }
             },adder)
         }
-        adder.command.addCommandAPI("item", arrayOf("i","아이템"),"item-related command.", true, CommandAPI("qa i")
-            .addCommand("get") {
+        adder.command.addApiCommand("item", {
+            aliases = arrayOf("i", "item")
+            permissions = arrayOf("questadder.item")
+        }, {
+            addCommand("give") {
                 aliases = arrayOf("g","지급")
-                description = "get specific item."
-                usage = "get <item>"
+                description = "give specific item.".asComponent()
+                usage = "give ".asClearComponent().append("<item>".asComponent(NamedTextColor.AQUA))
                 length = 1
+                permissions = arrayOf("questadder.item.give")
                 allowedSender = arrayOf(SenderType.PLAYER)
-                executor = { sender, args ->
+                executor = { _, sender, args ->
                     sender as Player
-                    getItem(args[1])?.let { i ->
+                    getItem(args[0])?.let { i ->
                         sender.give(i)
                         sender.info("item successfully given.")
                     } ?: run {
                         sender.warn("item not found.")
                     }
                 }
-                tabComplete = { _, args ->
-                    if (args.size == 2) HashSet(itemMap.keys).apply {
+                tabCompleter = { _, _, args ->
+                    if (args.size == 1) HashSet(itemMap.keys).apply {
                         itemDatabaseList.forEach {
                             addAll(it.getKeys())
                         }
                     }.filter {
-                        it.startsWith(args[1])
+                        it.contains(args[0])
                     } else null
                 }
-            })
+            }
+        })
     }
     fun addItemDatabase(database: ItemDatabase) {
         itemDatabaseList.add(database)

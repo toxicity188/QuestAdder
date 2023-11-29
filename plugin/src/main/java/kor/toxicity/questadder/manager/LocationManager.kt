@@ -1,13 +1,10 @@
 package kor.toxicity.questadder.manager
 
 import kor.toxicity.questadder.QuestAdderBukkit
-import kor.toxicity.questadder.command.CommandAPI
 import kor.toxicity.questadder.command.SenderType
-import kor.toxicity.questadder.extension.colored
-import kor.toxicity.questadder.extension.info
-import kor.toxicity.questadder.extension.send
-import kor.toxicity.questadder.extension.warn
+import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.util.NamedLocation
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.configuration.MemoryConfiguration
@@ -21,23 +18,27 @@ object LocationManager: QuestAdderManager {
 
     override fun start(adder: QuestAdderBukkit) {
         val locationFolder = File(adder.dataFolder,"locations")
-        adder.command.addCommandAPI("location", arrayOf("loc","좌표"), "location-related command.", true, CommandAPI("qa loc")
-            .addCommand("create") {
+        adder.command.addApiCommand("location", {
+            aliases = arrayOf("loc", "좌표")
+            permissions = arrayOf("questadder.location")
+        }, {
+            addCommand("create") {
                 aliases = arrayOf("c","생성")
-                description = "add sender's location to yaml."
-                usage = "create <file> <key>"
+                description = "add sender's location to yaml.".asComponent()
+                usage = "create ".asComponent().append("<file> <key>".asComponent(NamedTextColor.AQUA))
                 length = 2
                 allowedSender = arrayOf(SenderType.PLAYER)
-                executor = { sender, args ->
-                    if (locationMap.containsKey(args[2])) {
-                        sender.warn("the location named \"${args[2]} already exists.")
+                permissions = arrayOf("questadder.location.create")
+                executor = { _, sender, args ->
+                    if (locationMap.containsKey(args[1])) {
+                        sender.warn("the location named \"${args[1]} already exists.")
                     } else {
                         val location = (sender as Player).location
                         QuestAdderBukkit.asyncTask {
                             try {
                                 val file = File(locationFolder.apply {
                                     mkdir()
-                                },"${args[1]}.yml").apply {
+                                },"${args[0]}.yml").apply {
                                     if (!exists()) createNewFile()
                                 }
                                 val name = (if (args.size > 3) {
@@ -46,10 +47,10 @@ object LocationManager: QuestAdderManager {
                                         removeAt(0)
                                         removeAt(0)
                                     }.joinToString(" ")
-                                } else args[2])
+                                } else args[1])
                                 YamlConfiguration().run {
                                     load(file)
-                                    set(args[2], MemoryConfiguration().apply {
+                                    set(args[1], MemoryConfiguration().apply {
                                         set("name", name)
                                         set("world", location.world!!.name)
                                         set("x", location.x)
@@ -60,48 +61,50 @@ object LocationManager: QuestAdderManager {
                                     })
                                     save(file)
                                 }
-                                locationMap[args[2]] = NamedLocation(args[2],Material.BOOK, 0, name.colored(), location)
-                                sender.info("the location named \"${args[2]}\" successfully saved.")
+                                locationMap[args[1]] = NamedLocation(args[1],Material.BOOK, 0, name.colored(), location)
+                                sender.info("the location named \"${args[1]}\" successfully saved.")
                             } catch (ex: Exception) {
-                                sender.info("unable to save the location named \"${args[2]}")
+                                sender.info("unable to save the location named \"${args[1]}")
                                 sender.info("reason: ${ex.message ?: ex.javaClass.simpleName}")
                             }
                         }
                     }
                 }
-                tabComplete = { _, args ->
-                    if (args.size == 2) locationFolder.listFiles()?.filter {
-                        it.extension == "yml" && it.name.startsWith(args[1])
+                tabCompleter = { _, _, args ->
+                    if (args.size == 1) locationFolder.listFiles()?.filter {
+                        it.extension == "yml" && it.name.contains(args[0])
                     }?.map {
                         it.nameWithoutExtension
                     } else null
                 }
             }
-            .addCommand("teleport") {
+            addCommand("teleport") {
                 aliases = arrayOf("tp","텔레포트")
-                description = "teleport specific location."
-                usage = "teleport <location> [player]"
+                description = "teleport specific location.".asComponent()
+                usage = "teleport ".asClearComponent().append("<location> ".asComponent(NamedTextColor.AQUA)).append("[player]".asComponent(NamedTextColor.DARK_AQUA))
                 length = 1
+                permissions = arrayOf("questadder.location.teleport")
                 allowedSender = arrayOf(SenderType.PLAYER)
-                executor = { sender, args ->
-                    locationMap[args[1]]?.let {
-                        if (args.size > 2) {
-                            Bukkit.getPlayer(args[2])?.let { player ->
+                executor = { _, sender, args ->
+                    locationMap[args[0]]?.let {
+                        if (args.size > 1) {
+                            Bukkit.getPlayer(args[1])?.let { player ->
                                 player.teleport(it.location)
-                                sender.info("the player named \"${player.name}\" successfully teleported to \"${args[1]}\".")
-                            } ?: sender.warn("the player named \"${args[2]}\" doesn't exist.")
+                                sender.info("the player named \"${player.name}\" successfully teleported to \"${args[0]}\".")
+                            } ?: sender.warn("the player named \"${args[1]}\" doesn't exist.")
                         } else {
                             (sender as Player).teleport(it.location)
-                            sender.info("successfully teleported to \"${args[1]}\".")
+                            sender.info("successfully teleported to \"${args[0]}\".")
                         }
-                    } ?: sender.warn("the location named \"${args[1]}\" doesn't exist.")
+                    } ?: sender.warn("the location named \"${args[0]}\" doesn't exist.")
                 }
-                tabComplete = { _, args ->
-                    if (args.size == 2) locationMap.keys.filter {
-                        it.startsWith(args[1])
+                tabCompleter = { _, _, args ->
+                    if (args.size == 1) locationMap.keys.filter {
+                        it.contains(args[0])
                     } else null
                 }
-            })
+            }
+        })
     }
 
     override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
