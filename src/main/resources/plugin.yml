@@ -10,8 +10,6 @@ depend:
   - Citizens
 libraries:
   - "net.kyori:adventure-api:${adventureVersion}"
-  - "net.kyori:adventure-text-serializer-legacy:${adventureVersion}"
-  - "net.kyori:adventure-text-serializer-gson:${adventureVersion}"
   - "net.kyori:adventure-text-serializer-plain:${adventureVersion}"
   - "net.kyori:adventure-platform-bukkit:${platformVersion}"
 softdepend:

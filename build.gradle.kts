@@ -22,31 +22,18 @@ allprojects {
 
     repositories {
         mavenCentral()
-        maven {
-            name = "papermc-repo"
-            url = uri("https://repo.papermc.io/repository/maven-public/")
-        }
-        maven {
-            name = "sonatype"
-            url = uri("https://oss.sonatype.org/content/groups/public/")
-        }
-        maven {
-            name = "citizens-repo"
-            url = uri("https://maven.citizensnpcs.co/repo")
-        }
+        maven(url = "https://repo.papermc.io/repository/maven-public/")
+        maven(url = "https://oss.sonatype.org/content/groups/public/")
+        maven(url = "https://maven.citizensnpcs.co/repo")
         maven(url = "https://jitpack.io")
-        maven {
-            name = "alessiodpRepo"
-            url = uri("https://repo.alessiodp.com/releases")
-        }
-        maven {
-            name = "minecraft-repo"
-            url = uri("https://libraries.minecraft.net/")
-        }
+        maven(url = "https://repo.alessiodp.com/releases")
+        maven(url = "https://libraries.minecraft.net/")
+        maven(url = "https://repo.extendedclip.com/content/repositories/placeholderapi/")
         maven(url = "https://maven.enginehub.org/repo/")
         maven(url = "https://mvn.lumine.io/repository/maven/")
         maven(url = "https://repo.bg-software.com/repository/api/")
         maven(url = "https://nexus.phoenixdevt.fr/repository/maven-public/")
+        maven(url = "https://repo.oraxen.com/releases")
     }
 
     dependencies {
@@ -55,8 +42,6 @@ allprojects {
 
 
         compileOnly("net.kyori:adventure-api:${adventureVersion}")
-        compileOnly("net.kyori:adventure-text-serializer-legacy:${adventureVersion}")
-        compileOnly("net.kyori:adventure-text-serializer-gson:${adventureVersion}")
         compileOnly("net.kyori:adventure-text-serializer-plain:${adventureVersion}")
         compileOnly("net.kyori:adventure-platform-bukkit:${platformVersion}")
 

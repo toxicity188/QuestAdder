@@ -275,7 +275,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                         }
 
                         inv.inventory.setItem(22, item)
-                        current.player.updateInventory()
+                        // current.player.updateInventory()
                     }
 
                     override fun run(talk: Component) {
@@ -284,7 +284,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                             QuestAdderBukkit.platform.setLore(this, listOf(comp))
                         }
                         inv.inventory.setItem(22, item)
-                        current.player.updateInventory()
+                        // current.player.updateInventory()
                     }
 
                     override fun end() {

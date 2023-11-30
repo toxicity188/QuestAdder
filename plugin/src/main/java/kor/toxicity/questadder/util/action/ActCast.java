@@ -1,6 +1,7 @@
 package kor.toxicity.questadder.util.action;
 
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.util.SpellData;
 import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
@@ -23,11 +24,12 @@ public class ActCast extends AbstractAction {
     @Override
     public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         var spell = MagicSpells.getSpellByInGameName(name);
-        if (spell != null) spell.cast(player);
-        else {
+        if (spell != null) {
+            spell.cast(new SpellData(player));
+            return ActionResult.SUCCESS;
+        } else {
             QuestAdderBukkit.Companion.warn("The skill named \"" + name + "\" doesn't exist.");
             return ActionResult.FAIL;
         }
-        return ActionResult.SUCCESS;
     }
 }
