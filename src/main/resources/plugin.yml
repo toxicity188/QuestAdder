@@ -48,6 +48,9 @@ permissions:
   questadder.reload:
     description: Allow player to access reload command.
     default: op
+  questadder.help:
+    description: Allow player to access help command.
+    default: op
   questadder.run:
     description: Allow player to access run command.
     default: op
@@ -60,12 +63,14 @@ permissions:
     children:
       questadder.savepoint.save: true
       questadder.savepoint.load: true
+      questadder.savepoint.help: true
   questadder.sender:
     description: Allow player to access sender command.
     default: op
     children:
       questadder.sender.give: true
       questadder.sender.run: true
+      questadder.sender.help: true
   questadder.parse:
     description: Allow player to access parse command.
     default: op
@@ -80,14 +85,17 @@ permissions:
     default: op
     children:
       questadder.item.give: true
+      questadder.item.help: true
   questadder.location:
     description: Allow player to access location command.
     default: op
     children:
       questadder.location.create: true
       questadder.location.teleport: true
+      questadder.location.help: true
   questadder.block:
     description: Allow player to access block command.
     default: op
     children:
       questadder.block.get: true
+      questadder.block.help: true

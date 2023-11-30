@@ -39,7 +39,14 @@ class CommandAPI(private val name: String) {
                 } else 0).coerceAtMost((map.size - 1) / 8).coerceAtLeast(0)
                 sender.send("----------< ${page + 1} / ${(map.size - 1) / 8 + 1} >----------".asComponent(NamedTextColor.GOLD))
                 sender.send(Component.empty())
-                map.values.toList().subList(page, (page + 8).coerceAtMost(map.size)).forEach {
+                sender.send(Component.empty()
+                    .append("     <argument>".asComponent(NamedTextColor.AQUA))
+                    .append(" - Required, ".asComponent())
+                    .append("[argument]".asComponent(NamedTextColor.DARK_AQUA))
+                    .append(" - Optional".asComponent())
+                )
+                sender.send(Component.empty())
+                map.values.toList().subList(page * 8, ((page + 1) * 8).coerceAtMost(map.size)).forEach {
                     sender.send(Component.empty()
                         .append("/$name ".asClearComponent().style(Style.style(NamedTextColor.YELLOW, TextDecoration.BOLD)))
                         .append(it.usage())

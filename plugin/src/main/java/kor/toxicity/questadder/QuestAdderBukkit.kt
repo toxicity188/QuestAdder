@@ -399,7 +399,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             }
         }
         .addCommand("index") {
-            aliases = arrayOf("i","인덱스")
+            aliases = arrayOf("인덱스")
             description = "set the NPC's index.".asComponent()
             usage = "index ".asClearComponent().append("<player> <NPC key> <index>".asComponent().color(NamedTextColor.AQUA))
             permissions = arrayOf("questadder.index")

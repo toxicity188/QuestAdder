@@ -180,8 +180,11 @@ object DialogManager: QuestAdderManager {
             @EventHandler
             fun swap(e: PlayerSwapHandItemsEvent) {
                 val player = e.player
-                if (!player.isSneaking) e.isCancelled = Dialog.skip(player)
-                else e.isCancelled = Dialog.end(player)
+                if (!player.isSneaking) {
+                    if (Dialog.skip(player)) e.isCancelled = true
+                } else if (Dialog.end(player)) {
+                    e.isCancelled = true
+                }
             }
         },adder)
         adder.command.addApiCommand("sender", {
