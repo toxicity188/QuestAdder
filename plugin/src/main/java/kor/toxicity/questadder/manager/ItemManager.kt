@@ -185,6 +185,7 @@ object ItemManager: QuestAdderManager {
             Bukkit.getOnlinePlayers().forEach {
                 reloadPlayerInventory(it)
             }
+            0
         }
         checker(0.0, "finalizing items...")
     }

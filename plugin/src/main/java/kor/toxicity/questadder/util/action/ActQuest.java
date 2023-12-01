@@ -2,6 +2,7 @@ package kor.toxicity.questadder.util.action;
 
 import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
+import kor.toxicity.questadder.api.concurrent.LazyRunnable;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.api.mechanic.ActionResult;
@@ -27,7 +28,7 @@ public class ActQuest extends AbstractAction {
     @Override
     public void initialize() {
         super.initialize();
-        adder.addLazyTask(() -> {
+        adder.addLazyTask(LazyRunnable.emptyOf(() -> {
             var quest1 = DialogManager.INSTANCE.getQuest(quest);
             if (quest1 == null) QuestAdderBukkit.Companion.warn("not found error: the quest named \"" + quest + "\" doesn't exist.");
             else {
@@ -37,7 +38,7 @@ public class ActQuest extends AbstractAction {
                     default -> consumer = quest1::give;
                 }
             }
-        });
+        }));
     }
 
     @NotNull

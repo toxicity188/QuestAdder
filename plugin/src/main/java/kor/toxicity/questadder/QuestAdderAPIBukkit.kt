@@ -17,8 +17,6 @@ import org.bukkit.OfflinePlayer
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import java.util.*
-import java.util.function.BiConsumer
 import java.util.function.BiFunction
 import java.util.function.Consumer
 
@@ -112,22 +110,6 @@ object QuestAdderAPIBukkit: APIManager {
         }
     }
 
-    /**
-     * Get NPC object from given uuid.
-     *
-     * @param uuid An entity uuid of NPC
-     * @return An object of NPC of null
-     * @since 1.0.3
-     */
-    override fun getNPC(uuid: UUID) = DialogManager.getNPC(uuid)
-    /**
-     * Get NPC object from given uuid.
-     *
-     * @param name A yaml key of the NPC
-     * @return An object of NPC of null
-     * @since 1.0.5
-     */
-    override fun getNPC(name: String) = DialogManager.getNPC(name)
 
     /**
      * Get all NPC in server.
@@ -192,11 +174,6 @@ object QuestAdderAPIBukkit: APIManager {
      * @since 1.0.7
      */
     override fun getActionKeys() = DialogManager.getActionKeys()
-    /**
-     * @return A keys of all of loaded NPCs.
-     * @since 1.0.7
-     */
-    override fun getNPCKeys() = DialogManager.getNPCKeys()
     /**
      * @return A keys of all of loaded quest NPCs.
      * @since 1.0.7

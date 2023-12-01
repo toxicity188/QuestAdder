@@ -149,8 +149,9 @@ object ResourcePackManager: QuestAdderManager {
                 update(e.block.location)
                 e.itemInHand.itemMeta?.persistentDataContainer?.get(blockEditorKey, PersistentDataType.STRING)?.let {
                     e.isCancelled = true
-                    QuestAdderBukkit.task {
-                        blockRegistry.get(it)?.place(e.block.location)
+                    val loc = e.block.location
+                    QuestAdderBukkit.task(loc) {
+                        blockRegistry.get(it)?.place(loc)
                     }
                 }
                 blockRegistry.get(e.block.blockData)?.let {
@@ -175,7 +176,7 @@ object ResourcePackManager: QuestAdderManager {
                         }
                     }
                 }
-                if (taskArray.isNotEmpty()) QuestAdderBukkit.task {
+                if (taskArray.isNotEmpty()) QuestAdderBukkit.task(location) {
                     taskArray.forEach {
                         it()
                     }
@@ -617,6 +618,7 @@ object ResourcePackManager: QuestAdderManager {
                 ex.printStackTrace()
                 QuestAdderBukkit.warn("unable to make a resource pack.")
             }
+            0
         }
     }
 

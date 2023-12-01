@@ -19,6 +19,7 @@ dependencies {
     compileOnly("io.lumine:MythicCrucible:1.6.0")
     compileOnly("me.clip:placeholderapi:2.11.5")
     compileOnly("com.github.Ssomar-Developement:SCore:4.23.10.8")
+    compileOnly("de.oliver:FancyNpcs:2.0.5")
 
     implementation("com.ticxo.playeranimator:PlayerAnimator:R1.2.7")
     implementation("net.objecthunter:exp4j:0.4.8")
@@ -30,4 +31,7 @@ dependencies {
     implementation(project(":platform"))
     implementation(project(":platform:spigot"))
     implementation(project(":platform:paper"))
+    implementation(project(":scheduler"))
+    implementation(project(":scheduler:standard"))
+    implementation(project(":scheduler:folia"))
 }

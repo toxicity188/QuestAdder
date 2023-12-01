@@ -100,12 +100,10 @@ object SlateManager: QuestAdderManager {
     }
 
     override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
-        QuestAdderBukkit.task {
-            for (mutableEntry in slateMap) {
-                mutableEntry.value.cancel()
-            }
-            slateMap.clear()
+        for (mutableEntry in slateMap) {
+            mutableEntry.value.cancel()
         }
+        slateMap.clear()
     }
 
     override fun end(adder: QuestAdderBukkit) {
@@ -139,10 +137,12 @@ object SlateManager: QuestAdderManager {
         }
 
         fun cancel(back: Boolean = true) {
-            if (back) player.teleport(location)
-            player.isInvisible = false
-            if (!player.isOp) player.allowFlight = false
-            QuestAdderBukkit.nms.changeFakeItemInHand(player, mainHandItem, Bukkit.getOnlinePlayers())
+            QuestAdderBukkit.task(player.location) {
+                if (back) QuestAdderBukkit.scheduler.teleport(player, location)
+                player.isInvisible = false
+                if (!player.isOp) player.allowFlight = false
+                QuestAdderBukkit.nms.changeFakeItemInHand(player, mainHandItem, Bukkit.getOnlinePlayers())
+            }
         }
     }
 }

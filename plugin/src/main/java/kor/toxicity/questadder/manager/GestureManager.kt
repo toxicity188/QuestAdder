@@ -3,7 +3,6 @@ package kor.toxicity.questadder.manager
 import com.ticxo.playeranimator.api.model.player.PlayerModel
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.extension.send
-import net.citizensnpcs.api.npc.NPC
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import java.io.File
@@ -36,18 +35,17 @@ object GestureManager: QuestAdderManager {
     override fun end(adder: QuestAdderBukkit) {
     }
 
-    fun play(player: Player, string: String, npc: NPC) {
-        val entity = npc.entity as? Player ?: return
+    fun play(player: Player, string: String, target: Player) {
         try {
-            gestureMap.put(player.uniqueId, object : QuestPlayerModel(entity) {
+            gestureMap.put(player.uniqueId, object : QuestPlayerModel(target) {
                 override fun spawn() {
                     spawn(player)
-                    QuestAdderBukkit.nms.removePlayer(player, entity)
+                    QuestAdderBukkit.nms.removePlayer(player, target)
                 }
 
                 override fun despawn() {
                     despawn(player)
-                    QuestAdderBukkit.nms.spawnPlayer(player, entity)
+                    QuestAdderBukkit.nms.spawnPlayer(player, target)
                     gestureMap.remove(player.uniqueId)
                 }
 
@@ -59,7 +57,7 @@ object GestureManager: QuestAdderManager {
             })?.cancel()
         } catch (ex: Exception) {
             ex.printStackTrace()
-            QuestAdderBukkit.warn("runtime error: unable to load gesture. (${npc.name})")
+            QuestAdderBukkit.warn("runtime error: unable to load gesture. (${string})")
         }
     }
 

@@ -18,3 +18,7 @@ include("nms:v1_20_R2")
 
 include("platform:spigot")
 include("platform:paper")
+
+include("scheduler")
+include("scheduler:standard")
+include("scheduler:folia")

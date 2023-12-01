@@ -5,58 +5,73 @@ import kor.toxicity.questadder.api.gui.IGui
 import kor.toxicity.questadder.api.mechanic.IActualNPC
 import kor.toxicity.questadder.api.mechanic.IQuestNPC
 import kor.toxicity.questadder.api.mechanic.QuestRecord
+import kor.toxicity.questadder.api.npc.WrappedNPC
 import kor.toxicity.questadder.api.util.SoundData
 import kor.toxicity.questadder.data.PlayerData
 import kor.toxicity.questadder.nms.VirtualEntity
-import net.citizensnpcs.api.npc.NPC
+import kor.toxicity.questadder.scheduler.ScheduledTask
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
-import org.bukkit.entity.Entity
+import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import org.jetbrains.annotations.ApiStatus.Internal
-import java.util.UUID
+import java.util.*
+import java.util.function.Supplier
 
-class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
+class ActualNPC(val npc: WrappedNPC, val questNPC: QuestNPC): IActualNPC {
 
     private val playerDisplayMap = HashMap<UUID,PlayerDisplay>()
 
-    private val thread = QuestAdderBukkit.asyncTaskTimer(questNPC.thread,questNPC.thread) {
-        val entity = npc.entity ?: return@asyncTaskTimer
-        val loc = entity.location
-        val players = Bukkit.getOnlinePlayers().filter {
-            it.world == entity.world && loc.distance(it.location) <= questNPC.renderDistance
-        }.toMutableSet()
-        val iterator = playerDisplayMap.values.iterator()
-        val task = ArrayList<() -> Unit>()
-        while (iterator.hasNext()) {
-            val next = iterator.next()
-            if (!players.remove(next.player)) {
-                next.remove()
-                iterator.remove()
-            } else {
-                task.add {
-                    next.update()
-                }
-            }
-        }
-        players.forEach {
-            QuestAdderBukkit.getPlayerData(it)?.let { data ->
-                playerDisplayMap.put(it.uniqueId,PlayerDisplay(it,data))?.remove()
-            }
-        }
-        if (task.isNotEmpty()) QuestAdderBukkit.task {
-            task.forEach {
-                it()
+    private var task: ScheduledTask? = null
+
+    override fun getLocationSupplier(): Supplier<Location>? {
+        return npc.location?.let {
+            Supplier {
+                it.clone()
             }
         }
     }
-    @Internal
+
+    init {
+        startTask()
+    }
     fun cancel() {
         playerDisplayMap.values.forEach {
             it.remove()
         }
-        thread.cancel()
+        playerDisplayMap.clear()
+        task?.cancel()
+        task = null
+    }
+
+    fun startTask() {
+        cancel()
+        task = QuestAdderBukkit.asyncTaskTimer(questNPC.thread,questNPC.thread) {
+            val players = Bukkit.getOnlinePlayers().filter {
+                it.world == npc.world && (npc.location ?: return@asyncTaskTimer).distance(it.location) <= questNPC.renderDistance
+            }.toMutableSet()
+            val iterator = playerDisplayMap.values.iterator()
+            val task = ArrayList<Pair<Location, () -> Unit>>()
+            while (iterator.hasNext()) {
+                val next = iterator.next()
+                if (!players.remove(next.player)) {
+                    next.remove()
+                    iterator.remove()
+                } else {
+                    task.add(next.player.location to {
+                        next.update()
+                    })
+                }
+            }
+            players.forEach {
+                QuestAdderBukkit.getPlayerData(it)?.let { data ->
+                    playerDisplayMap.put(it.uniqueId,PlayerDisplay(it,data))?.remove()
+                }
+            }
+            if (task.isNotEmpty()) task.forEach {
+                QuestAdderBukkit.task(it.first, it.second)
+            }
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -65,17 +80,11 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
 
         other as ActualNPC
 
-        if (npc != other.npc) return false
-
-        return true
+        return npc == other.npc
     }
 
     override fun hashCode(): Int {
         return npc.hashCode()
-    }
-
-    override fun getEntity(): Entity? {
-        return npc.entity
     }
 
     override fun getSoundData(): SoundData {
@@ -114,26 +123,30 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
         }
         fun update() {
             val newState = getState()
-            val entity = npc.entity ?: return
             if (state != newState) {
                 state = newState
                 thread?.remove()
+                val loc = npc.location?.clone()?.apply {
+                    y += npc.eyeHeight
+                } ?: return
                 thread = when (state) {
-                    State.COMPLETE -> EntityThread(QuestAdderBukkit.nms.createArmorStand(player,entity.location).apply {
+                    State.COMPLETE -> EntityThread(QuestAdderBukkit.nms.createArmorStand(player,loc).apply {
                         setText(Component.empty())
                         setItem(ItemStack(QuestAdderBukkit.Config.defaultResourcePackItem).apply {
                             itemMeta = itemMeta?.apply {
                                 setCustomModelData(4)
                             }
                         })
+                        setCustomNameVisible(false)
                     })
-                    State.READY_TO_REQUEST -> EntityThread(QuestAdderBukkit.nms.createArmorStand(player,entity.location).apply {
+                    State.READY_TO_REQUEST -> EntityThread(QuestAdderBukkit.nms.createArmorStand(player,loc).apply {
                         setText(Component.empty())
                         setItem(ItemStack(QuestAdderBukkit.Config.defaultResourcePackItem).apply {
                             itemMeta = itemMeta?.apply {
                                 setCustomModelData(3)
                             }
                         })
+                        setCustomNameVisible(false)
                     })
                     else -> null
                 }
@@ -143,7 +156,9 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
         private inner class EntityThread(val entity: VirtualEntity) {
 
             private val task = QuestAdderBukkit.asyncTaskTimer(1,1) {
-                entity.teleport((npc.entity ?: return@asyncTaskTimer).location.apply {
+                entity.teleport((npc.location?.clone()?.apply {
+                    y += npc.eyeHeight
+                } ?: return@asyncTaskTimer).apply {
                     pitch = 0F
                     yaw = player.location.yaw - 180F
                 })
@@ -162,7 +177,7 @@ class ActualNPC(val npc: NPC, val questNPC: QuestNPC): IActualNPC {
         NOT_EXIST
     }
 
-    override fun toCitizensNPC(): NPC {
+    override fun toUsedNPC(): WrappedNPC {
         return npc
     }
 

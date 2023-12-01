@@ -11,7 +11,7 @@ abstract class SubExecutor(private val beforeData: GuiData): GuiExecutor {
 
     override fun end(data: GuiData) {
         if (!safeEnd) {
-            QuestAdderBukkit.taskLater(1) {
+            QuestAdderBukkit.taskLater(data.player.location, 1) {
                 beforeData.reopen()
             }
         }

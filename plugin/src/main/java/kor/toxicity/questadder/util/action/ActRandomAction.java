@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
+import kor.toxicity.questadder.api.concurrent.LazyRunnable;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.api.mechanic.ActionResult;
@@ -29,7 +30,7 @@ public class ActRandomAction extends AbstractAction {
     public void initialize() {
         super.initialize();
         var actionList = new ArrayList<AbstractAction>();
-        adder.addLazyTask(() -> {
+        adder.addLazyTask(LazyRunnable.emptyOf(() -> {
             var i = 0;
             for (JsonElement e : name) {
                 try {
@@ -48,7 +49,7 @@ public class ActRandomAction extends AbstractAction {
                 consumer = (p,q) -> QuestAdderBukkit.Companion.warn("runtime error: an actions are empty.");
                 QuestAdderBukkit.Companion.warn("an actions are empty.");
             }
-        });
+        }));
     }
 
     @NotNull

@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.QuestAdder
+import kor.toxicity.questadder.api.concurrent.LazyRunnable
 import kor.toxicity.questadder.api.event.ActionCancelEvent
 import kor.toxicity.questadder.api.event.QuestAdderEvent
 import kor.toxicity.questadder.manager.DialogManager
@@ -15,6 +16,7 @@ import kor.toxicity.questadder.api.mechanic.AbstractEvent
 import kor.toxicity.questadder.api.mechanic.ActionResult
 import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.UUIDManager
+import kor.toxicity.questadder.scheduler.ScheduledTask
 import kor.toxicity.questadder.util.action.*
 import kor.toxicity.questadder.util.event.*
 import kor.toxicity.questadder.util.reflect.ActionReflector
@@ -22,7 +24,6 @@ import kor.toxicity.questadder.util.reflect.PrimitiveType
 import org.bukkit.command.CommandExecutor
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
-import org.bukkit.scheduler.BukkitTask
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
@@ -191,7 +192,7 @@ object ActionBuilder {
     }
 
     fun create(adder: QuestAdder, parameters: Collection<String>, unsafe: Boolean = false): CancellableAction? {
-        val playerTask = HashMap<UUID,BukkitTask>()
+        val playerTask = HashMap<UUID,ScheduledTask>()
         val uuid = UUIDManager.createRandomUUID()
         val empty: CancellableAction = object : CancellableAction(adder) {
             override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
@@ -217,7 +218,7 @@ object ActionBuilder {
                 val d = matcher.group("delay").toLong()
                 action = object : CancellableAction(adder) {
                     override fun invoke(player: Player, event: QuestAdderEvent): ActionResult {
-                        playerTask[player.uniqueId] = QuestAdderBukkit.taskLater(d) {
+                        playerTask[player.uniqueId] = QuestAdderBukkit.taskLater(player.location,d) {
                             t.invoke(player,event)
                         }
                         return ActionResult.SUCCESS
@@ -313,7 +314,7 @@ object ActionBuilder {
                     }
                     when (name) {
                         "cast" -> {
-                            adder.addLazyTask {
+                            adder.addLazyTask(LazyRunnable.emptyOf {
                                 val original = predicate
                                 val castActions = value.split(',').mapNotNull {
                                     DialogManager.getAction(it)
@@ -321,17 +322,17 @@ object ActionBuilder {
                                 if (castActions.isNotEmpty()) {
                                     predicate = { player, event ->
                                         val get = function.apply(event)
-                                        val originalResult = original(player,event)
+                                        val originalResult = original(player, event)
                                         if (get as Boolean) {
                                             castActions.random().invoke(player, event)
                                             ActionResult.SUCCESS
                                         } else originalResult
                                     }
                                 } else QuestAdderBukkit.warn("unable to load the dialog: $s")
-                            }
+                            })
                         }
                         "castinstead" -> {
-                            adder.addLazyTask {
+                            adder.addLazyTask(LazyRunnable.emptyOf {
                                 val original = predicate
                                 val castActions = value.split(',').mapNotNull {
                                     DialogManager.getAction(it)
@@ -339,14 +340,14 @@ object ActionBuilder {
                                 if (castActions.isNotEmpty()) {
                                     predicate = { player, event ->
                                         val get = function.apply(event)
-                                        val originalResult = original(player,event)
+                                        val originalResult = original(player, event)
                                         if (originalResult == ActionResult.SUCCESS && get as Boolean) {
                                             val otherResult = castActions.random().invoke(player, event)
                                             if (otherResult == ActionResult.SUCCESS) ActionResult.INSTEAD_OTHER_ACTION else otherResult
                                         } else originalResult
                                     }
                                 } else QuestAdderBukkit.warn("unable to load the dialog: $s")
-                            }
+                            })
                         }
                         else -> {
                             val original = predicate

@@ -39,6 +39,7 @@ import org.bukkit.command.CommandSender
 import org.bukkit.command.SimpleCommandMap
 import org.bukkit.craftbukkit.v1_20_R2.CraftServer
 import org.bukkit.craftbukkit.v1_20_R2.CraftWorld
+import org.bukkit.craftbukkit.v1_20_R2.entity.CraftEntity
 import org.bukkit.craftbukkit.v1_20_R2.entity.CraftItem
 import org.bukkit.craftbukkit.v1_20_R2.entity.CraftPlayer
 import org.bukkit.craftbukkit.v1_20_R2.help.SimpleHelpMap
@@ -286,7 +287,10 @@ class NMSImpl: NMS {
             t.customName = CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(text))
             sendEntityDataPacket()
         }
-
+        override fun setCustomNameVisible(boolean: Boolean) {
+            t.isCustomNameVisible = boolean
+            sendEntityDataPacket()
+        }
     }
     private abstract class VirtualDisplayImpl<T: Display>(t: T, player: Player, location: Location): VirtualEntityImpl<T>(t, player, location), VirtualDisplay {
         init {
@@ -314,5 +318,8 @@ class NMSImpl: NMS {
             t.text = CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(text))
             sendEntityDataPacket()
         }
+    }
+    override fun getEyeHeight(entity: org.bukkit.entity.Entity): Float {
+        return (entity as CraftEntity).handle.eyeHeight
     }
 }

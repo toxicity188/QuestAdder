@@ -5,6 +5,7 @@ import com.mojang.authlib.properties.PropertyMap
 import net.kyori.adventure.text.Component
 import org.bukkit.Location
 import org.bukkit.command.CommandExecutor
+import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 
@@ -27,4 +28,5 @@ interface NMS {
     fun createFakeItem(itemStack: ItemStack, location: Location): FakeItem
 
     fun getChannel(): NMSChannel
+    fun getEyeHeight(entity: Entity): Float
 }

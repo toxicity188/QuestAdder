@@ -6,13 +6,14 @@ description: Make a various quest in your server!
 load: POSTWORLD
 api-version: 1.17
 website: https://github.com/toxicity188/QuestAdder
-depend:
-  - Citizens
+folia-supported: true
 libraries:
   - "net.kyori:adventure-api:${adventureVersion}"
   - "net.kyori:adventure-text-serializer-plain:${adventureVersion}"
   - "net.kyori:adventure-platform-bukkit:${platformVersion}"
 softdepend:
+  - Citizens
+  - FancyNpcs
   - Vault
   - ItemsAdder
   - Oraxen

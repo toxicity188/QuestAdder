@@ -14,7 +14,6 @@ import java.io.File
 import java.util.function.Consumer
 
 class QuestNPC(adder: QuestAdderBukkit, val file: File, val npcKey: String, section: ConfigurationSection): IQuestNPC {
-    val id = section.findInt(0,"id","Id")
     val name = section.getString("name") ?: npcKey
     val soundData = section.findSoundData("typing-sound","TypingSound") ?: QuestAdderBukkit.Config.defaultTypingSound
     val dialogs: List<Dialog> = ArrayList<Dialog>().apply {

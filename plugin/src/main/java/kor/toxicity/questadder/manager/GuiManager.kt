@@ -42,7 +42,7 @@ object GuiManager: QuestAdderManager {
     }
 
     override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
-        QuestAdderBukkit.task {
+        QuestAdderBukkit.task(null) {
             closeAll()
         }
     }

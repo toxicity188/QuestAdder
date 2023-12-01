@@ -1,26 +1,30 @@
 package kor.toxicity.questadder.manager
 
 import com.google.gson.JsonObject
+import de.oliver.fancynpcs.api.FancyNpcsPlugin
 import kor.toxicity.questadder.QuestAdderBukkit
+import kor.toxicity.questadder.api.concurrent.LazyRunnable
 import kor.toxicity.questadder.api.event.*
 import kor.toxicity.questadder.api.gui.GuiData
 import kor.toxicity.questadder.api.gui.MouseButton
 import kor.toxicity.questadder.api.mechanic.DialogSender
 import kor.toxicity.questadder.api.mechanic.QuestRecord
+import kor.toxicity.questadder.api.mechanic.RegistrableAction
 import kor.toxicity.questadder.command.SenderType
+import kor.toxicity.questadder.data.QuestData
 import kor.toxicity.questadder.extension.*
+import kor.toxicity.questadder.hooker.npc.CitizensNPCWrapper
+import kor.toxicity.questadder.hooker.npc.FancyNpcsNPCWrapper
 import kor.toxicity.questadder.mechanic.dialog.Dialog
-import kor.toxicity.questadder.mechanic.qna.QnA
 import kor.toxicity.questadder.mechanic.npc.ActualNPC
 import kor.toxicity.questadder.mechanic.npc.QuestNPC
+import kor.toxicity.questadder.mechanic.qna.QnA
 import kor.toxicity.questadder.mechanic.quest.Quest
-import kor.toxicity.questadder.util.ComponentReader
-import kor.toxicity.questadder.api.mechanic.RegistrableAction
-import kor.toxicity.questadder.data.QuestData
 import kor.toxicity.questadder.mechanic.sender.DialogSenderType
 import kor.toxicity.questadder.mechanic.sender.ItemDialogSender
 import kor.toxicity.questadder.shop.blueprint.ShopBlueprint
 import kor.toxicity.questadder.shop.implement.Shop
+import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.builder.ActionBuilder
 import kor.toxicity.questadder.util.builder.FunctionBuilder
 import kor.toxicity.questadder.util.gui.Gui
@@ -30,8 +34,7 @@ import kor.toxicity.questadder.util.gui.player.PlayerGuiData
 import net.citizensnpcs.api.CitizensAPI
 import net.citizensnpcs.api.event.CitizensReloadEvent
 import net.citizensnpcs.api.event.NPCDespawnEvent
-import net.citizensnpcs.api.event.NPCSpawnEvent
-import net.citizensnpcs.api.npc.NPC
+import net.citizensnpcs.api.event.NPCRightClickEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
@@ -43,12 +46,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryClickEvent
-import org.bukkit.event.player.PlayerCommandPreprocessEvent
-import org.bukkit.event.player.PlayerDropItemEvent
-import org.bukkit.event.player.PlayerInteractAtEntityEvent
-import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.event.player.PlayerQuitEvent
-import org.bukkit.event.player.PlayerSwapHandItemsEvent
+import org.bukkit.event.player.*
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
@@ -56,8 +54,7 @@ import java.io.File
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.HashMap
-import kotlin.collections.HashSet
+import kotlin.collections.ArrayList
 
 object DialogManager: QuestAdderManager {
 
@@ -69,8 +66,9 @@ object DialogManager: QuestAdderManager {
     private val shopMap = ConcurrentHashMap<String, Shop>()
 
     private val questNpcMap = HashMap<String, QuestNPC>()
-    private val npcIdMap = HashMap<Int, QuestNPC>()
-    private val actualNPCMap = ConcurrentHashMap<UUID, ActualNPC>()
+
+    private val citizensNpcIdMap = HashMap<Int, ActualNPC>()
+    private val fancyNpcsNpcIdMap = HashMap<String, ActualNPC>()
 
     private val exampleMap = mapOf(
         "actions" to "example-action.yml",
@@ -83,6 +81,74 @@ object DialogManager: QuestAdderManager {
 
     override fun start(adder: QuestAdderBukkit) {
         val pluginManager = Bukkit.getPluginManager()
+        fun activate(player: Player, actualNPC: ActualNPC) {
+            val questNpc = actualNPC.questNPC
+            QuestAdderBukkit.getPlayerData(player)?.let { data ->
+                if (questNpc.dialogs.isNotEmpty()) {
+                    val dialog = questNpc.dialogs[(data.npcIndexes.getOrPut(actualNPC.questNPC.npcKey) {
+                        0
+                    }).coerceAtLeast(0).coerceAtMost(questNpc.dialogs.lastIndex)]
+                    if (TalkStartEvent(player, dialog, actualNPC).call()) dialog.start(player,actualNPC)
+                }
+            }
+        }
+        if (pluginManager.isPluginEnabled("Citizens")) pluginManager.registerEvents(object : Listener {
+            @EventHandler
+            fun spawn(e: net.citizensnpcs.api.event.NPCSpawnEvent) {
+                citizensNpcIdMap[e.npc.id]?.let {
+                    senderMap[it.questNPC.npcKey] = it
+                    it.startTask()
+                }
+            }
+            @EventHandler
+            fun reload(e: CitizensReloadEvent) {
+                QuestAdderBukkit.reloadSync()
+            }
+            @EventHandler
+            fun click(e: NPCRightClickEvent) {
+                val player = e.clicker
+                citizensNpcIdMap[e.npc.id]?.let {
+                    activate(player, it)
+                }
+            }
+            @EventHandler
+            fun deSpawn(e: NPCDespawnEvent) {
+                citizensNpcIdMap[e.npc.id]?.let {
+                    senderMap.remove(it.questNPC.npcKey)
+                    it.cancel()
+                }
+            }
+        }, adder)
+        if (pluginManager.isPluginEnabled("FancyNpcs")) pluginManager.registerEvents(object : Listener {
+            fun register(npc: de.oliver.fancynpcs.api.Npc) {
+                fancyNpcsNpcIdMap[npc.data.id]?.let {
+                    senderMap[it.questNPC.npcKey] = it
+                    it.startTask()
+                }
+            }
+            @EventHandler
+            fun spawn(e: de.oliver.fancynpcs.api.events.NpcSpawnEvent) {
+                register(e.npc)
+            }
+            @EventHandler
+            fun create(e: de.oliver.fancynpcs.api.events.NpcCreateEvent) {
+                register(e.npc)
+            }
+            @EventHandler
+            fun deSpawn(e: de.oliver.fancynpcs.api.events.NpcRemoveEvent) {
+                fancyNpcsNpcIdMap[e.npc.data.id]?.let {
+                    senderMap.remove(it.questNPC.npcKey)
+                    it.cancel()
+                }
+            }
+            @EventHandler
+            fun interact(e: de.oliver.fancynpcs.api.events.NpcInteractEvent) {
+                val player = e.player
+                fancyNpcsNpcIdMap[e.npc.data.id]?.let {
+                    activate(player, it)
+                }
+            }
+        }, adder)
         pluginManager.registerEvents(object : Listener {
             @EventHandler
             fun quit(e: PlayerQuitEvent) {
@@ -120,42 +186,6 @@ object DialogManager: QuestAdderManager {
                 val uuid = e.player.uniqueId
                 if (selectedQuestMap[uuid] == e.quest) selectedQuestMap.remove(uuid)
             }
-            @EventHandler
-            fun click(e: PlayerInteractAtEntityEvent) {
-                val player = e.player
-
-                val npc = CitizensAPI.getNPCRegistry().getNPC(e.rightClicked) ?: return
-
-                actualNPCMap[npc.uniqueId]?.let {
-
-                    val questNpc = it.questNPC
-                    QuestAdderBukkit.getPlayerData(player)?.let { data ->
-
-                        if (questNpc.dialogs.isNotEmpty()) {
-                            val dialog = questNpc.dialogs[(data.npcIndexes.getOrPut(it.questNPC.npcKey) {
-                                0
-                            }).coerceAtLeast(0).coerceAtMost(questNpc.dialogs.lastIndex)]
-                            if (TalkStartEvent(player, dialog, it).call()) dialog.start(e.player,it)
-                        }
-                    }
-                }
-            }
-            @EventHandler
-            fun spawn(e: NPCSpawnEvent) {
-                registerNPC(e.npc)
-            }
-            @EventHandler
-            fun deSpawn(e: NPCDespawnEvent) {
-                actualNPCMap.remove(e.npc.entity.uniqueId)?.let {
-                    senderMap.remove(it.questNPC.npcKey)
-                    it.cancel()
-                }
-            }
-            @EventHandler
-            fun reload(e: CitizensReloadEvent) {
-                QuestAdderBukkit.reloadSync()
-            }
-
             @EventHandler
             fun itemClick(e: PlayerInteractEvent) {
                 e.item?.let {
@@ -347,7 +377,6 @@ object DialogManager: QuestAdderManager {
                         questData.subList(index, (index + 9 * maxIndex).coerceAtMost(questData.size)).forEachIndexed { index, quest ->
                             inventory.setItem(startIndex + index, quest.getIcon(sender, QuestAdderBukkit.Config.questSuffix))
                         }
-                        sender.updateInventory()
                     }
                     QuestAdderBukkit.Config.playerGui.create(sender).run {
                         initializer = {
@@ -524,17 +553,6 @@ object DialogManager: QuestAdderManager {
             }
         }
     }
-    private fun registerNPC(npc: NPC) {
-        npcIdMap[npc.id]?.let {
-            val uuid = npc.uniqueId
-            if (!actualNPCMap.containsKey(uuid)) {
-                val actual = ActualNPC(npc,it)
-                actualNPCMap[uuid] = actual
-                senderMap[actual.questNPC.npcKey] = actual
-            }
-        }
-    }
-
 
     override fun reload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit) {
         dialogReload(adder, checker)
@@ -544,27 +562,23 @@ object DialogManager: QuestAdderManager {
     fun getAction(name: String) = actionMap[name]
     fun getQuest(name: String) = questMap[name]
     fun getQnA(name: String) = qnaMap[name]
-    fun getNPC(uuid: UUID) = actualNPCMap[uuid]
     fun getDialogSender(name: String) = senderMap[name]
 
     fun getDialogKeys() = dialogMap.keys.toList()
     fun getActionKeys() = actionMap.keys.toList()
     fun getQuestKeys() = questMap.keys.toList()
     fun getQnAKeys() = qnaMap.keys.toList()
-    fun getNPCKeys() = actualNPCMap.values.map {
-        it.questNPC.key
-    }
     fun getQuestNPCKeys() = questNpcMap.keys.toList()
-
-    fun getNPC(name: String) = actualNPCMap.values.firstOrNull {
-        it.questNPC.npcKey == name
-    }
     fun getShop(name: String) = shopMap[name]
     fun getShopKey() = shopMap.keys.toList()
     fun getQuestNPC(name: String) = questNpcMap[name]
-    fun getAllNPC(): Set<ActualNPC> = HashSet(actualNPCMap.values)
+    fun getAllNPC(): Set<ActualNPC> = HashSet<ActualNPC>().apply {
+        addAll(citizensNpcIdMap.values)
+    }
 
     private fun dialogReload(adder: QuestAdderBukkit, checker: (Double, String) -> Unit = { _, _ -> }) {
+        val npcTask = ArrayList<() -> Unit>()
+
         checker(0.0, "initializing dialog load...")
         val actionReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
             ActionBuilder.build(QuestAdderBukkit.Companion,c)?.let { build ->
@@ -598,18 +612,40 @@ object DialogManager: QuestAdderManager {
             }
         }
         val npcReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
-            try {
-                if (senderMap.containsKey(key)) throw RuntimeException("name collision found: $key")
-                val npc = QuestNPC(adder, file, key, c)
-                npcIdMap.put(npc.id, npc)?.let {
-                    QuestAdderBukkit.warn("npc id collision found: $key in ${file.name} and ${it.file.name}")
+            npcTask.add {
+                try {
+                    if (senderMap.containsKey(key)) throw RuntimeException("name collision found: $key")
+                    val npc = QuestNPC(adder, file, key, c)
+                    val type = c.getString("type") ?: "citizens"
+                    val old = questNpcMap[key]
+                    if (old != null) {
+                        throw RuntimeException("npc name collision found: $key in ${file.name} and ${old.file.name}")
+                    } else {
+                        val actual = when (type.lowercase()) {
+                            "citizens" -> {
+                                val int = c.findInt(0, "ID", "Id", "id")
+                                val actual = ActualNPC(CitizensNPCWrapper(CitizensAPI.getNPCRegistries().firstNotNullOfOrNull { r ->
+                                    r.getById(int)
+                                } ?: throw RuntimeException("npc id \"$int\" not found.")), npc)
+                                if (citizensNpcIdMap.putIfAbsent(int, actual) != null) throw RuntimeException("the npc id \"$int\" is already exist.")
+                                actual
+                            }
+                            "fancynpcs" -> {
+                                val str = c.findString("ID", "Id", "id") ?: throw RuntimeException("id value not found.")
+                                val get = FancyNpcsPlugin.get().npcManager.getNpc(str)
+                                val actual = ActualNPC(FancyNpcsNPCWrapper(get ?: throw RuntimeException("npc id \"$str\" not found.")), npc)
+                                if (fancyNpcsNpcIdMap.putIfAbsent(get.data.id, actual) != null) throw RuntimeException("the npc id \"$str\" is already exist.")
+                                actual
+                            }
+                            else -> throw RuntimeException("this npc type doesn't exist: $type")
+                        }
+                        senderMap[actual.questNPC.npcKey] = actual
+                        questNpcMap[key] = npc
+                    }
+                } catch (ex: Throwable) {
+                    QuestAdderBukkit.warn("unable to load NPC. ($key in ${file.name})")
+                    QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
                 }
-                questNpcMap.put(key, npc)?.let {
-                    QuestAdderBukkit.warn("npc name collision found: $key in ${file.name} and ${it.file.name}")
-                }
-            } catch (ex: Exception) {
-                QuestAdderBukkit.warn("unable to load NPC. ($key in ${file.name})")
-                QuestAdderBukkit.warn("reason: ${ex.message ?: ex.javaClass.simpleName}")
             }
         }
         val senderReader: (File,String,ConfigurationSection) -> Unit = { file, key, c ->
@@ -661,9 +697,18 @@ object DialogManager: QuestAdderManager {
         }
 
         QuestAdderBukkit.unregisterAll()
-        actualNPCMap.values.forEach {
+
+        //Hooker start
+        citizensNpcIdMap.values.forEach {
             it.cancel()
         }
+        citizensNpcIdMap.clear()
+        fancyNpcsNpcIdMap.values.forEach {
+            it.cancel()
+        }
+        fancyNpcsNpcIdMap.clear()
+        //Hooker end
+
         actionMap.values.forEach {
             it.unregister()
         }
@@ -676,10 +721,9 @@ object DialogManager: QuestAdderManager {
         questMap.clear()
         dialogMap.clear()
         questNpcMap.clear()
-        actualNPCMap.clear()
         senderMap.clear()
         shopMap.clear()
-        npcIdMap.clear()
+        citizensNpcIdMap.clear()
 
         fun loadConfig(name: String, reader: (File,String,ConfigurationSection) -> Unit) {
             adder.loadFolder(name) { file, config ->
@@ -717,17 +761,11 @@ object DialogManager: QuestAdderManager {
         checker(6.5 / 7.0, "loading senders folder...")
         loadConfig("shops", shopReader)
 
-        CitizensAPI.getNPCRegistries().forEach {
-            it.forEach { npc ->
-                registerNPC(npc)
-            }
-        }
         Bukkit.getConsoleSender().run {
             send("${actionMap.size} of actions has successfully loaded.")
             send("${dialogMap.size} of dialogs has successfully loaded.")
             send("${questMap.size} of quests has successfully loaded.")
             send("${qnaMap.size} of QnAs has successfully loaded.")
-            send("${questNpcMap.size} of NPCs has successfully loaded.")
             send("${senderMap.size} of senders has successfully loaded.")
             send("${shopMap.size} of shops has successfully loaded.")
         }
@@ -739,9 +777,21 @@ object DialogManager: QuestAdderManager {
             else entry.setValue(quest)
         }
         checker(1.0, "finalizing dialog loading...")
-        QuestAdderBukkit.task {
+        QuestAdderBukkit.task(null) {
             QuestAdderBukkit.nms.updateCommand()
         }
+        QuestAdderBukkit.addLazyTask(object : LazyRunnable {
+            override fun getDelay(): Long {
+                return if (npcTask.isNotEmpty()) 5000L else 0L
+            }
+
+            override fun run() {
+                npcTask.forEach {
+                    it()
+                }
+                Bukkit.getConsoleSender().send("${questNpcMap.size} of NPCs has successfully loaded.")
+            }
+        })
     }
 
     override fun end(adder: QuestAdderBukkit) {

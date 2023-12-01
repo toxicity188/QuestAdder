@@ -2,6 +2,7 @@ package kor.toxicity.questadder.util.action;
 
 import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
+import kor.toxicity.questadder.api.concurrent.LazyRunnable;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.api.gui.IGui;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
@@ -10,12 +11,14 @@ import kor.toxicity.questadder.api.mechanic.DialogSender;
 import kor.toxicity.questadder.api.util.DataField;
 import kor.toxicity.questadder.api.util.SoundData;
 import kor.toxicity.questadder.manager.DialogManager;
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class ActCustomDialog extends AbstractAction {
 
@@ -43,15 +46,14 @@ public class ActCustomDialog extends AbstractAction {
     @Override
     public void initialize() {
         super.initialize();
-        adder.addLazyTask(() -> {
+        adder.addLazyTask(LazyRunnable.emptyOf(() -> {
             var d = DialogManager.INSTANCE.getDialog(dialog);
             if (d == null) QuestAdderBukkit.Companion.warn("the dialog named \"" + dialog + "\" doesn't exist.");
             else {
                 var data = new SoundData(sound, volume, pitch);
                 var sender = new DialogSender() {
-                    @Nullable
                     @Override
-                    public Entity getEntity() {
+                    public @Nullable Supplier<Location> getLocationSupplier() {
                         return null;
                     }
 
@@ -80,7 +82,7 @@ public class ActCustomDialog extends AbstractAction {
                 };
                 consumer = p -> d.start(p, sender);
             }
-        });
+        }));
     }
 
     @NotNull

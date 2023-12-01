@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import kor.toxicity.questadder.QuestAdderBukkit
 import kor.toxicity.questadder.api.QuestAdder
+import kor.toxicity.questadder.api.concurrent.LazyRunnable
 import kor.toxicity.questadder.api.event.DialogStartEvent
 import kor.toxicity.questadder.api.gui.GuiData
 import kor.toxicity.questadder.api.gui.GuiExecutor
@@ -18,6 +19,7 @@ import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.*
 import kor.toxicity.questadder.mechanic.qna.QnA
 import kor.toxicity.questadder.nms.VirtualArmorStand
+import kor.toxicity.questadder.scheduler.ScheduledTask
 import kor.toxicity.questadder.shop.implement.Shop
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.Null
@@ -32,7 +34,6 @@ import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import org.bukkit.scheduler.BukkitTask
 import java.io.File
 import java.time.Duration
 import java.util.*
@@ -89,7 +90,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
         }
         private var talkIndex = 0
         private var talkerComponent: Component? = null
-        private var task: BukkitTask? = null
+        private var task: ScheduledTask? = null
         private var iterator = ComponentReader.emptyIterator()
 
         private var started = false
@@ -163,7 +164,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
             current.state.tasks.forEach {
                 it()
             }
-            QuestAdderBukkit.task {
+            QuestAdderBukkit.task(current.player.location) {
                 current.player.closeInventory()
             }
         }
@@ -182,7 +183,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 sound = current.typingSoundMap[onlyText] ?: QuestAdderBukkit.Config.defaultTypingSound
                 speed = current.typingSpeedMap[onlyText] ?: QuestAdderBukkit.Config.defaultTypingSpeed
             }
-            task = QuestAdderBukkit.taskTimer(speed,speed) {
+            task = QuestAdderBukkit.taskTimer(current.player.location,speed,speed) {
                 if (iterator.hasNext()) {
                     val next = iterator.nextLine()
                     if ((next as TextComponent).content() != "*") {
@@ -192,7 +193,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 } else {
                     cancel()
                     started = false
-                    task = QuestAdderBukkit.taskLater(20) {
+                    task = QuestAdderBukkit.taskLater(current.player.location,20) {
                         start()
                     }
                 }
@@ -290,7 +291,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                     override fun end() {
                         if (!current.safeEnd) {
                             current.safeEnd = true
-                            QuestAdderBukkit.task {
+                            QuestAdderBukkit.task(current.player.location) {
                                 current.player.closeInventory()
                                 current.inventory = null
                                 current.safeEnd = false
@@ -336,10 +337,16 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                 override fun create(current: DialogCurrent, jsonObject: JsonObject): TypingExecutor {
                     return object : TypingExecutor {
 
-                        private var referencedEntity = current.sender.entity ?: current.player
+                        private var referencedEntity = current.sender.locationSupplier?.let {
+                            {
+                                it.get()
+                            }
+                        } ?: {
+                            current.player.location
+                        }
                         private var comp = Component.empty()
 
-                        private val display = current.display ?: QuestAdderBukkit.nms.createArmorStand(current.player,referencedEntity.location).apply {
+                        private val display = current.display ?: QuestAdderBukkit.nms.createArmorStand(current.player,referencedEntity()).apply {
                             setText(Component.empty())
                             current.display = this
                         }
@@ -351,15 +358,23 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                         override fun initialize(talker: Component?) {
                             comp = Component.empty()
                             referencedEntity = if (talker != null && talker.onlyText() == "player") {
-                                current.player
+                                {
+                                    current.player.location
+                                }
                             }
-                            else current.sender.entity ?: current.player
+                            else current.sender.locationSupplier?.let {
+                                {
+                                    it.get()
+                                }
+                            } ?: {
+                                current.player.location
+                            }
                         }
 
                         override fun run(talk: Component) {
                             comp = comp.append(talk)
                             display.setText(comp)
-                            display.teleport(referencedEntity.location.apply {
+                            display.teleport(referencedEntity().apply {
                                 y += 0.25
                             })
                         }
@@ -571,7 +586,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
             }
         }
         bluePrint.dialog?.let { t ->
-            adder.addLazyTask {
+            adder.addLazyTask(LazyRunnable.emptyOf {
                 t.forEach {
                     DialogManager.getDialog(it)?.let { d ->
                         dialog?.add(d) ?: run {
@@ -581,7 +596,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                         }
                     } ?: error("not found error: the dialog named '$it' doesn't exist.")
                 }
-            }
+            })
         }
         bluePrint.action?.let { g ->
             g.getKeys(false).forEach {
@@ -611,7 +626,10 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                     try {
                         addTalkTask(it.toInt()) { current ->
                             val sender = current.sender
-                            if (sender is IActualNPC) GestureManager.play(current.player, s, sender.toCitizensNPC())
+                            if (sender is IActualNPC) {
+                                val entity = sender.toUsedNPC().entity
+                                if (entity is Player) GestureManager.play(current.player, s, entity)
+                            }
                         }
                     } catch (ex: Exception) {
                         error("syntax error: the parameter \"$it\" is not an int.")
@@ -659,7 +677,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
             }
         }
         bluePrint.subDialog?.let { t ->
-            adder.addLazyTask {
+            adder.addLazyTask(LazyRunnable.emptyOf {
                 t.forEach {
                     DialogManager.getDialog(it)?.let { d ->
                         subDialog?.add(d) ?: run {
@@ -669,7 +687,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                         }
                     } ?: error("not found error: the dialog named '$it' doesn't exist.")
                 }
-            }
+            })
         }
         fun throwRuntimeError() = error("runtime error: unable to load the function.")
         bluePrint.index?.forEach {
@@ -813,10 +831,10 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
         bluePrint.checkQuest?.forEach {
             val split = it.split(' ')
             if (split.size > 1) {
-                adder.addLazyTask {
+                adder.addLazyTask(LazyRunnable.emptyOf {
                     val quest = DialogManager.getQuest(split[0]) ?: run {
                         error("not found error: the quest named \"${split[0]}\" doesn't exist.")
-                        return@addLazyTask
+                        return@emptyOf
                     }
                     when (split[1].lowercase()) {
                         "has" -> { current: DialogCurrent ->
@@ -861,11 +879,11 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                             addPredicate(pre)
                         }
                     }
-                }
+                })
             }
         }
         bluePrint.condition?.let { cond ->
-            adder.addLazyTask {
+            adder.addLazyTask(LazyRunnable.emptyOf {
                 fun throwRuntimeError(result: Any?) {
                     error("runtime error: the value \"$result\" is not a boolean.")
                 }
@@ -920,15 +938,15 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                         }
                     }
                 }
-            }
+            })
         }
         bluePrint.setQuest?.forEach {
             val split = it.split(' ')
             if (split.size > 1) {
-                adder.addLazyTask {
+                adder.addLazyTask(LazyRunnable.emptyOf {
                     val quest = DialogManager.getQuest(split[0]) ?: run {
                         error("not found error: the quest named \"${split[0]}\" doesn't exist.")
-                        return@addLazyTask
+                        return@emptyOf
                     }
                     when (split[1].lowercase()) {
                         "give" -> addLastAction { current ->
@@ -945,11 +963,11 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                         }
                         else -> error("not found error: the quest action \"${split[1]}\" doesn't exist.")
                     }
-                }
+                })
             }
         }
         bluePrint.qna?.forEach {
-            adder.addLazyTask {
+            adder.addLazyTask(LazyRunnable.emptyOf {
                 DialogManager.getQnA(it)?.let { q ->
                     qna?.add(q) ?: run {
                         qna = ArrayList<QnA>().apply {
@@ -957,10 +975,10 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                         }
                     }
                 } ?: error("not found error: the qna named $it doesn't exist.")
-            }
+            })
         }
         bluePrint.shops?.forEach {
-            adder.addLazyTask {
+            adder.addLazyTask(LazyRunnable.emptyOf {
                 DialogManager.getShop(it)?.let { q ->
                     shop?.add(q) ?: run {
                         shop = ArrayList<Shop>().apply {
@@ -968,7 +986,7 @@ class Dialog(adder: QuestAdder, val file: File, private val dialogKey: String, s
                         }
                     }
                 } ?: error("not found error: the shop named $it doesn't exist.")
-            }
+            })
         }
         bluePrint.takeItem?.forEach {
             ItemManager.getItemSupplier(it)?.let { supplier ->

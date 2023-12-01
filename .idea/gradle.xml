@@ -23,6 +23,9 @@
             <option value="$PROJECT_DIR$/platform/paper" />
             <option value="$PROJECT_DIR$/platform/spigot" />
             <option value="$PROJECT_DIR$/plugin" />
+            <option value="$PROJECT_DIR$/scheduler" />
+            <option value="$PROJECT_DIR$/scheduler/folia" />
+            <option value="$PROJECT_DIR$/scheduler/standard" />
           </set>
         </option>
       </GradleProjectSettings>

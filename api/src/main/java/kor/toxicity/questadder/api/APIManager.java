@@ -96,24 +96,6 @@ public interface APIManager {
      */
     <T,R> void addFunction(@NotNull String name, @NotNull List<@NotNull Class<?>> args, @NotNull Class<T> argsClass, @NotNull Class<R> returnClass, @NotNull BiFunction<@NotNull T, @NotNull Object[], @NotNull R> function);
 
-    /**
-     * Gets NPC object from given uuid.
-     *
-     * @param uuid An entity uuid of NPC
-     * @return An object of NPC of null
-     * @since 1.0.3
-     */
-    @Nullable
-    IActualNPC getNPC(@NotNull UUID uuid);
-    /**
-     * Gets NPC object from given name.
-     *
-     * @param name A yaml key of the NPC
-     * @return An object of NPC of null
-     * @since 1.0.5
-     */
-    @Nullable
-    IActualNPC getNPC(@NotNull String name);
 
     /**
      * Gets all NPC in server.
@@ -171,11 +153,6 @@ public interface APIManager {
      * @since 1.0.7
      */
     @NotNull List<@NotNull String> getActionKeys();
-    /**
-     * @return A keys of all of loaded NPCs.
-     * @since 1.0.7
-     */
-    @NotNull List<@NotNull String> getNPCKeys();
     /**
      * @return A keys of all of loaded quest NPCs.
      * @since 1.0.7

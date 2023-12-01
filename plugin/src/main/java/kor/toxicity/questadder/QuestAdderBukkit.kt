@@ -8,6 +8,7 @@ import kor.toxicity.questadder.api.APIManager
 import kor.toxicity.questadder.api.QuestAdder
 import kor.toxicity.questadder.api.QuestAdderAPI
 import kor.toxicity.questadder.api.QuestAdderPlugin
+import kor.toxicity.questadder.api.concurrent.LazyRunnable
 import kor.toxicity.questadder.api.event.*
 import kor.toxicity.questadder.api.mechanic.AbstractEvent
 import kor.toxicity.questadder.api.mechanic.QuestRecord
@@ -21,6 +22,8 @@ import kor.toxicity.questadder.nms.NMS
 import kor.toxicity.questadder.platform.PaperPlatformAdapter
 import kor.toxicity.questadder.platform.PlatformAdapter
 import kor.toxicity.questadder.platform.SpigotPlatformAdapter
+import kor.toxicity.questadder.scheduler.FoliaScheduler
+import kor.toxicity.questadder.scheduler.StandardScheduler
 import kor.toxicity.questadder.util.ComponentReader
 import kor.toxicity.questadder.util.TimeFormat
 import kor.toxicity.questadder.util.action.ActCast
@@ -54,6 +57,7 @@ import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bstats.bukkit.Metrics
 import org.bukkit.Bukkit
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.boss.BarColor
@@ -83,7 +87,7 @@ import java.util.concurrent.ThreadLocalRandom
 class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
     companion object: QuestAdder {
 
-        const val VERSION = "1.1.9"
+        const val VERSION = "1.2.0"
 
         private val listener = object : Listener {
         }
@@ -93,7 +97,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         var animator: PlayerAnimator? = null
             private set
 
-        var reloaded = false
+        var reloaded = true
             private set
         lateinit var audience: BukkitAudiences
             private set
@@ -112,10 +116,11 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         @Internal
         fun warn(message: String) = plugin.logger.warning(message)
 
-        override fun addLazyTask(runnable: Runnable) {
-            plugin.addLazyTask {
-                runnable.run()
-            }
+        fun addLazyTask(runnable: Runnable) {
+            plugin.addLazyTask(LazyRunnable.emptyOf(runnable))
+        }
+        override fun addLazyTask(runnable: LazyRunnable) {
+            plugin.addLazyTask(runnable)
         }
 
         override fun getAPIManager(): APIManager {
@@ -132,18 +137,19 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             return plugin
         }
 
+        val scheduler = if (Bukkit.getName().lowercase() == "folia") FoliaScheduler() else StandardScheduler()
         @Internal
-        fun task(action: () -> Unit) = Bukkit.getScheduler().runTask(plugin,action)
+        fun task(location: Location?, action: () -> Unit) = scheduler.task(plugin, location, action)
         @Internal
-        fun asyncTask(action: () -> Unit) = Bukkit.getScheduler().runTaskAsynchronously(plugin,action)
+        fun asyncTask(action: () -> Unit) = scheduler.asyncTask(plugin, action)
         @Internal
-        fun taskLater(delay: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskLater(plugin,action,delay)
+        fun taskLater(location: Location?, delay: Long, action: () -> Unit) = scheduler.taskLater(plugin, location, delay, action)
         @Internal
-        fun taskTimer(delay: Long, period: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskTimer(plugin,action,delay,period)
+        fun taskTimer(location: Location?, delay: Long, period: Long, action: () -> Unit) = scheduler.taskTimer(plugin, location, delay, period, action)
         @Internal
-        fun asyncTaskLater(delay: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskLaterAsynchronously(plugin,action,delay)
+        fun asyncTaskLater(delay: Long, action: () -> Unit) = scheduler.asyncTaskLater(plugin, delay, action)
         @Internal
-        fun asyncTaskTimer(delay: Long, period: Long, action: () -> Unit) = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin,action,delay,period)
+        fun asyncTaskTimer(delay: Long, period: Long, action: () -> Unit) = scheduler.asyncTaskTimer(plugin, delay, period, action)
 
         @Internal
         fun getPlayerData(player: Player) = playerThreadMap[player.uniqueId]?.data
@@ -160,7 +166,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         @Internal
         fun reload(player: Player, callback: (Long) -> Unit) = plugin.reload(player, callback)
         @Internal
-        fun reloadSync() = plugin.reloadSync()
+        fun reloadSync() = plugin.reloadSync({_, _ -> }, {})
 
         private val managerList = mutableListOf(
             ResourcePackManager,
@@ -589,35 +595,37 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             }
         },this)
         Metrics(this,19565)
-        task {
+        task(null) {
             PluginLoadStartEvent().call()
-            load()
-            PluginLoadEndEvent().call()
-            send("plugin enabled.")
-            send("current platform: ${platform.getTargetPlatformName()}")
-            try {
-                val get = HttpClient.newHttpClient().send(
-                    HttpRequest.newBuilder()
-                        .uri(URI.create("https://api.spigotmc.org/legacy/update.php?resource=112227/"))
-                        .GET()
-                        .build(), HttpResponse.BodyHandlers.ofString()).body()
-                if (VERSION != get) {
-                    warn("new version found: $get")
-                    warn("download: https://www.spigotmc.org/resources/questadder.112227/")
-                    pluginManager.registerEvents(object : Listener {
-                        @EventHandler
-                        fun join(e: PlayerJoinEvent) {
-                            val player = e.player
-                            if (player.isOp) {
-                                player.info("new version found: $get")
-                                player.info("download: https://www.spigotmc.org/resources/questadder.112227/".asClearComponent().clickEvent(
-                                    ClickEvent.openUrl("https://www.spigotmc.org/resources/questadder.112227/")))
+            load({_, _ -> }) {
+                PluginLoadEndEvent().call()
+                send("plugin enabled.")
+                send("current platform: ${platform.getTargetPlatformName()}")
+                try {
+                    val get = HttpClient.newHttpClient().send(
+                        HttpRequest.newBuilder()
+                            .uri(URI.create("https://api.spigotmc.org/legacy/update.php?resource=112227/"))
+                            .GET()
+                            .build(), HttpResponse.BodyHandlers.ofString()).body()
+                    if (VERSION != get) {
+                        warn("new version found: $get")
+                        warn("download: https://www.spigotmc.org/resources/questadder.112227/")
+                        pluginManager.registerEvents(object : Listener {
+                            @EventHandler
+                            fun join(e: PlayerJoinEvent) {
+                                val player = e.player
+                                if (player.isOp) {
+                                    player.info("new version found: $get")
+                                    player.info("download: https://www.spigotmc.org/resources/questadder.112227/".asClearComponent().clickEvent(
+                                        ClickEvent.openUrl("https://www.spigotmc.org/resources/questadder.112227/")))
+                                }
                             }
-                        }
-                    },this)
+                        },this)
+                    }
+                } catch (ex: Exception) {
+                    warn("unable to check for updates: ${ex.message ?: ex.javaClass.simpleName}")
                 }
-            } catch (ex: Exception) {
-                warn("unable to check for updates: ${ex.message ?: ex.javaClass.simpleName}")
+                reloaded = false
             }
         }
     }
@@ -632,46 +640,58 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         send("plugin disabled.")
     }
 
-    private val lazyTaskCache = ConcurrentLinkedQueue<() -> Unit>()
+    private val lazyTaskCache = ConcurrentLinkedQueue<LazyRunnable>()
 
-    fun addLazyTask(action: () -> Unit) {
+    fun addLazyTask(action: LazyRunnable) {
         lazyTaskCache.add(action)
     }
-    private fun load(checker: (Double, String) -> Unit = { _,_ -> }) {
-        loadFile("prefix")?.let { prefix ->
-            Prefix.reload(prefix)
-        }
-        loadFile("suffix")?.let { suffix ->
-            Suffix.reload(suffix)
-        }
-        loadFile("config")?.let { config ->
-            Config.reload(config)
-        }
-        val size = managerList.count().toDouble()
-        managerList.forEachIndexed { index, questAdderManager ->
-            questAdderManager.reload(this) { d, s ->
-                checker((d + index.toDouble()) / size, s)
-            }
-        }
-        val lazyTaskSize = lazyTaskCache.size.toDouble()
-        var task: (() -> Unit)?
-        var i = 0.0
-        do {
-            task = lazyTaskCache.poll()?.apply {
-                invoke()
-            }
-            checker((i++) / lazyTaskSize, "finalizing...")
-        } while (task != null)
+    fun addLazyTask(action: Runnable) {
+        lazyTaskCache.add(LazyRunnable.emptyOf(action))
     }
-    private fun reloadSync(checker: (Double,String) -> Unit = { _, _ -> }) {
+    private fun load(checker: (Double, String) -> Unit = { _,_ -> }, callback: () -> Unit) {
+        object : Thread() {
+            override fun run() {
+                loadFile("prefix")?.let { prefix ->
+                    Prefix.reload(prefix)
+                }
+                loadFile("suffix")?.let { suffix ->
+                    Suffix.reload(suffix)
+                }
+                loadFile("config")?.let { config ->
+                    Config.reload(config)
+                }
+                val size = managerList.count().toDouble()
+                managerList.forEachIndexed { index, questAdderManager ->
+                    questAdderManager.reload(this@QuestAdderBukkit) { d, s ->
+                        checker((d + index.toDouble()) / size, s)
+                    }
+                }
+                var task: LazyRunnable?
+                do {
+                    task = lazyTaskCache.poll()?.apply {
+                        val g = delay
+                        if (g > 0) sleep(g)
+                        run()
+                    }
+                    checker(1.0, "finalizing...")
+                } while (task != null)
+                task(null) {
+                    callback()
+                }
+            }
+        }.start()
+    }
+    private fun reloadSync(checker: (Double,String) -> Unit = { _, _ -> }, callback: () -> Unit) {
         if (reloaded) {
             warn("plugin is still on reload.")
             return
         }
         reloaded = true
         loadDatabase()
-        load(checker)
-        reloaded = false
+        load(checker) {
+            callback()
+            reloaded = false
+        }
     }
     private fun loadDatabase() {
         loadFile("database")?.let { database ->
@@ -682,37 +702,43 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         ReloadStartEvent().call()
         asyncTask {
             var time = System.currentTimeMillis()
-            reloadSync()
-            time = System.currentTimeMillis() - time
-            task {
-                callback(time)
-                ReloadEndEvent().call()
+            reloadSync {
+                time = System.currentTimeMillis() - time
+                task(null) {
+                    callback(time)
+                    ReloadEndEvent().call()
+                }
             }
         }
     }
     private fun reload(player: Player, callback: (Long) -> Unit) {
+        if (reloaded) {
+            player.warn("This plugin is still on reload.")
+            return
+        }
         val bossBar = Bukkit.createBossBar(null, BarColor.WHITE, BarStyle.SOLID)
         bossBar.addPlayer(player)
         ReloadStartEvent().call()
         asyncTask {
             var time = System.currentTimeMillis()
             var debug = ""
-            reloadSync { d, s ->
+            reloadSync({ d, s ->
                 if (Config.debug && s != debug) {
                     debug = s
                     Bukkit.getConsoleSender().send(s)
                 }
                 bossBar.progress = d
                 bossBar.setTitle(s)
-            }
-            time = System.currentTimeMillis() - time
-            bossBar.setTitle("finished.")
-            asyncTaskLater(60) {
-                bossBar.removeAll()
-            }
-            task {
-                callback(time)
-                ReloadEndEvent().call()
+            }) {
+                time = System.currentTimeMillis() - time
+                bossBar.setTitle("finished.")
+                asyncTaskLater(60) {
+                    bossBar.removeAll()
+                }
+                task(null) {
+                    callback(time)
+                    ReloadEndEvent().call()
+                }
             }
         }
     }
@@ -740,7 +766,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
         var data = DB.using.load(this@QuestAdderBukkit,player)
         private val task = asyncTaskTimer(Config.autoSaveTime,Config.autoSaveTime) {
             save()
-            task {
+            task(null) {
                 UserDataAutoSaveEvent(player, data).call()
             }
         }
@@ -751,7 +777,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
             }
         }
         init {
-            task {
+            task(null) {
                 UserDataLoadEvent(player, data).call()
             }
         }

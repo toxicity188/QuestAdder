@@ -32,7 +32,7 @@ public class ActWarp extends AbstractAction {
     @Override
     public ActionResult invoke(@NotNull Player player, @NotNull QuestAdderEvent event) {
         if (packet) QuestAdderBukkit.Companion.getNms().changePosition(player,loc.getLocation());
-        else player.teleport(loc.getLocation());
+        else QuestAdderBukkit.Companion.getScheduler().teleport(player, loc.getLocation());
         return ActionResult.SUCCESS;
     }
 }

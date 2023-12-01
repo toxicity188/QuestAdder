@@ -89,11 +89,11 @@ object LocationManager: QuestAdderManager {
                     locationMap[args[0]]?.let {
                         if (args.size > 1) {
                             Bukkit.getPlayer(args[1])?.let { player ->
-                                player.teleport(it.location)
+                                QuestAdderBukkit.scheduler.teleport(player, it.location)
                                 sender.info("the player named \"${player.name}\" successfully teleported to \"${args[0]}\".")
                             } ?: sender.warn("the player named \"${args[1]}\" doesn't exist.")
                         } else {
-                            (sender as Player).teleport(it.location)
+                            QuestAdderBukkit.scheduler.teleport(sender as Player, it.location)
                             sender.info("successfully teleported to \"${args[0]}\".")
                         }
                     } ?: sender.warn("the location named \"${args[0]}\" doesn't exist.")

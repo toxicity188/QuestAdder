@@ -1,7 +1,6 @@
 package kor.toxicity.questadder.mechanic.qna
 
 import kor.toxicity.questadder.QuestAdderBukkit
-import kor.toxicity.questadder.api.event.DialogStartEvent
 import kor.toxicity.questadder.api.event.QuestAdderPlayerEvent
 import kor.toxicity.questadder.api.gui.GuiData
 import kor.toxicity.questadder.api.gui.GuiExecutor
@@ -11,10 +10,8 @@ import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.mechanic.dialog.Dialog
 import kor.toxicity.questadder.mechanic.dialog.DialogEndData
 import kor.toxicity.questadder.util.ItemWriter
-import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.configuration.ConfigurationSection
-import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import java.io.File
 

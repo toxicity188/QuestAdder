@@ -2,6 +2,7 @@ package kor.toxicity.questadder.util.action;
 
 import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
+import kor.toxicity.questadder.api.concurrent.LazyRunnable;
 import kor.toxicity.questadder.api.mechanic.AbstractAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.api.mechanic.ActionResult;
@@ -38,13 +39,12 @@ public class ActInput extends AbstractAction {
     public void initialize() {
         super.initialize();
         componentReader = new ComponentReader<>(message);
-        ((QuestAdderBukkit) adder.getPlugin()).addLazyTask(() -> {
+        ((QuestAdderBukkit) adder.getPlugin()).addLazyTask(LazyRunnable.emptyOf(() -> {
             cal = DialogManager.INSTANCE.getAction(callback);
             if (cal == null) QuestAdderBukkit.Companion.warn("the action \"" + callback + "\" doesn't exist.");
             fa = DialogManager.INSTANCE.getAction(failure);
             if (fa == null) QuestAdderBukkit.Companion.warn("the action \"" + failure + "\" doesn't exist.");
-            return Unit.INSTANCE;
-        });
+        }));
     }
 
     @NotNull

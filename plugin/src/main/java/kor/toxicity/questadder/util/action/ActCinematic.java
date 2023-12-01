@@ -7,10 +7,10 @@ import kor.toxicity.questadder.api.mechanic.CancellableAction;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.manager.LocationManager;
 import kor.toxicity.questadder.api.util.DataField;
+import kor.toxicity.questadder.scheduler.ScheduledTask;
 import kotlin.Unit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -95,7 +95,7 @@ public class ActCinematic extends CancellableAction {
         }).toList();
 
         if (packet) consumer = (i,p) -> QuestAdderBukkit.Companion.getNms().changePosition(p,loc.get(i));
-        else consumer = (i,p) -> p.teleport(loc.get(i));
+        else consumer = (i,p) -> QuestAdderBukkit.Companion.getScheduler().teleport(p, loc.get(i));
     }
 
     @NotNull
@@ -114,10 +114,10 @@ public class ActCinematic extends CancellableAction {
 
     private class CinematicTask {
         private int i = 0;
-        private final BukkitTask task;
+        private final ScheduledTask task;
 
         public CinematicTask(Player player) {
-            task = QuestAdderBukkit.Companion.taskTimer(period,period,() -> {
+            task = QuestAdderBukkit.Companion.taskTimer(player.getLocation(),period,period,() -> {
                 if (i == iterate) {
                     TASK_MAP.remove(player.getUniqueId());
                     cancel();

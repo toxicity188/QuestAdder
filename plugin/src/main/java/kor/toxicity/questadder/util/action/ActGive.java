@@ -2,6 +2,7 @@ package kor.toxicity.questadder.util.action;
 
 import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
+import kor.toxicity.questadder.api.concurrent.LazyRunnable;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.extension.PlayersKt;
@@ -29,11 +30,11 @@ public class ActGive extends AbstractAction {
     @Override
     public void initialize() {
         super.initialize();
-        adder.addLazyTask(() -> {
+        adder.addLazyTask(LazyRunnable.emptyOf(() -> {
             if (item != null) stack = ItemManager.INSTANCE.getItem(item);
             if (sender != null && DialogManager.INSTANCE.getDialogSender(sender) instanceof ItemDialogSender s) stack = s.getItem();
             if (stack == null) QuestAdderBukkit.Companion.warn("unable to find item stack.");
-        });
+        }));
     }
 
     @NotNull

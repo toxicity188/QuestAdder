@@ -2,6 +2,7 @@ package kor.toxicity.questadder.util.action;
 
 import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
+import kor.toxicity.questadder.api.concurrent.LazyRunnable;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.manager.DialogManager;
@@ -32,14 +33,14 @@ public class ActAction extends AbstractAction {
     public void initialize() {
         super.initialize();
         if (condition != null) cond = FunctionBuilder.INSTANCE.evaluate(condition, Object.class);
-        adder.addLazyTask(() -> {
+        adder.addLazyTask(LazyRunnable.emptyOf(() -> {
             action = DialogManager.INSTANCE.getAction(name);
             if (action == null) throwNotFundError(name);
             if (condition != null && instead != null) {
                 ins = DialogManager.INSTANCE.getAction(instead);
                 if (ins == null) throwNotFundError(instead);
             }
-        });
+        }));
     }
     private void throwNotFundError(String n) {
         if (action == null) QuestAdderBukkit.Companion.warn("not found error: the action named \"" + n + "\" doesn't exist.");

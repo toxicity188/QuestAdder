@@ -2,6 +2,7 @@ package kor.toxicity.questadder.util.action;
 
 import kor.toxicity.questadder.QuestAdderBukkit;
 import kor.toxicity.questadder.api.QuestAdder;
+import kor.toxicity.questadder.api.concurrent.LazyRunnable;
 import kor.toxicity.questadder.api.event.QuestAdderEvent;
 import kor.toxicity.questadder.api.mechanic.ActionResult;
 import kor.toxicity.questadder.manager.DialogManager;
@@ -34,10 +35,10 @@ public class ActIndex extends AbstractAction {
         super.initialize();
         function = FunctionBuilder.INSTANCE.evaluate(amount, Object.class);
         if (!Number.class.isAssignableFrom(function.getReturnType())) throw new RuntimeException("The function \"" + amount + "\" is not a number.");
-        adder.addLazyTask(() -> {
+        adder.addLazyTask(LazyRunnable.emptyOf(() -> {
             npc = DialogManager.INSTANCE.getQuestNPC(name);
             if (npc == null) QuestAdderBukkit.Companion.warn("The NPC named \"" + name + "\" doesn't exist.");
-        });
+        }));
     }
 
     @NotNull

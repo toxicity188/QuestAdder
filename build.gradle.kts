@@ -7,7 +7,7 @@ plugins {
 }
 
 val questAdderGroup = "kor.toxicity.questadder"
-val questAdderVersion = "1.1.9"
+val questAdderVersion = "1.2.0"
 
 val adventureVersion = "4.14.0"
 val platformVersion = "4.3.1"
@@ -34,6 +34,7 @@ allprojects {
         maven(url = "https://repo.bg-software.com/repository/api/")
         maven(url = "https://nexus.phoenixdevt.fr/repository/maven-public/")
         maven(url = "https://repo.oraxen.com/releases")
+        maven(url = "https://repo.fancyplugins.de/releases")
     }
 
     dependencies {

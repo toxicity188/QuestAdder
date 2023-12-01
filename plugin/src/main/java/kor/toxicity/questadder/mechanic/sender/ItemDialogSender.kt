@@ -9,10 +9,11 @@ import kor.toxicity.questadder.extension.*
 import kor.toxicity.questadder.manager.DialogManager
 import kor.toxicity.questadder.mechanic.dialog.Dialog
 import kor.toxicity.questadder.util.gui.Gui
+import org.bukkit.Location
 import org.bukkit.configuration.ConfigurationSection
-import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
+import java.util.function.Supplier
 
 class ItemDialogSender(adder: QuestAdderBukkit, key: String, section: ConfigurationSection): IItemDialogSender {
     val item = section.findItemStack("Item","item") {
@@ -34,7 +35,7 @@ class ItemDialogSender(adder: QuestAdderBukkit, key: String, section: Configurat
         }
     }
 
-    override fun getEntity(): Entity? {
+    override fun getLocationSupplier(): Supplier<Location>? {
         return null
     }
 
