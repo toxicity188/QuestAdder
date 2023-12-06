@@ -16,11 +16,12 @@ import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Supplier
 
 class ActualNPC(val npc: WrappedNPC, val questNPC: QuestNPC): IActualNPC {
 
-    private val playerDisplayMap = HashMap<UUID,PlayerDisplay>()
+    private val playerDisplayMap = ConcurrentHashMap<UUID,PlayerDisplay>()
 
     private var task: ScheduledTask? = null
 

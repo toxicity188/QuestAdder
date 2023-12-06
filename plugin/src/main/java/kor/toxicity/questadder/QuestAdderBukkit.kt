@@ -99,6 +99,8 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
 
         var reloaded = true
             private set
+        var started = false
+            private set
         lateinit var audience: BukkitAudiences
             private set
         val platform: PlatformAdapter = if (Bukkit.getConsoleSender() is Audience) PaperPlatformAdapter() else SpigotPlatformAdapter()
@@ -625,6 +627,7 @@ class QuestAdderBukkit: JavaPlugin(), QuestAdderPlugin {
                 } catch (ex: Exception) {
                     warn("unable to check for updates: ${ex.message ?: ex.javaClass.simpleName}")
                 }
+                started = true
                 reloaded = false
             }
         }

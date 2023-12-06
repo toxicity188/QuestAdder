@@ -7,7 +7,7 @@ plugins {
 }
 
 val questAdderGroup = "kor.toxicity.questadder"
-val questAdderVersion = "1.2.0"
+val questAdderVersion = "1.2.1"
 
 val adventureVersion = "4.14.0"
 val platformVersion = "4.3.1"
@@ -68,6 +68,7 @@ dependencies {
     implementation(project(path = ":nms:v1_19_R3", configuration = "reobf"))
     implementation(project(path = ":nms:v1_20_R1", configuration = "reobf"))
     implementation(project(path = ":nms:v1_20_R2", configuration = "reobf"))
+    implementation(project(path = ":nms:v1_20_R3", configuration = "reobf"))
     implementation(project(path = ":plugin", configuration = "shadow"))
 }
 

@@ -782,7 +782,7 @@ object DialogManager: QuestAdderManager {
         }
         QuestAdderBukkit.addLazyTask(object : LazyRunnable {
             override fun getDelay(): Long {
-                return if (npcTask.isNotEmpty()) 5000L else 0L
+                return if (!QuestAdderBukkit.started && npcTask.isNotEmpty()) 5000L else 0L
             }
 
             override fun run() {

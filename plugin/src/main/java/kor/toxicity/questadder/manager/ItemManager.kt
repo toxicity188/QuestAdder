@@ -24,7 +24,7 @@ object ItemManager: QuestAdderManager {
     private var itemMap = HashMap<String, ItemSupplier>()
     private var itemDatabaseList = ArrayList<ItemDatabase>()
 
-    private val itemPattern = Pattern.compile("^(?<name>(([a-zA-Z]|[가-힣]|_|-|:)+))(?<argument>\\{[\\w|\\W]*})?$")
+    private val itemPattern = Pattern.compile("^(?<name>(([a-zA-Z]|[0-9]|[가-힣]|_|-|:)+))(?<argument>\\{[\\w|\\W]*})?$")
 
     fun getItem(name: String): ItemStack? {
         val matcher = itemPattern.matcher(name)
